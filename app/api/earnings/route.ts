@@ -82,13 +82,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate totals
-    const totalSales = results.reduce((sum, r) => sum + (r.totalSales || 0), 0);
-    const totalRevenue = results.reduce((sum, r) => sum + (r.totalRevenue || 0), 0);
+    const totalSales = results.reduce((sum, r) => sum + ('totalSales' in r ? r.totalSales : 0), 0);
+    const totalRevenue = results.reduce((sum, r) => sum + ('totalRevenue' in r ? r.totalRevenue : 0), 0);
     const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Combine top products from all marketplaces
     const allTopProducts = results
-      .flatMap(r => r.topProducts || [])
+      .flatMap(r => 'topProducts' in r ? r.topProducts : [])
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
 
@@ -166,8 +166,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate totals
-    const totalSales = results.reduce((sum, r) => sum + (r.totalSales || 0), 0);
-    const totalRevenue = results.reduce((sum, r) => sum + (r.totalRevenue || 0), 0);
+    const totalSales = results.reduce((sum, r) => sum + ('totalSales' in r ? r.totalSales : 0), 0);
+    const totalRevenue = results.reduce((sum, r) => sum + ('totalRevenue' in r ? r.totalRevenue : 0), 0);
     const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     return NextResponse.json({

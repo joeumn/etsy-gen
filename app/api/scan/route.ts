@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const marketplace = searchParams.get('marketplace') || 'etsy';
-    const category = searchParams.get('category');
+    const category = searchParams.get('category') || undefined;
     const limit = parseInt(searchParams.get('limit') || '50');
 
     // Get AI provider

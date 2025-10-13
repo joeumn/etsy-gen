@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
   env: {
     ENABLE_ZIG_1: process.env.ENABLE_ZIG_1 || 'false',
     ENABLE_ZIG_2: process.env.ENABLE_ZIG_2 || 'false',

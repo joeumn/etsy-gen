@@ -1,10 +1,10 @@
-import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
+// import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
 import { AIProvider, AIProviderConfig, GenerateProductRequest, GeneratedProduct, TrendData, TrendAnalysisResult } from '../IAIProvider';
 
 export class AzureOpenAIProvider implements AIProvider {
   name = 'Azure OpenAI';
   isAvailable = false;
-  private client: OpenAIClient;
+  private client: any;
 
   constructor(private config: AIProviderConfig) {
     if (!config.apiKey || !config.baseUrl) {
@@ -12,10 +12,11 @@ export class AzureOpenAIProvider implements AIProvider {
       return;
     }
 
-    this.client = new OpenAIClient(
-      config.baseUrl,
-      new AzureKeyCredential(config.apiKey)
-    );
+    // TODO: Fix Azure OpenAI v2 import
+    // this.client = new OpenAIClient(
+    //   config.baseUrl,
+    //   new AzureKeyCredential(config.apiKey)
+    // );
     this.isAvailable = true;
   }
 

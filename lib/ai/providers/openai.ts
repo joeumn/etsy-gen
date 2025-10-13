@@ -92,7 +92,7 @@ Return only valid JSON.`;
         quality: 'standard',
       });
 
-      return response.data[0]?.url || '';
+      return response.data?.[0]?.url || '';
     } catch (error) {
       console.error('OpenAI image generation error:', error);
       return `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=${encodeURIComponent(prompt)}`;
