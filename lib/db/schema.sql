@@ -172,6 +172,16 @@ CREATE INDEX idx_ai_generation_logs_user_id ON ai_generation_logs(user_id);
 CREATE INDEX idx_ai_generation_logs_created_at ON ai_generation_logs(created_at);
 CREATE INDEX idx_marketplace_api_logs_user_id ON marketplace_api_logs(user_id);
 CREATE INDEX idx_marketplace_api_logs_created_at ON marketplace_api_logs(created_at);
+-- New indexes for Zig modules
+CREATE INDEX idx_design_assets_user_id ON design_assets(user_id);
+CREATE INDEX idx_design_assets_product_id ON design_assets(product_id);
+CREATE INDEX idx_design_assets_created_at ON design_assets(created_at);
+CREATE INDEX idx_user_usage_user_id ON user_usage(user_id);
+CREATE INDEX idx_brands_user_id ON brands(user_id);
+CREATE INDEX idx_brands_created_at ON brands(created_at);
+CREATE INDEX idx_social_trends_trend_id ON social_trends(trend_id);
+CREATE INDEX idx_social_trends_platform ON social_trends(platform);
+CREATE INDEX idx_social_trends_created_at ON social_trends(created_at);
 
 -- Insert default AI providers
 INSERT INTO ai_providers (name, is_active, config) VALUES
@@ -186,6 +196,64 @@ INSERT INTO marketplaces (name, is_active, config) VALUES
 ('etsy', true, '{"api_version": "v3", "rate_limit": 100}'),
 ('amazon', true, '{"api_version": "2022-04-01", "rate_limit": 200}'),
 ('shopify', true, '{"api_version": "2023-10", "rate_limit": 40}');
+
+-- Design assets table (Zig 3)
+CREATE TABLE design_assets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES generated_products(id) ON DELETE CASCADE,
+  prompt TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  image_type VARCHAR(20) DEFAULT 'png' CHECK (image_type IN ('png', 'jpg', 'svg')),
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User usage table (Zig 4)
+CREATE TABLE user_usage (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  plan VARCHAR(20) DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'enterprise')),
+  scans_used INTEGER DEFAULT 0,
+  scans_limit INTEGER DEFAULT 10,
+  generations_used INTEGER DEFAULT 0,
+  generations_limit INTEGER DEFAULT 5,
+  studio_access BOOLEAN DEFAULT false,
+  social_signals BOOLEAN DEFAULT false,
+  auto_branding BOOLEAN DEFAULT false,
+  stripe_customer_id VARCHAR(255),
+  stripe_subscription_id VARCHAR(255),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Brands table (Zig 6)
+CREATE TABLE brands (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  logo_url TEXT,
+  color_palette JSONB,
+  typography JSONB,
+  tagline TEXT,
+  brand_kit_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Social trends table (Zig 5)
+CREATE TABLE social_trends (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trend_id UUID REFERENCES trend_data(id) ON DELETE CASCADE,
+  platform VARCHAR(50) NOT NULL,
+  hashtag VARCHAR(100),
+  engagement_score DECIMAL(5,2),
+  reach_score DECIMAL(5,2),
+  viral_score DECIMAL(5,2),
+  social_trend_score DECIMAL(5,2),
+  raw_data JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- Insert default feature flags
 INSERT INTO feature_flags (name, is_enabled, config) VALUES
