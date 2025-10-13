@@ -172,6 +172,17 @@ CREATE INDEX idx_ai_generation_logs_user_id ON ai_generation_logs(user_id);
 CREATE INDEX idx_ai_generation_logs_created_at ON ai_generation_logs(created_at);
 CREATE INDEX idx_marketplace_api_logs_user_id ON marketplace_api_logs(user_id);
 CREATE INDEX idx_marketplace_api_logs_created_at ON marketplace_api_logs(created_at);
+-- New table indexes
+CREATE INDEX idx_design_assets_user_id ON design_assets(user_id);
+CREATE INDEX idx_design_assets_product_id ON design_assets(product_id);
+CREATE INDEX idx_design_assets_created_at ON design_assets(created_at);
+CREATE INDEX idx_user_usage_user_id ON user_usage(user_id);
+CREATE INDEX idx_user_usage_type ON user_usage(usage_type);
+CREATE INDEX idx_brands_user_id ON brands(user_id);
+CREATE INDEX idx_social_trends_trend_id ON social_trends(trend_id);
+CREATE INDEX idx_social_trends_platform ON social_trends(platform);
+CREATE INDEX idx_stripe_customers_user_id ON stripe_customers(user_id);
+CREATE INDEX idx_stripe_customers_stripe_id ON stripe_customers(stripe_customer_id);
 
 -- Insert default AI providers
 INSERT INTO ai_providers (name, is_active, config) VALUES
@@ -187,14 +198,80 @@ INSERT INTO marketplaces (name, is_active, config) VALUES
 ('amazon', true, '{"api_version": "2022-04-01", "rate_limit": 200}'),
 ('shopify', true, '{"api_version": "2023-10", "rate_limit": 40}');
 
+-- Design assets table (Zig 3)
+CREATE TABLE design_assets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES generated_products(id) ON DELETE CASCADE,
+  prompt TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  image_type VARCHAR(20) DEFAULT 'png' CHECK (image_type IN ('png', 'jpg', 'svg')),
+  storage_path TEXT NOT NULL,
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User usage tracking table (Zig 4)
+CREATE TABLE user_usage (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  usage_type VARCHAR(50) NOT NULL,
+  usage_count INTEGER DEFAULT 0,
+  limit_count INTEGER DEFAULT 0,
+  period_start TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  period_end TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '1 month',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Brands table (Zig 6)
+CREATE TABLE brands (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  logo_url TEXT,
+  color_palette JSONB,
+  typography JSONB,
+  tagline TEXT,
+  brand_kit_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Social trends table (Zig 5)
+CREATE TABLE social_trends (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trend_id UUID REFERENCES trend_data(id) ON DELETE CASCADE,
+  platform VARCHAR(50) NOT NULL,
+  hashtag VARCHAR(255),
+  engagement_score DECIMAL(5,2),
+  reach_score DECIMAL(5,2),
+  viral_score DECIMAL(5,2),
+  social_trend_score DECIMAL(5,2),
+  raw_data JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Stripe customers table
+CREATE TABLE stripe_customers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  stripe_customer_id VARCHAR(255) UNIQUE NOT NULL,
+  subscription_id VARCHAR(255),
+  subscription_status VARCHAR(50),
+  current_period_end TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Insert default feature flags
 INSERT INTO feature_flags (name, is_enabled, config) VALUES
 ('zig_1_edge_scaling', false, '{"description": "Run scanning via Cloudflare Workers or Vercel Edge Functions"}'),
 ('zig_2_vector_search', false, '{"description": "Add pgvector / Qdrant index to cluster trends & prevent duplicate listings"}'),
-('zig_3_ai_design_studio', false, '{"description": "Integrate image generation for instant product mockups"}'),
-('zig_4_monetization', false, '{"description": "Add Stripe billing + usage-based limits + affiliate tracking"}'),
-('zig_5_social_signals', false, '{"description": "Scan TikTok, Pinterest, Instagram hashtags for trend ranking"}'),
-('zig_6_auto_branding', false, '{"description": "Create store branding (logo, banner, colors, font kit) for each product line"}');
+('zig_3_ai_design_studio', true, '{"description": "Integrate image generation for instant product mockups"}'),
+('zig_4_monetization', true, '{"description": "Add Stripe billing + usage-based limits + affiliate tracking"}'),
+('zig_5_social_signals', true, '{"description": "Scan TikTok, Pinterest, Instagram hashtags for trend ranking"}'),
+('zig_6_auto_branding', true, '{"description": "Create store branding (logo, banner, colors, font kit) for each product line"}');
 
 -- Functions for updating timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -213,3 +290,6 @@ CREATE TRIGGER update_generated_products_updated_at BEFORE UPDATE ON generated_p
 CREATE TRIGGER update_product_listings_updated_at BEFORE UPDATE ON product_listings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_feature_flags_updated_at BEFORE UPDATE ON feature_flags FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_user_usage_updated_at BEFORE UPDATE ON user_usage FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_brands_updated_at BEFORE UPDATE ON brands FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_stripe_customers_updated_at BEFORE UPDATE ON stripe_customers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

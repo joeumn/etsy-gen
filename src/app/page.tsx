@@ -1,103 +1,244 @@
-import Image from "next/image";
+"use client";
+
+import { motion } from "framer-motion";
+import { ArrowRight, Sparkles, TrendingUp, Palette, Zap, Shield, Star } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Navigation */}
+      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="h-8 w-8 rounded-lg bg-flame-gradient"></div>
+            <span className="text-xl font-bold">FoundersForge</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link href="/dashboard">
+              <Button variant="ghost">Dashboard</Button>
+            </Link>
+            <Link href="/pricing">
+              <Button>Get Started</Button>
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </nav>
+
+      {/* Hero Section */}
+      <section className="container py-24 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="mx-auto max-w-4xl"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <div className="mb-8 flex justify-center">
+            <div className="inline-flex items-center rounded-full border bg-muted/50 px-4 py-2 text-sm">
+              <Sparkles className="mr-2 h-4 w-4 text-flame-500" />
+              AI-Powered Product Creation
+            </div>
+          </div>
+          
+          <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-6xl">
+            Turn Trends Into
+            <span className="bg-gradient-to-r from-ocean-500 via-flame-500 to-gold-500 bg-clip-text text-transparent">
+              {" "}Profitable Products
+            </span>
+          </h1>
+          
+          <p className="mb-8 text-lg text-muted-foreground sm:text-xl">
+            Discover trending products, generate AI-powered designs, and launch your digital empire 
+            across multiple marketplaces with our all-in-one platform.
+          </p>
+          
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+            <Link href="/dashboard">
+              <Button size="lg" className="bg-flame-gradient hover:opacity-90">
+                Start Creating
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/pricing">
+              <Button size="lg" variant="outline">
+                View Pricing
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Features Section */}
+      <section className="container py-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            Everything You Need to Succeed
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            From trend discovery to product launch, we've got you covered.
+          </p>
+        </motion.div>
+
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: index * 0.1 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-flame-gradient">
+                    <feature.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <CardTitle>{feature.title}</CardTitle>
+                  <CardDescription>{feature.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="container py-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="rounded-2xl bg-gradient-to-r from-ocean-500/10 via-flame-500/10 to-gold-500/10 p-8"
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+          <div className="grid gap-8 md:grid-cols-4">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="text-3xl font-bold text-flame-500">{stat.value}</div>
+                <div className="text-muted-foreground">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container py-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="rounded-2xl bg-gradient-to-r from-ocean-500 to-flame-500 p-12 text-center text-white"
+        >
+          <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+            Ready to Launch Your First Product?
+          </h2>
+          <p className="mb-8 text-lg opacity-90">
+            Join thousands of entrepreneurs who are already building their digital empires.
+          </p>
+          <Link href="/dashboard">
+            <Button size="lg" variant="secondary" className="bg-white text-ocean-500 hover:bg-white/90">
+              Get Started Free
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </motion.div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t bg-muted/50">
+        <div className="container py-12">
+          <div className="grid gap-8 md:grid-cols-4">
+            <div>
+              <div className="mb-4 flex items-center space-x-2">
+                <div className="h-8 w-8 rounded-lg bg-flame-gradient"></div>
+                <span className="text-xl font-bold">FoundersForge</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                The ultimate platform for AI-powered product creation and marketplace success.
+              </p>
+            </div>
+            <div>
+              <h3 className="mb-4 font-semibold">Product</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/dashboard" className="hover:text-foreground">Dashboard</Link></li>
+                <li><Link href="/studio" className="hover:text-foreground">AI Studio</Link></li>
+                <li><Link href="/pricing" className="hover:text-foreground">Pricing</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="mb-4 font-semibold">Support</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/help" className="hover:text-foreground">Help Center</Link></li>
+                <li><Link href="/contact" className="hover:text-foreground">Contact</Link></li>
+                <li><Link href="/docs" className="hover:text-foreground">Documentation</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="mb-4 font-semibold">Company</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/about" className="hover:text-foreground">About</Link></li>
+                <li><Link href="/blog" className="hover:text-foreground">Blog</Link></li>
+                <li><Link href="/careers" className="hover:text-foreground">Careers</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
+            © 2024 FoundersForge. All rights reserved.
+          </div>
+        </div>
       </footer>
     </div>
   );
 }
+
+const features = [
+  {
+    title: "AI Trend Analysis",
+    description: "Discover trending products across Etsy, Amazon, and Shopify with our advanced AI algorithms.",
+    icon: TrendingUp,
+  },
+  {
+    title: "Design Studio",
+    description: "Generate stunning product mockups and designs using cutting-edge AI image generation.",
+    icon: Palette,
+  },
+  {
+    title: "Auto-Listing",
+    description: "Automatically create optimized listings across multiple marketplaces with one click.",
+    icon: Zap,
+  },
+  {
+    title: "Social Signals",
+    description: "Track viral trends on TikTok, Pinterest, and Instagram to stay ahead of the competition.",
+    icon: Star,
+  },
+  {
+    title: "Auto-Branding",
+    description: "Generate complete brand kits with logos, colors, and typography for your product lines.",
+    icon: Shield,
+  },
+  {
+    title: "Analytics Dashboard",
+    description: "Track your performance with detailed analytics and revenue insights.",
+    icon: TrendingUp,
+  },
+];
+
+const stats = [
+  { value: "10K+", label: "Products Generated" },
+  { value: "500+", label: "Active Users" },
+  { value: "$2M+", label: "Revenue Generated" },
+  { value: "95%", label: "Success Rate" },
+];
