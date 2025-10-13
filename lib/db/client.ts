@@ -249,6 +249,215 @@ export interface Database {
           updated_at?: string;
         };
       };
+      // Stage 3: Analytics tables
+      analytics_cache: {
+        Row: {
+          id: string;
+          created_at: string;
+          key: string;
+          payload: any;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          key: string;
+          payload: any;
+          expires_at?: string;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          key?: string;
+          payload?: any;
+          expires_at?: string;
+        };
+      };
+      analytics_queries: {
+        Row: {
+          id: string;
+          query_text: string;
+          query_hash: string;
+          sql_template: string;
+          parameters: any | null;
+          result_type: 'table' | 'timeseries' | 'bar' | 'radar' | 'pie';
+          created_at: string;
+          last_used_at: string;
+          usage_count: number;
+        };
+        Insert: {
+          id?: string;
+          query_text: string;
+          query_hash: string;
+          sql_template: string;
+          parameters?: any | null;
+          result_type: 'table' | 'timeseries' | 'bar' | 'radar' | 'pie';
+          created_at?: string;
+          last_used_at?: string;
+          usage_count?: number;
+        };
+        Update: {
+          id?: string;
+          query_text?: string;
+          query_hash?: string;
+          sql_template?: string;
+          parameters?: any | null;
+          result_type?: 'table' | 'timeseries' | 'bar' | 'radar' | 'pie';
+          created_at?: string;
+          last_used_at?: string;
+          usage_count?: number;
+        };
+      };
+      // Stage 3: Affiliate tables
+      affiliates: {
+        Row: {
+          id: string;
+          user_id: string;
+          code: string;
+          display_name: string | null;
+          is_public: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          code: string;
+          display_name?: string | null;
+          is_public?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          code?: string;
+          display_name?: string | null;
+          is_public?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      affiliate_clicks: {
+        Row: {
+          id: string;
+          code: string;
+          occurred_at: string;
+          ip: string | null;
+          ua: string | null;
+          landing_path: string | null;
+          referrer: string | null;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          occurred_at?: string;
+          ip?: string | null;
+          ua?: string | null;
+          landing_path?: string | null;
+          referrer?: string | null;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          occurred_at?: string;
+          ip?: string | null;
+          ua?: string | null;
+          landing_path?: string | null;
+          referrer?: string | null;
+        };
+      };
+      affiliate_signups: {
+        Row: {
+          id: string;
+          code: string;
+          user_id: string;
+          occurred_at: string;
+          first_touch_click_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          user_id: string;
+          occurred_at?: string;
+          first_touch_click_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          user_id?: string;
+          occurred_at?: string;
+          first_touch_click_id?: string | null;
+        };
+      };
+      affiliate_conversions: {
+        Row: {
+          id: string;
+          code: string;
+          user_id: string;
+          occurred_at: string;
+          plan: 'pro' | 'enterprise';
+          mrr_cents: number;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          conversion_value_cents: number;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          user_id: string;
+          occurred_at?: string;
+          plan: 'pro' | 'enterprise';
+          mrr_cents?: number;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          conversion_value_cents?: number;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          user_id?: string;
+          occurred_at?: string;
+          plan?: 'pro' | 'enterprise';
+          mrr_cents?: number;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          conversion_value_cents?: number;
+        };
+      };
+      // Stage 3: Events/Telemetry
+      events: {
+        Row: {
+          id: string;
+          occurred_at: string;
+          user_id: string | null;
+          name: string;
+          payload: any | null;
+          session_id: string | null;
+          ip: string | null;
+          ua: string | null;
+        };
+        Insert: {
+          id?: string;
+          occurred_at?: string;
+          user_id?: string | null;
+          name: string;
+          payload?: any | null;
+          session_id?: string | null;
+          ip?: string | null;
+          ua?: string | null;
+        };
+        Update: {
+          id?: string;
+          occurred_at?: string;
+          user_id?: string | null;
+          name?: string;
+          payload?: any | null;
+          session_id?: string | null;
+          ip?: string | null;
+          ua?: string | null;
+        };
+      };
     };
   };
 }
