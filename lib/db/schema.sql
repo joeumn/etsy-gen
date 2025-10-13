@@ -173,6 +173,19 @@ CREATE INDEX idx_ai_generation_logs_created_at ON ai_generation_logs(created_at)
 CREATE INDEX idx_marketplace_api_logs_user_id ON marketplace_api_logs(user_id);
 CREATE INDEX idx_marketplace_api_logs_created_at ON marketplace_api_logs(created_at);
 
+-- New table indexes
+CREATE INDEX idx_design_assets_user_id ON design_assets(user_id);
+CREATE INDEX idx_design_assets_product_id ON design_assets(product_id);
+CREATE INDEX idx_design_assets_asset_type ON design_assets(asset_type);
+CREATE INDEX idx_user_usage_user_id ON user_usage(user_id);
+CREATE INDEX idx_user_usage_plan_type ON user_usage(plan_type);
+CREATE INDEX idx_brands_user_id ON brands(user_id);
+CREATE INDEX idx_social_trends_trend_id ON social_trends(trend_id);
+CREATE INDEX idx_social_trends_platform ON social_trends(platform);
+CREATE INDEX idx_social_trends_social_trend_score ON social_trends(social_trend_score);
+CREATE INDEX idx_stripe_customers_user_id ON stripe_customers(user_id);
+CREATE INDEX idx_stripe_customers_stripe_customer_id ON stripe_customers(stripe_customer_id);
+
 -- Insert default AI providers
 INSERT INTO ai_providers (name, is_active, config) VALUES
 ('gemini', true, '{"model": "gemini-pro", "temperature": 0.7}'),
@@ -186,6 +199,76 @@ INSERT INTO marketplaces (name, is_active, config) VALUES
 ('etsy', true, '{"api_version": "v3", "rate_limit": 100}'),
 ('amazon', true, '{"api_version": "2022-04-01", "rate_limit": 200}'),
 ('shopify', true, '{"api_version": "2023-10", "rate_limit": 40}');
+
+-- Design assets table (Zig 3 - AI Design Studio)
+CREATE TABLE design_assets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES generated_products(id) ON DELETE CASCADE,
+  asset_type VARCHAR(50) NOT NULL CHECK (asset_type IN ('image', 'logo', 'banner', 'mockup')),
+  prompt TEXT,
+  image_url TEXT NOT NULL,
+  metadata JSONB,
+  storage_path TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User usage tracking table (Zig 4 - Monetization)
+CREATE TABLE user_usage (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  plan_type VARCHAR(20) DEFAULT 'free' CHECK (plan_type IN ('free', 'pro', 'enterprise')),
+  scans_used INTEGER DEFAULT 0,
+  scans_limit INTEGER DEFAULT 10,
+  generations_used INTEGER DEFAULT 0,
+  generations_limit INTEGER DEFAULT 5,
+  studio_access BOOLEAN DEFAULT false,
+  social_signals BOOLEAN DEFAULT false,
+  auto_branding BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Brands table (Zig 6 - Auto-Branding)
+CREATE TABLE brands (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  brand_name VARCHAR(255) NOT NULL,
+  logo_url TEXT,
+  color_palette JSONB,
+  typography JSONB,
+  tagline TEXT,
+  brand_kit_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Social trends table (Zig 5 - Social Signals)
+CREATE TABLE social_trends (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trend_id UUID REFERENCES trend_data(id) ON DELETE CASCADE,
+  platform VARCHAR(50) NOT NULL CHECK (platform IN ('tiktok', 'pinterest', 'instagram', 'twitter')),
+  hashtag VARCHAR(255),
+  engagement_score DECIMAL(5,2),
+  reach_score DECIMAL(5,2),
+  viral_score DECIMAL(5,2),
+  social_trend_score DECIMAL(5,2),
+  raw_data JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Stripe customers table (Zig 4 - Monetization)
+CREATE TABLE stripe_customers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  stripe_customer_id VARCHAR(255) UNIQUE NOT NULL,
+  subscription_id VARCHAR(255),
+  subscription_status VARCHAR(50),
+  current_period_end TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- Insert default feature flags
 INSERT INTO feature_flags (name, is_enabled, config) VALUES
@@ -213,3 +296,9 @@ CREATE TRIGGER update_generated_products_updated_at BEFORE UPDATE ON generated_p
 CREATE TRIGGER update_product_listings_updated_at BEFORE UPDATE ON product_listings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_feature_flags_updated_at BEFORE UPDATE ON feature_flags FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- New table triggers
+CREATE TRIGGER update_design_assets_updated_at BEFORE UPDATE ON design_assets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_user_usage_updated_at BEFORE UPDATE ON user_usage FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_brands_updated_at BEFORE UPDATE ON brands FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_stripe_customers_updated_at BEFORE UPDATE ON stripe_customers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
