@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/auto-create",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/auto-price",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/auto-market",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/auto-optimize",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}
