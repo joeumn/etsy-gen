@@ -52,29 +52,26 @@ export class PricingOptimizer {
       }
     `;
 
-    // Note: In a real implementation, you would use a more robust method to get the AI's response.
-    // This is a simplified example.
-    const response = await aiProvider.generateListingContent({
+    // In a real app, you would parse the response more robustly
+    const responseText = await aiProvider.generateListingContent({
       title: 'Pricing Optimization',
       description: prompt,
-      tags: [],
-      price: 0,
-      category: '',
-      seoKeywords: [],
-    }, 'etsy');
-
+      tags: [], price: 0, category: '', seoKeywords: [],
+    }, 'system');
+    
     try {
-      const parsedResponse = JSON.parse(response);
-      return parsedResponse;
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No JSON found in AI response for pricing.');
+        const parsedResponse = JSON.parse(jsonMatch[0]);
+        return parsedResponse;
     } catch (error) {
-      console.error('Failed to parse pricing recommendation:', error);
-      // Fallback to a simple rule
-      return {
-        newPrice: context.currentPrice * 1.05,
-        expectedRevenueDelta: context.currentPrice * 0.05 * (context.salesData.reduce((sum, item) => sum + item.unitsSold, 0) / context.salesData.length),
-        confidence: 0.6,
-        reasoning: 'AI model failed to respond; applying a default 5% price increase.'
-      };
+        console.error('Failed to parse pricing recommendation:', error);
+        return {
+            newPrice: context.currentPrice,
+            expectedRevenueDelta: 0,
+            confidence: 0,
+            reasoning: 'Failed to get a valid recommendation from the AI model.'
+        };
     }
   }
 }

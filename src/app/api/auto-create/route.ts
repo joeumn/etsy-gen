@@ -22,9 +22,6 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
 
 async function synthesizeTrends() {
   const aiProvider = await AIProviderFactory.getProvider();
-
-  // In a real scenario, we'd dynamically fetch this from /api/scan, /api/social-scan, etc.
-  // For this implementation, we're using pre-researched trends to create a high-quality prompt.
   const trendContext = `
     Based on recent analysis for 2025, the following digital product niches are showing strong potential:
     1.  **Hyper-Personalization & Niche Planners**: Digital planners for specific needs (e.g., ADHD, freelancers, content creators) are outperforming generic planners.
@@ -33,70 +30,40 @@ async function synthesizeTrends() {
     4.  **Minimalist & "Human-Centric" Design**: Templates (social media, websites, business cards) that feature clean, minimalist design with a focus on accessibility and user experience are trending.
     5.  **Self-Improvement & Wellness**: The demand for habit trackers, goal-setting worksheets, and digital journals continues to grow.
   `;
-
   const synthesisPrompt = `
-    You are an AI Trend Analyst for a digital product business.
-    Your goal is to generate 3 novel and highly marketable digital product ideas based on the provided trend context.
-    For each idea, provide a brief description and the primary niche it targets.
-
-    Context:
-    ${trendContext}
-
-    Return your response as a JSON object containing a single key "product_ideas", which is an array of objects, each with "productName", "description", and "niche".
-    Example:
-    {
-      "product_ideas": [
-        {
-          "productName": "AI Prompt Engineering Kit for Etsy Sellers",
-          "description": "A comprehensive pack of ChatGPT prompts and Midjourney templates designed to help Etsy sellers create better listings, product images, and marketing copy.",
-          "niche": "AI for Creatives"
-        }
-      ]
-    }
+    You are an AI Trend Analyst. Your goal is to generate 3 novel and marketable digital product ideas based on the provided trend context.
+    Return a JSON object with a key "product_ideas", which is an array of objects, each with "productName", "description", and "niche".
   `;
-
-  const response = await aiProvider.generateListingContent({
-    title: 'Trend Synthesis',
-    description: synthesisPrompt,
-    tags: [], price: 0, category: '', seoKeywords: []
+  const responseText = await aiProvider.generateListingContent({
+      title: 'Trend Synthesis', description: synthesisPrompt, tags: [], price: 0, category: '', seoKeywords: []
   }, 'system');
-
   try {
-    const parsedResponse = JSON.parse(response);
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON found in AI response for trends.');
+    const parsedResponse = JSON.parse(jsonMatch[0]);
     return parsedResponse.product_ideas || [];
   } catch (error) {
     console.error("Failed to parse trend synthesis from AI:", error);
-    return []; // Return an empty array on failure
+    return [];
   }
 }
 
-
 export async function GET(request: NextRequest) {
-  // Secure the endpoint with a cron job secret
   const authToken = (request.headers.get('authorization') || '').split('Bearer ')[1];
   if (process.env.CRON_SECRET && authToken !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
   if (process.env.ENABLE_STAGE4_AUTOCREATE !== 'true') {
     return NextResponse.json({ message: 'Auto-create feature is not enabled.' });
   }
-
   console.log("Starting auto-create job...");
-
   try {
-    // 1. Synthesize Trends to get Product Ideas
     const productIdeas = await synthesizeTrends();
     if (!productIdeas || productIdeas.length === 0) {
-      console.log("No new product ideas generated.");
       return NextResponse.json({ message: 'No new product ideas generated.' });
     }
-
-    // 2. Process the first product idea from the list
     const idea = productIdeas[0];
     console.log(`Generating product for idea: ${idea.productName}`);
-
-    // 3. Generate Product Details
     const generatedProductData = await fetchApi('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -108,44 +75,27 @@ export async function GET(request: NextRequest) {
       })
     });
     const product = generatedProductData.data.product;
-
-    // 4. Determine Optimal Price
     const priceRecommendation = await pricingOptimizer.getOptimalPrice({
       marketplace: 'etsy',
       category: product.category,
-      currentPrice: product.price, // Use initial price as current
-      salesData: [], // No sales data for a new product
-      competitorPrices: [9.99, 12.99, 14.99] // Mock competitor data
+      currentPrice: product.price,
+      salesData: [],
+      competitorPrices: [9.99, 12.99, 14.99]
     });
-
     product.price = priceRecommendation.newPrice;
     await supabase.from('pricing_history').insert({
-        // In a real app, you'd have a product ID before this step
-        // product_id: product.id, 
         old_price: 0,
         new_price: product.price,
         expected_delta: priceRecommendation.expectedRevenueDelta,
     });
-    
     console.log(`Optimal price set to: $${product.price}`);
-
-    // 5. List the Product on the Marketplace
     const listingResponse = await fetchApi('/api/list', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        marketplace: 'etsy',
-        product: product,
-        publish: true
-      })
+      body: JSON.stringify({ marketplace: 'etsy', product, publish: true })
     });
-    
     console.log('Auto-create job executed successfully. Product listed:', listingResponse.data.listingId);
-    return NextResponse.json({
-      message: 'Auto-create job executed successfully.',
-      productId: listingResponse.data.listingId
-    });
-
+    return NextResponse.json({ message: 'Auto-create job executed successfully.', productId: listingResponse.data.listingId });
   } catch (error) {
     console.error("Error in auto-create job:", error);
     return NextResponse.json({ error: 'Failed to execute auto-create job.' }, { status: 500 });

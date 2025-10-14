@@ -297,7 +297,7 @@ pnpm lint
 - **CORS**: Properly configured
 - **Rate Limiting**: Implemented on API routes
 
-## ï¿½ï¿½ Contributing
+## í´ Contributing
 
 1. Fork the repository
 2. Create a feature branch
