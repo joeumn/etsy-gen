@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FoundersForge - AI-Powered Product Creation",
+  title: "The Forge - AI-Powered Product Creation",
   description: "Turn trends into profitable products with AI. Discover trending products, generate complete listings, and create stunning designs.",
 };
 

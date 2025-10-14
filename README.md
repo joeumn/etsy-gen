@@ -141,6 +141,9 @@ A comprehensive Next.js 14 + TypeScript + Tailwind + shadcn/ui application that 
    # Stripe
    STRIPE_SECRET_KEY=sk_test_...
    STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+   # Cron Job Security
+   CRON_SECRET=your_secret_cron_token
    
    # Feature Flags
    ENABLE_ZIG3_STUDIO=true
@@ -294,7 +297,7 @@ pnpm lint
 - **CORS**: Properly configured
 - **Rate Limiting**: Implemented on API routes
 
-## Ì¥ù Contributing
+## ÔøΩÔøΩ Contributing
 
 1. Fork the repository
 2. Create a feature branch
