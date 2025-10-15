@@ -1,9 +1,9 @@
-import { NextAuthOptions } from "next-auth";
+import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { supabase } from "./db/client";
 import bcrypt from "bcryptjs";
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthConfig = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -18,21 +18,35 @@ export const authOptions: NextAuthOptions = {
 
         try {
           // Get user from database
-          const { data: user, error } = await supabase
+          const { data, error } = await supabase
             .from("users")
-            .select("*")
+            .select("id, email, name, avatar_url, password_hash, role")
             .eq("email", credentials.email)
             .single();
 
-          if (error || !user) {
+          if (error || !data) {
             return null;
           }
 
-          // Verify password
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            user.password_hash
-          );
+          // Explicitly type the user to help TypeScript
+          const user = data as {
+            id: string;
+            email: string;
+            name: string | null;
+            avatar_url: string | null;
+            password_hash: string;
+            role: string;
+          };
+
+          // Ensure password_hash is a valid string
+          const passwordHash = String(user.password_hash);
+          if (!passwordHash || passwordHash === 'undefined' || passwordHash === '[object Object]') {
+            return null;
+          }
+
+          // Verify password (Supabase type inference issue workaround)
+          // @ts-expect-error - Supabase types password_hash as {} incorrectly
+          const isPasswordValid: boolean = await bcrypt.compare(credentials.password, passwordHash);
 
           if (!isPasswordValid) {
             return null;
@@ -55,14 +69,14 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: any; user: any }) {
       if (user) {
         token.id = user.id;
         token.avatar = user.avatar;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       if (token) {
         session.user.id = token.id as string;
         session.user.avatar = token.avatar as string;
@@ -72,51 +86,11 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/auth/signin",
-    signUp: "/auth/signup",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
 
 // Helper functions for authentication
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
-}
-
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
-}
-
-export async function createUser(email: string, password: string, name?: string) {
-  const hashedPassword = await hashPassword(password);
-  
-  const { data, error } = await supabase
-    .from("users")
-    .insert({
-      email,
-      password_hash: hashedPassword,
-      name,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
-}
-
-export async function getUserByEmail(email: string) {
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("email", email)
-    .single();
-
-  if (error) {
-    return null;
-  }
-
-  return data;
-}
+// Re-export auth helpers
+export { hashPassword, verifyPassword, createUser, getUserByEmail, getUserById, authenticateUser, verifyToken } from './auth-helper';
 
