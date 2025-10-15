@@ -1,0 +1,4 @@
+{
+  "externalUrl": "http://127.0.0.1:40925/ingest",
+  "logPath": "/workspace/.cursor/debug.log"
+}
