@@ -6,6 +6,8 @@ CREATE TABLE users (
   email VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(255),
   avatar_url TEXT,
+  password_hash TEXT,
+  email_verified BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
