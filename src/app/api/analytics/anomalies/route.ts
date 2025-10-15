@@ -156,19 +156,21 @@ async function getHistoricalData(userId: string, metric: string, period: number)
   // Group by date and aggregate
   const groupedData = new Map<string, { date: string; value: number; count: number }>();
   
-  data?.forEach(row => {
-    const date = row.created_at.split('T')[0];
-    const existing = groupedData.get(date);
-    
-    if (existing) {
-      existing.value += row.value;
-      existing.count += 1;
-    } else {
-      groupedData.set(date, {
-        date,
-        value: row.value,
-        count: 1
-      });
+  data?.forEach((row: any) => {
+    if (row && typeof row === 'object' && 'created_at' in row) {
+      const date = row.created_at.split('T')[0];
+      const existing = groupedData.get(date);
+      
+      if (existing) {
+        existing.value += row.value;
+        existing.count += 1;
+      } else {
+        groupedData.set(date, {
+          date,
+          value: row.value,
+          count: 1
+        });
+      }
     }
   });
 
