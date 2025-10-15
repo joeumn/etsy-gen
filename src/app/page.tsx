@@ -213,7 +213,7 @@ export default function Home() {
         >
           <h2 className="text-4xl font-bold mb-4">What Our Customers Say</h2>
           <p className="text-xl text-muted-foreground">
-            Join thousands of successful entrepreneurs who've transformed their businesses with FoundersForge.
+            Join thousands of successful entrepreneurs who&apos;ve transformed their businesses with FoundersForge.
           </p>
         </motion.div>
 
@@ -232,7 +232,7 @@ export default function Home() {
                       <Star key={i} className="h-4 w-4 fill-gold-500 text-gold-500" />
                     ))}
                   </div>
-                  <p className="text-muted-foreground mb-4">"{testimonial.content}"</p>
+                  <p className="text-muted-foreground mb-4">&ldquo;{testimonial.content}&rdquo;</p>
                   <div>
                     <div className="font-semibold">{testimonial.name}</div>
                     <div className="text-sm text-muted-foreground">{testimonial.role}</div>
