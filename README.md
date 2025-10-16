@@ -100,24 +100,9 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### First Login
+### First Access
 
-**Default Admin Credentials**:
-
-For development (mock auth):
-- Email: `joeinduluth@gmail.com`
-- Password: `Two1Eight`
-- Role: Super Admin
-
-Alternative demo account:
-- Email: `admin@foundersforge.com`
-- Password: `ForgeAdmin2024!`
-
-For production (Supabase), run the setup script:
-```bash
-node scripts/setup-admin.js
-```
-This will create the admin user `joeinduluth@gmail.com` with password `Two1Eight`
+The application is now configured for direct access without authentication. Simply navigate to the dashboard to begin using The Forge.
 
 ---
 
@@ -242,16 +227,8 @@ AI analyzes your data and provides actionable recommendations.
 - **Features**: 
   - Hero section with animated background
   - Feature showcase
-  - Beta access CTA
+  - Direct access to dashboard
   - Responsive design
-
-### Authentication
-- **URL**: `/auth/login`
-- **Features**:
-  - Email + password only (no signup)
-  - Remember me functionality
-  - Beautiful animated design
-  - Demo credentials display
 
 ### Dashboard
 - **URL**: `/dashboard`
@@ -342,11 +319,9 @@ All components use Framer Motion animations and support dark mode.
 
 ## 🛡️ Security
 
-### Authentication
-- bcrypt password hashing (12 rounds)
-- JWT-style token system
-- Role-based access control
-- Session management
+### Security
+
+The Forge implements comprehensive security measures to protect your data and operations.
 
 ### API Protection
 - Input validation (Zod schemas)
@@ -356,8 +331,7 @@ All components use Framer Motion animations and support dark mode.
 - Comprehensive logging
 
 ### Data Protection
-- Encrypted passwords
-- Secure token storage
+- Secure data storage
 - HTTPS only (production)
 - Environment variable secrets
 
