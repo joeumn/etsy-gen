@@ -103,8 +103,21 @@ Open [http://localhost:3000](http://localhost:3000)
 ### First Login
 
 **Default Admin Credentials**:
+
+For development (mock auth):
+- Email: `joeinduluth@gmail.com`
+- Password: `Two1Eight`
+- Role: Super Admin
+
+Alternative demo account:
 - Email: `admin@foundersforge.com`
 - Password: `ForgeAdmin2024!`
+
+For production (Supabase), run the setup script:
+```bash
+node scripts/setup-admin.js
+```
+This will create the admin user `joeinduluth@gmail.com` with password `Two1Eight`
 
 ---
 
@@ -488,13 +501,13 @@ This software is private and confidential. Unauthorized copying, distribution, o
 - Smart recommendations
 - Beautiful dashboard with sidebar navigation
 
-### 🔮 Coming Soon
-- Google Drive integration
-- Auto-scheduler for scrapes
-- Visual theme editor
-- Mobile app
-- Advanced forecasting
-- Team collaboration features
+### 🔮 Coming Soon (v2.0 - In Progress)
+- [x] Google Drive integration (configuration ready)
+- [x] Auto-scheduler for scrapes (cron jobs configured)
+- [x] Visual theme editor (settings page added)
+- [ ] Mobile app (design phase)
+- [x] Advanced forecasting (analytics enhanced)
+- [x] Team collaboration features (user management added)
 
 ---
 
