@@ -5,19 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdvancedStatCard } from "@/components/ui/advanced-stat-card";
 import { RevenueChart } from "@/components/ui/revenue-chart";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { 
-  TrendingUp, 
-  DollarSign, 
+import {
+  TrendingUp,
+  DollarSign,
   Package,
   Target,
   Activity,
   ShoppingBag,
   Zap,
   Play,
-  BarChart3
+  BarChart3,
+  RefreshCw,
+  Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function Dashboard() {
   // Real-time stats
