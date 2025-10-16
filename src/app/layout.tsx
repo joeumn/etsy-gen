@@ -13,6 +13,11 @@ export const metadata: Metadata = {
     description: "Turn trends into profitable products with AI",
     type: "website",
   },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+  },
 };
 
 export default function RootLayout({
