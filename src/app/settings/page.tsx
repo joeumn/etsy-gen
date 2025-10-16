@@ -28,7 +28,13 @@ export default function Settings() {
   const [settings, setSettings] = useState({
     // AI Provider Settings
     aiProvider: "gemini",
-    
+    aiKeys: {
+      gemini: "",
+      openai: "",
+      anthropic: "",
+      azureOpenAI: "",
+    },
+
     // Marketplace Connections
     etsy: {
       connected: false,
@@ -45,7 +51,7 @@ export default function Settings() {
       accessToken: "",
       shopDomain: "",
     },
-    
+
     // Notification Settings
     notifications: {
       email: true,
@@ -53,7 +59,7 @@ export default function Settings() {
       weeklyReport: true,
       newTrends: true,
     },
-    
+
     // Feature Flags
     features: {
       zig3Studio: process.env.NEXT_PUBLIC_ENABLE_ZIG3_STUDIO === 'true',
@@ -200,9 +206,68 @@ export default function Settings() {
                         <SelectItem value="gemini">Google Gemini</SelectItem>
                         <SelectItem value="openai">OpenAI GPT-4</SelectItem>
                         <SelectItem value="anthropic">Anthropic Claude</SelectItem>
-                        <SelectItem value="azure">Azure OpenAI</SelectItem>
+                        <SelectItem value="azureOpenAI">Azure OpenAI</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  {/* AI API Keys */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">API Keys</Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="gemini-key" className="text-xs text-muted-foreground">Google Gemini API Key</Label>
+                        <Input
+                          id="gemini-key"
+                          type="password"
+                          placeholder="Enter your Gemini API key"
+                          value={settings.aiKeys.gemini}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
+                            ...prev,
+                            aiKeys: { ...prev.aiKeys, gemini: e.target.value }
+                          }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="openai-key" className="text-xs text-muted-foreground">OpenAI API Key</Label>
+                        <Input
+                          id="openai-key"
+                          type="password"
+                          placeholder="Enter your OpenAI API key"
+                          value={settings.aiKeys.openai}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
+                            ...prev,
+                            aiKeys: { ...prev.aiKeys, openai: e.target.value }
+                          }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="anthropic-key" className="text-xs text-muted-foreground">Anthropic API Key</Label>
+                        <Input
+                          id="anthropic-key"
+                          type="password"
+                          placeholder="Enter your Anthropic API key"
+                          value={settings.aiKeys.anthropic}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
+                            ...prev,
+                            aiKeys: { ...prev.aiKeys, anthropic: e.target.value }
+                          }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="azure-key" className="text-xs text-muted-foreground">Azure OpenAI API Key</Label>
+                        <Input
+                          id="azure-key"
+                          type="password"
+                          placeholder="Enter your Azure OpenAI API key"
+                          value={settings.aiKeys.azureOpenAI}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
+                            ...prev,
+                            aiKeys: { ...prev.aiKeys, azureOpenAI: e.target.value }
+                          }))}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
