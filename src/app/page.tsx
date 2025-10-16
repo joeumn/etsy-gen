@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { 
@@ -189,24 +190,46 @@ export default function Home() {
         {/* CTA Section */}
         <section className="container mx-auto px-4 py-20">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="bg-flame-gradient rounded-3xl p-12 shadow-2xl shadow-flame-500/20">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                Ready to Build Wealth on Autopilot?
-              </h2>
-              <p className="text-xl text-white/90 mb-8">
-                Join the exclusive beta and let AI create your product empire.
-              </p>
-              <Button 
-                size="lg" 
-                variant="secondary" 
-                className="bg-white text-flame-600 hover:bg-white/90 text-lg px-10 py-6 h-auto font-semibold"
-                asChild
+            <motion.div
+              className="bg-flame-gradient rounded-3xl p-12 shadow-2xl shadow-flame-500/20"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              whileHover={{ scale: 1.02 }}
+            >
+              <motion.h2
+                className="text-4xl md:text-5xl font-bold text-white mb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.9 }}
               >
-                <Link href="/auth/login">
-                  Request Beta Access <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-            </div>
+                Ready to Build Wealth on Autopilot?
+              </motion.h2>
+              <motion.p
+                className="text-xl text-white/90 mb-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1.0 }}
+              >
+                Join the exclusive beta and let AI create your product empire.
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1.1 }}
+              >
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="bg-white text-flame-600 hover:bg-white/90 text-lg px-10 py-6 h-auto font-semibold"
+                  asChild
+                >
+                  <Link href="/auth/login">
+                    Request Beta Access <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              </motion.div>
+            </motion.div>
           </div>
         </section>
 
