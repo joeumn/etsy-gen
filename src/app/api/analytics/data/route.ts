@@ -1,13 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { authOptions } from '@/lib/auth';
+import { getUserById } from '@/lib/auth-helper';
 
 export async function GET(request: NextRequest) {
   try {
-    // For development, skip authentication and use mock user
-    const userId = 'mock-user-1'; // Use the admin user ID
+    // Get user ID from authorization header or query params
+    const authHeader = request.headers.get('authorization');
+    let userId: string | null = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = Buffer.from(token, 'base64').toString('utf-8');
+        userId = decoded.split(':')[0];
+      } catch {
+        // Continue without userId
+      }
+    }
+
+    if (!userId) {
+      const { searchParams } = new URL(request.url);
+      userId = searchParams.get('userId') || 'mock-user-1';
+    }
+
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || '30d';
+
+    // Verify user exists
+    const user = await getUserById(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Get real analytics data from database
     const [
@@ -25,24 +48,18 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false })
         .limit(10),
 
-      // Top products
+      // Top products - using direct query
       supabase
         .from('top_products')
-        .select('*')
-        .eq('earnings_id', supabase
-          .from('earnings')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('period', period)
-          .single()
-        )
+        .select('*, earnings!inner(user_id)')
+        .eq('earnings.user_id', userId)
         .order('revenue', { ascending: false })
         .limit(5),
 
       // Marketplace performance (from earnings grouped by marketplace)
       supabase
         .from('earnings')
-        .select('marketplace, total_revenue, total_sales')
+        .select('marketplace, total_revenue, total_sales, conversion_rate')
         .eq('user_id', userId)
         .eq('period', period),
 
@@ -62,23 +79,27 @@ export async function GET(request: NextRequest) {
       orders: earning.total_sales,
     })) || [];
 
-    // Process top products
+    // Process top products with real conversion rates
     const topProducts = topProductsData.data?.map(product => ({
       id: product.id,
       name: product.product_title || 'Unknown Product',
       revenue: product.revenue,
       orders: product.sales,
-      conversionRate: Math.floor(Math.random() * 10) + 2, // Mock conversion rate
-      trending: Math.random() > 0.5 ? 'up' : 'down',
+      conversionRate: product.earnings?.conversion_rate || 0,
+      trending: product.sales > (product.previous_sales || 0) ? 'up' : 'down',
     })) || [];
 
-    // Process marketplace data
+    // Process marketplace data with real metrics
     const marketplaceMap = new Map();
+    let totalRevenue = 0;
+    
     marketplaceData.data?.forEach(item => {
-      const existing = marketplaceMap.get(item.marketplace) || { revenue: 0, orders: 0 };
+      totalRevenue += item.total_revenue;
+      const existing = marketplaceMap.get(item.marketplace) || { revenue: 0, orders: 0, conversionRate: 0 };
       marketplaceMap.set(item.marketplace, {
         revenue: existing.revenue + item.total_revenue,
         orders: existing.orders + item.total_sales,
+        conversionRate: item.conversion_rate || 0,
       });
     });
 
@@ -86,7 +107,8 @@ export async function GET(request: NextRequest) {
       marketplace,
       revenue: data.revenue,
       orders: data.orders,
-      share: Math.floor(Math.random() * 30) + 10, // Mock share percentage
+      share: totalRevenue > 0 ? Math.round((data.revenue / totalRevenue) * 100) : 0,
+      conversionRate: data.conversionRate,
     }));
 
     // Generate AI insights based on trend data

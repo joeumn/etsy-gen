@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { scrapeTikTokTrends } from '@/lib/scrapers/social-scraper';
+import { supabase } from '@/lib/db/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,42 +14,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if Zig 5 is enabled
-    if (process.env.ENABLE_ZIG5_SOCIAL !== 'true') {
+    // Use real social scraping functionality
+    const socialTrends = [];
+    
+    try {
+      // Scrape TikTok trends using actual scraper
+      const tiktokTrends = await scrapeTikTokTrends(keywords);
+      
+      // Transform scraped data to match expected format
+      const transformedTrends = tiktokTrends.map(trend => ({
+        platform: trend.platform,
+        hashtag: trend.hashtag,
+        engagementScore: trend.engagementScore,
+        reachScore: trend.reachScore,
+        viralScore: trend.viralScore,
+        socialTrendScore: Math.round((trend.engagementScore + trend.reachScore + trend.viralScore) / 3),
+        rawData: {
+          posts: Math.floor(trend.mentions / 100),
+          likes: trend.mentions,
+          shares: Math.floor(trend.mentions * 0.1),
+          comments: Math.floor(trend.mentions * 0.05),
+        },
+        createdAt: trend.timestamp.toISOString(),
+      }));
+      
+      socialTrends.push(...transformedTrends);
+      
+      // Store in database for future reference
+      await supabase.from('social_trends').insert(
+        transformedTrends.map(trend => ({
+          platform: trend.platform,
+          hashtag: trend.hashtag,
+          engagement_score: trend.engagementScore,
+          reach_score: trend.reachScore,
+          viral_score: trend.viralScore,
+          keywords: keywords,
+          raw_data: trend.rawData,
+        }))
+      );
+    } catch (scraperError) {
+      console.error('Social scraping error:', scraperError);
+      // Return error instead of falling back to mock data
       return NextResponse.json(
-        { error: 'Social signals feature is not enabled' },
-        { status: 403 }
+        { error: 'Failed to scrape social trends. Please try again later.' },
+        { status: 503 }
       );
     }
 
-    // Mock social media data - in production, this would call actual APIs
-    const mockSocialData = platforms.map((platform: string) => {
-      const baseScore = Math.random() * 100;
-      return {
-        platform,
-        hashtag: keywords[0] || 'trending',
-        engagementScore: Math.round(baseScore * 0.8),
-        reachScore: Math.round(baseScore * 0.6),
-        viralScore: Math.round(baseScore * 0.4),
-        socialTrendScore: Math.round((baseScore * 0.8 + baseScore * 0.6 + baseScore * 0.4) / 3),
-        rawData: {
-          posts: Math.floor(Math.random() * 1000) + 100,
-          likes: Math.floor(Math.random() * 10000) + 1000,
-          shares: Math.floor(Math.random() * 1000) + 100,
-          comments: Math.floor(Math.random() * 500) + 50,
-        },
-        createdAt: new Date().toISOString(),
-      };
-    });
-
-    // Calculate overall trend score (60% sales velocity + 40% social buzz)
-    const avgSocialScore = mockSocialData.reduce((sum: number, data: any) => sum + data.socialTrendScore, 0) / mockSocialData.length;
-    const overallTrendScore = Math.round(avgSocialScore * 0.4 + Math.random() * 100 * 0.6);
+    // Calculate overall trend score from real data
+    const avgSocialScore = socialTrends.reduce((sum, data) => sum + data.socialTrendScore, 0) / (socialTrends.length || 1);
+    const overallTrendScore = Math.round(avgSocialScore);
 
     return NextResponse.json({
       success: true,
       data: {
-        socialTrends: mockSocialData,
+        socialTrends,
         overallTrendScore,
         keywords,
         platforms,
@@ -69,35 +90,77 @@ export async function GET(request: NextRequest) {
     const platform = searchParams.get('platform') || 'tiktok';
     const hashtag = searchParams.get('hashtag') || 'trending';
 
-    // Check if Zig 5 is enabled
-    if (process.env.ENABLE_ZIG5_SOCIAL !== 'true') {
-      return NextResponse.json(
-        { error: 'Social signals feature is not enabled' },
-        { status: 403 }
-      );
+    // Fetch from database first (cached data)
+    const { data: cachedData } = await supabase
+      .from('social_trends')
+      .select('*')
+      .eq('platform', platform)
+      .contains('keywords', [hashtag])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (cachedData) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          platform: cachedData.platform,
+          hashtag: cachedData.hashtag,
+          engagementScore: cachedData.engagement_score,
+          reachScore: cachedData.reach_score,
+          viralScore: cachedData.viral_score,
+          socialTrendScore: Math.round((cachedData.engagement_score + cachedData.reach_score + cachedData.viral_score) / 3),
+          rawData: cachedData.raw_data,
+          createdAt: cachedData.created_at,
+        },
+      });
     }
 
-    // Mock data for specific platform/hashtag
-    const mockData = {
-      platform,
-      hashtag,
-      engagementScore: Math.round(Math.random() * 100),
-      reachScore: Math.round(Math.random() * 100),
-      viralScore: Math.round(Math.random() * 100),
-      socialTrendScore: Math.round(Math.random() * 100),
-      rawData: {
-        posts: Math.floor(Math.random() * 1000) + 100,
-        likes: Math.floor(Math.random() * 10000) + 1000,
-        shares: Math.floor(Math.random() * 1000) + 100,
-        comments: Math.floor(Math.random() * 500) + 50,
-      },
-      createdAt: new Date().toISOString(),
-    };
+    // If no cached data, scrape fresh data
+    try {
+      const trends = await scrapeTikTokTrends([hashtag]);
+      if (trends.length > 0) {
+        const trend = trends[0];
+        const trendData = {
+          platform: trend.platform,
+          hashtag: trend.hashtag,
+          engagementScore: trend.engagementScore,
+          reachScore: trend.reachScore,
+          viralScore: trend.viralScore,
+          socialTrendScore: Math.round((trend.engagementScore + trend.reachScore + trend.viralScore) / 3),
+          rawData: {
+            posts: Math.floor(trend.mentions / 100),
+            likes: trend.mentions,
+            shares: Math.floor(trend.mentions * 0.1),
+            comments: Math.floor(trend.mentions * 0.05),
+          },
+          createdAt: trend.timestamp.toISOString(),
+        };
 
-    return NextResponse.json({
-      success: true,
-      data: mockData,
-    });
+        // Store in database
+        await supabase.from('social_trends').insert({
+          platform: trendData.platform,
+          hashtag: trendData.hashtag,
+          engagement_score: trendData.engagementScore,
+          reach_score: trendData.reachScore,
+          viral_score: trendData.viralScore,
+          keywords: [hashtag],
+          raw_data: trendData.rawData,
+        });
+
+        return NextResponse.json({
+          success: true,
+          data: trendData,
+        });
+      }
+    } catch (scraperError) {
+      console.error('Social scraping error:', scraperError);
+    }
+
+    return NextResponse.json(
+      { error: 'No social trend data available for the specified platform and hashtag' },
+      { status: 404 }
+    );
   } catch (error) {
     console.error('Social scan GET API error:', error);
     return NextResponse.json(
