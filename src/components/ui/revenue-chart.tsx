@@ -50,13 +50,13 @@ export function RevenueChart({
           )}
         </CardHeader>
         <CardContent>
-          <div className="h-[300px]">
+          <div className="h-[250px] md:h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               {type === "area" ? (
                 <AreaChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
                   <Area
                     type="monotone"
@@ -69,8 +69,8 @@ export function RevenueChart({
               ) : (
                 <RadarChart data={data}>
                   <PolarGrid />
-                  <PolarAngleAxis dataKey="subject" />
-                  <PolarRadiusAxis />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
+                  <PolarRadiusAxis tick={{ fontSize: 12 }} />
                   <Radar
                     name="Score"
                     dataKey="A"

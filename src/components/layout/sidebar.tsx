@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -14,10 +14,11 @@ import {
   Sparkles,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { APP_CONFIG } from "@/lib/config";
 
 const navigation = [
@@ -32,11 +33,20 @@ const navigation = [
 
 interface SidebarProps {
   className?: string;
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, isMobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    if (onMobileClose) {
+      onMobileClose();
+    }
+  }, [pathname, onMobileClose]);
 
   const handleLogout = () => {
     // Clear auth data
@@ -48,16 +58,8 @@ export function Sidebar({ className }: SidebarProps) {
     window.location.href = "/";
   };
 
-  return (
-    <motion.div
-      initial={{ x: -20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      className={cn(
-        "flex flex-col h-screen border-r bg-card/50 backdrop-blur-sm transition-all duration-300",
-        isCollapsed ? "w-20" : "w-64",
-        className
-      )}
-    >
+  const sidebarContent = (
+    <>
       {/* Header */}
       <div className="p-6 border-b">
         <div className="flex items-center justify-between">
@@ -80,6 +82,16 @@ export function Sidebar({ className }: SidebarProps) {
             <div className="w-10 h-10 bg-flame-gradient rounded-lg flex items-center justify-center shadow-glow-sm mx-auto">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
+          )}
+          {/* Close button for mobile */}
+          {onMobileClose && (
+            <button
+              onClick={onMobileClose}
+              className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
           )}
         </div>
       </div>
@@ -133,10 +145,11 @@ export function Sidebar({ className }: SidebarProps) {
           {!isCollapsed && <span className="font-medium">Logout</span>}
         </button>
 
+        {/* Hide collapse button on mobile */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-lg w-full transition-all duration-200",
+            "hidden lg:flex items-center gap-3 px-4 py-3 rounded-lg w-full transition-all duration-200",
             "hover:bg-muted text-muted-foreground",
             isCollapsed && "justify-center px-2"
           )}
@@ -152,7 +165,54 @@ export function Sidebar({ className }: SidebarProps) {
           )}
         </button>
       </div>
-    </motion.div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <motion.div
+        initial={{ x: -20, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        className={cn(
+          "hidden lg:flex flex-col h-screen border-r bg-card/50 backdrop-blur-sm transition-all duration-300",
+          isCollapsed ? "w-20" : "w-64",
+          className
+        )}
+      >
+        {sidebarContent}
+      </motion.div>
+
+      {/* Mobile Sidebar - Overlay */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onMobileClose}
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            />
+            
+            {/* Mobile Sidebar */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className={cn(
+                "fixed left-0 top-0 h-screen w-80 max-w-[85vw] border-r bg-card z-50 lg:hidden flex flex-col",
+                className
+              )}
+            >
+              {sidebarContent}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 

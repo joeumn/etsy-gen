@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { RefreshCw, Bell } from "lucide-react";
+import { RefreshCw, Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils";
 interface TopbarProps {
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  onMobileMenuToggle?: () => void;
 }
 
-export function Topbar({ onRefresh, isRefreshing = false }: TopbarProps) {
+export function Topbar({ onRefresh, isRefreshing = false, onMobileMenuToggle }: TopbarProps) {
   const [user, setUser] = useState<{ name?: string; email?: string } | null>(null);
 
   useEffect(() => {
@@ -38,17 +39,28 @@ export function Topbar({ onRefresh, isRefreshing = false }: TopbarProps) {
     <motion.div
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 flex items-center justify-between sticky top-0 z-40"
+      className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40"
     >
-      {/* Left side - could add breadcrumbs or search */}
-      <div className="flex items-center gap-4">
-        <h2 className="text-xl font-semibold">
+      {/* Left side - Mobile menu + Title */}
+      <div className="flex items-center gap-3">
+        {/* Mobile Menu Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onMobileMenuToggle}
+          className="lg:hidden"
+          aria-label="Toggle menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        
+        <h2 className="text-lg md:text-xl font-semibold truncate">
           Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
         </h2>
       </div>
 
       {/* Right side - actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         {/* Refresh Button */}
         <Button
           variant="outline"
@@ -72,13 +84,13 @@ export function Topbar({ onRefresh, isRefreshing = false }: TopbarProps) {
 
         {/* User Profile */}
         <div className="flex items-center gap-3 pl-3 border-l">
-          <Avatar className="h-9 w-9 border-2 border-flame-500/20">
-            <AvatarFallback className="bg-flame-gradient text-white font-semibold">
+          <Avatar className="h-8 w-8 md:h-9 md:w-9 border-2 border-flame-500/20">
+            <AvatarFallback className="bg-flame-gradient text-white font-semibold text-xs md:text-sm">
               {initials}
             </AvatarFallback>
           </Avatar>
           {user && (
-            <div className="hidden lg:block">
+            <div className="hidden xl:block">
               <p className="text-sm font-medium leading-none">{user.name || 'User'}</p>
               <p className="text-xs text-muted-foreground mt-1">{user.email}</p>
             </div>

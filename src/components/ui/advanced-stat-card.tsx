@@ -47,14 +47,14 @@ export function AdvancedStatCard({
       whileHover={{ y: -5, scale: 1.02 }}
     >
       <Card className={cn("overflow-hidden card-hover", className)}>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-muted-foreground mb-1">
+        <CardContent className="p-4 md:p-6">
+          <div className="flex items-start justify-between mb-3 md:mb-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
                 {title}
               </p>
               <motion.h3
-                className="text-3xl font-bold"
+                className="text-2xl md:text-3xl font-bold truncate"
                 initial={{ scale: 0.5 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.5, delay: delay + 0.2 }}
@@ -69,7 +69,7 @@ export function AdvancedStatCard({
             </div>
             <motion.div
               className={cn(
-                "p-3 rounded-xl bg-gradient-to-br text-white",
+                "p-2 md:p-3 rounded-xl bg-gradient-to-br text-white flex-shrink-0 ml-2",
                 gradientClasses[gradient]
               )}
               initial={{ rotate: -180, scale: 0 }}
@@ -81,13 +81,13 @@ export function AdvancedStatCard({
                 delay: delay + 0.1,
               }}
             >
-              <Icon className="h-6 w-6" />
+              <Icon className="h-5 w-5 md:h-6 md:w-6" />
             </motion.div>
           </div>
           
           {trend && (
             <motion.div
-              className="flex items-center text-sm"
+              className="flex items-center text-xs md:text-sm"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: delay + 0.3 }}
@@ -101,7 +101,7 @@ export function AdvancedStatCard({
                 <span>{isPositiveTrend ? "↑" : "↓"}</span>
                 <span className="ml-1">{Math.abs(trend.value)}%</span>
               </div>
-              <span className="text-muted-foreground ml-2">{trend.label}</span>
+              <span className="text-muted-foreground ml-2 truncate">{trend.label}</span>
             </motion.div>
           )}
         </CardContent>
