@@ -14,9 +14,9 @@ const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'pro
 const MOCK_USERS = [
   {
     id: 'mock-user-1',
-    email: 'admin@foundersforge.com',
-    password: 'ForgeAdmin2024!',
-    name: 'FoundersForge Admin',
+    email: 'joeinduluth@gmail.com',
+    password: 'Two1Eight',
+    name: 'Joe Induluth',
     role: 'super_admin',
     avatar_url: null,
     is_active: true,
