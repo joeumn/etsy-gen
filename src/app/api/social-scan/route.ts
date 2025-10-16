@@ -1,7 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SocialMediaScraper } from '@/lib/scrapers/social-scraper';
+import { AuthenticationError, handleAPIError } from '@/lib/errors';
+import { logError } from '@/lib/logger';
+import { supabase } from '@/lib/db/client';
 
 export async function POST(request: NextRequest) {
   try {
+    // Get auth token from header
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new AuthenticationError('No authentication token provided');
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode token to get user ID
+    let userId: string;
+    try {
+      const decoded = Buffer.from(token, 'base64').toString('utf-8');
+      userId = decoded.split(':')[0];
+    } catch {
+      throw new AuthenticationError('Invalid authentication token');
+    }
+
+    // Verify user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
+      throw new AuthenticationError('User not found');
+    }
+
     const body = await request.json();
     const { keywords, platforms = ['tiktok', 'pinterest', 'instagram'] } = body;
 
@@ -20,51 +53,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mock social media data - in production, this would call actual APIs
-    const mockSocialData = platforms.map((platform: string) => {
-      const baseScore = Math.random() * 100;
-      return {
-        platform,
-        hashtag: keywords[0] || 'trending',
-        engagementScore: Math.round(baseScore * 0.8),
-        reachScore: Math.round(baseScore * 0.6),
-        viralScore: Math.round(baseScore * 0.4),
-        socialTrendScore: Math.round((baseScore * 0.8 + baseScore * 0.6 + baseScore * 0.4) / 3),
-        rawData: {
-          posts: Math.floor(Math.random() * 1000) + 100,
-          likes: Math.floor(Math.random() * 10000) + 1000,
-          shares: Math.floor(Math.random() * 1000) + 100,
-          comments: Math.floor(Math.random() * 500) + 50,
-        },
-        createdAt: new Date().toISOString(),
-      };
-    });
+    // Use real social media scraper to get live data
+    const scraper = new SocialMediaScraper();
+    const socialData = await scraper.scrapeSocialTrends(keywords, platforms);
 
-    // Calculate overall trend score (60% sales velocity + 40% social buzz)
-    const avgSocialScore = mockSocialData.reduce((sum: number, data: any) => sum + data.socialTrendScore, 0) / mockSocialData.length;
-    const overallTrendScore = Math.round(avgSocialScore * 0.4 + Math.random() * 100 * 0.6);
+    // Calculate overall trend score based on real social data
+    const avgSocialScore = socialData.reduce((sum: number, data: any) => sum + (data.socialTrendScore || 0), 0) / socialData.length;
 
     return NextResponse.json({
       success: true,
       data: {
-        socialTrends: mockSocialData,
-        overallTrendScore,
+        socialTrends: socialData,
+        overallTrendScore: Math.round(avgSocialScore),
         keywords,
         platforms,
         timestamp: new Date().toISOString(),
       },
     });
   } catch (error) {
-    console.error('Social scan API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to scan social trends' },
-      { status: 500 }
-    );
+    logError(error, 'SocialScanAPI');
+    const { response, statusCode } = handleAPIError(error, '/api/social-scan');
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    // Get auth token from header
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new AuthenticationError('No authentication token provided');
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode token to get user ID
+    let userId: string;
+    try {
+      const decoded = Buffer.from(token, 'base64').toString('utf-8');
+      userId = decoded.split(':')[0];
+    } catch {
+      throw new AuthenticationError('Invalid authentication token');
+    }
+
+    // Verify user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
+      throw new AuthenticationError('User not found');
+    }
+
     const { searchParams } = new URL(request.url);
     const platform = searchParams.get('platform') || 'tiktok';
     const hashtag = searchParams.get('hashtag') || 'trending';
@@ -77,32 +120,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Mock data for specific platform/hashtag
-    const mockData = {
-      platform,
-      hashtag,
-      engagementScore: Math.round(Math.random() * 100),
-      reachScore: Math.round(Math.random() * 100),
-      viralScore: Math.round(Math.random() * 100),
-      socialTrendScore: Math.round(Math.random() * 100),
-      rawData: {
-        posts: Math.floor(Math.random() * 1000) + 100,
-        likes: Math.floor(Math.random() * 10000) + 1000,
-        shares: Math.floor(Math.random() * 1000) + 100,
-        comments: Math.floor(Math.random() * 500) + 50,
-      },
-      createdAt: new Date().toISOString(),
-    };
+    // Use real social media scraper to get live data for specific platform
+    const scraper = new SocialMediaScraper();
+    const data = await scraper.scrapePlatformData(platform, hashtag);
 
     return NextResponse.json({
       success: true,
-      data: mockData,
+      data,
     });
   } catch (error) {
-    console.error('Social scan GET API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to get social trend data' },
-      { status: 500 }
-    );
+    logError(error, 'SocialScanGETAPI');
+    const { response, statusCode } = handleAPIError(error, '/api/social-scan');
+    return NextResponse.json(response, { status: statusCode });
   }
 }
