@@ -6,7 +6,6 @@ import { AdvancedStatCard } from "@/components/ui/advanced-stat-card";
 import { RevenueChart } from "@/components/ui/revenue-chart";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import {
-  TrendingUp,
   DollarSign,
   Package,
   Target,
@@ -15,16 +14,25 @@ import {
   Zap,
   Play,
   BarChart3,
-  RefreshCw,
-  Plus
+  LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
+  // Define stat card type
+  type StatCard = {
+    title: string;
+    value: string;
+    description: string;
+    trend?: { value: number; label: string; isPositive: boolean };
+    icon: LucideIcon;
+    gradient: "flame" | "ocean" | "gold" | "forge";
+  };
+
   // Fetch real stats from API
-  const [stats, setStats] = useState([]);
+  const [stats, setStats] = useState<StatCard[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,7 +50,7 @@ export default function Dashboard() {
               value: "$24,890",
               description: "Last 30 days",
               trend: { value: 18.5, label: "vs previous", isPositive: true },
-              icon: "DollarSign",
+              icon: DollarSign,
               gradient: "flame",
             },
             {
@@ -50,14 +58,14 @@ export default function Dashboard() {
               value: "47",
               description: "Across all platforms",
               trend: { value: 12.3, label: "this month", isPositive: true },
-              icon: "Package",
+              icon: Package,
               gradient: "ocean",
             },
             {
               title: "Active Scrapes",
               value: "23",
               description: "Running now",
-              icon: "Activity",
+              icon: Activity,
               gradient: "gold",
             },
             {
@@ -65,7 +73,7 @@ export default function Dashboard() {
               value: "94%",
               description: "Conversion rate",
               trend: { value: 3.2, label: "vs previous", isPositive: true },
-              icon: "Target",
+              icon: Target,
               gradient: "forge",
             },
           ]);
@@ -79,7 +87,7 @@ export default function Dashboard() {
             value: "$24,890",
             description: "Last 30 days",
             trend: { value: 18.5, label: "vs previous", isPositive: true },
-            icon: "DollarSign",
+            icon: DollarSign,
             gradient: "flame",
           },
           {
@@ -87,14 +95,14 @@ export default function Dashboard() {
             value: "47",
             description: "Across all platforms",
             trend: { value: 12.3, label: "this month", isPositive: true },
-            icon: "Package",
+            icon: Package,
             gradient: "ocean",
           },
           {
             title: "Active Scrapes",
             value: "23",
             description: "Running now",
-            icon: "Activity",
+            icon: Activity,
             gradient: "gold",
           },
           {
@@ -102,7 +110,7 @@ export default function Dashboard() {
             value: "94%",
             description: "Conversion rate",
             trend: { value: 3.2, label: "vs previous", isPositive: true },
-            icon: "Target",
+            icon: Target,
             gradient: "forge",
           },
         ]);
