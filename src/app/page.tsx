@@ -10,7 +10,6 @@ import {
   Bot,
   ShoppingCart,
   Rocket,
-  Lock,
   CheckCircle,
   TrendingUp
 } from "lucide-react";
@@ -74,9 +73,9 @@ export default function Home() {
             <div className="flex items-center gap-4">
               <ThemeToggle />
               <Button asChild variant="outline" size="sm" className="hidden md:flex">
-                <Link href="/auth/login">
-                  <Lock className="h-4 w-4 mr-2" />
-                  Beta Access
+                <Link href="/dashboard">
+                  <Rocket className="h-4 w-4 mr-2" />
+                  Open Dashboard
                 </Link>
               </Button>
             </div>
@@ -89,7 +88,7 @@ export default function Home() {
             {/* Beta Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-flame-500/10 border border-flame-500/20 rounded-full mb-6">
               <Zap className="h-4 w-4 text-flame-500" />
-              <span className="text-sm font-semibold text-flame-500">Private Beta • Invite Only</span>
+              <span className="text-sm font-semibold text-flame-500">Free & Open Access</span>
             </div>
 
             {/* Main Headline */}
@@ -104,7 +103,7 @@ export default function Home() {
             {/* Subheadline */}
             <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
               Our AI scrapes marketplaces, identifies trends, creates digital products, 
-              and lists them automatically. You wake up to revenue.
+              and lists them automatically. Start building your product empire now.
             </p>
 
             {/* CTA Buttons */}
@@ -112,20 +111,11 @@ export default function Home() {
               <Button 
                 size="lg" 
                 className="bg-flame-gradient hover:shadow-glow text-white text-lg px-8 py-6 h-auto"
-                disabled
-              >
-                <Rocket className="mr-2 h-5 w-5" />
-                Coming Soon
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="text-lg px-8 py-6 h-auto border-2"
                 asChild
               >
-                <Link href="/auth/login">
-                  <Lock className="mr-2 h-5 w-5" />
-                  Beta Access
+                <Link href="/dashboard">
+                  <Rocket className="mr-2 h-5 w-5" />
+                  Launch Dashboard
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -211,7 +201,7 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 1.0 }}
               >
-                Join the exclusive beta and let AI create your product empire.
+                Launch The Forge and let AI create your product empire.
               </motion.p>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -224,8 +214,8 @@ export default function Home() {
                   className="bg-white text-flame-600 hover:bg-white/90 text-lg px-10 py-6 h-auto font-semibold"
                   asChild
                 >
-                  <Link href="/auth/login">
-                    Request Beta Access <ArrowRight className="ml-2 h-5 w-5" />
+                  <Link href="/dashboard">
+                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
               </motion.div>
@@ -247,7 +237,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="text-sm text-muted-foreground">
-                © 2025 {APP_CONFIG.company}. Private Beta.
+                © 2025 {APP_CONFIG.company}. Free & Open Access.
               </div>
             </div>
           </div>
