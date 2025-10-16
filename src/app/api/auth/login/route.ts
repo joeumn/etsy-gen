@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 import { logSecurityEvent, logError } from '@/lib/logger';
 import { validate, loginSchema } from '@/lib/validation';
 import { AuthenticationError, handleAPIError } from '@/lib/errors';
-import { useMockAuth, mockLogin } from '@/lib/auth-mock';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,22 +12,7 @@ export async function POST(request: NextRequest) {
     // Validate input
     const { email, password } = validate(loginSchema, body);
 
-    // Use mock auth in development without Supabase
-    if (useMockAuth()) {
-      const result = await mockLogin(email, password);
-      
-      if (!result.success) {
-        throw new AuthenticationError(result.error || 'Invalid credentials');
-      }
-
-      return NextResponse.json({
-        success: true,
-        token: result.token,
-        user: result.user,
-      });
-    }
-
-    // Production: Use real Supabase authentication
+    // Use real Supabase authentication
     // Get user from database
     const { data: user, error: dbError } = await supabase
       .from('users')

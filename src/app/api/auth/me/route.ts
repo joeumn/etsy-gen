@@ -23,23 +23,6 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError('Invalid authentication token');
     }
 
-    // Check if using mock auth
-    const { useMockAuth, mockVerifyToken } = await import('@/lib/auth-mock');
-    if (useMockAuth()) {
-      const user = await mockVerifyToken(token);
-      if (!user) {
-        throw new AuthenticationError('Invalid authentication token');
-      }
-
-      return NextResponse.json({
-        success: true,
-        user: {
-          ...user,
-          usage: null, // Mock users don't have usage data
-        },
-      });
-    }
-
     // Get user from database
     const { data: user, error } = await supabase
       .from('users')

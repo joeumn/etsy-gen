@@ -71,7 +71,21 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       try {
-        const response = await fetch(`/api/analytics/data?period=${selectedPeriod}`);
+        // Get auth token from localStorage or cookies
+        const token = localStorage.getItem('auth_token');
+        
+        if (!token) {
+          console.error('No authentication token found');
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(`/api/analytics/data?period=${selectedPeriod}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
         if (response.ok) {
           const data = await response.json();
           setRevenueData(data.revenueData || []);
@@ -122,102 +136,17 @@ export default function AnalyticsPage() {
             },
           ]);
         } else {
-          // Fallback to mock data
-          setStats([
-            {
-              title: "Total Revenue",
-              value: "$24,890",
-              description: "Last 30 days",
-              trend: { value: 18.5, label: "vs previous", isPositive: true },
-              icon: DollarSign,
-              gradient: "flame",
-            },
-            {
-              title: "Products Sold",
-              value: "1,247",
-              description: "Last 30 days",
-              trend: { value: 12.3, label: "vs previous", isPositive: true },
-              icon: Package,
-              gradient: "ocean",
-            },
-            {
-              title: "Conversion Rate",
-              value: "3.8%",
-              description: "Average across all",
-              trend: { value: 0.5, label: "vs previous", isPositive: true },
-              icon: Target,
-              gradient: "gold",
-            },
-            {
-              title: "Active Customers",
-              value: "892",
-              description: "Unique buyers",
-              trend: { value: 8.7, label: "vs previous", isPositive: true },
-              icon: Users,
-              gradient: "forge",
-            },
-          ]);
+          console.error('Failed to fetch analytics data:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Failed to fetch analytics data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-          setRevenueData([
-            { name: "Week 1", revenue: 4200, profit: 2100, orders: 45 },
-            { name: "Week 2", revenue: 3800, profit: 1900, orders: 38 },
-            { name: "Week 3", revenue: 5400, profit: 2700, orders: 62 },
-            { name: "Week 4", revenue: 6300, profit: 3150, orders: 71 },
-            { name: "Week 5", revenue: 5200, profit: 2600, orders: 58 },
-          ]);
-
-          setTopProducts([
-            {
-              id: 1,
-              name: "Minimalist Planner Template",
-              revenue: 3450,
-              orders: 145,
-              conversionRate: 4.2,
-              trending: "up",
-            },
-            {
-              id: 2,
-              name: "Watercolor Wedding Suite",
-              revenue: 2890,
-              orders: 112,
-              conversionRate: 3.8,
-              trending: "up",
-            },
-            {
-              id: 3,
-              name: "Business Card Mockup Pack",
-              revenue: 4200,
-              orders: 178,
-              conversionRate: 5.1,
-              trending: "up",
-            },
-            {
-              id: 4,
-              name: "Social Media Templates",
-              revenue: 1950,
-              orders: 89,
-              conversionRate: 3.2,
-              trending: "down",
-            },
-          ]);
-
-          setMarketplacePerformance([
-            { marketplace: "Etsy", revenue: 14500, orders: 445, share: 58 },
-            { marketplace: "Amazon", revenue: 6800, orders: 312, share: 27 },
-            { marketplace: "Shopify", revenue: 3590, orders: 190, share: 15 },
-          ]);
-
-          setInsights([
-            {
-              type: 'opportunity',
-              title: 'High Growth Opportunity',
-              description: 'Your "Minimalist Planner" products are showing 42% higher engagement.',
-            },
-            {
-              type: 'trend',
-              title: 'Trending Keywords Detected',
-              description: '"Watercolor wedding" searches increased 28% this week.',
-            },
+    fetchAnalyticsData();
+  }, [selectedPeriod]);
             {
               type: 'optimization',
               title: 'Conversion Optimization',

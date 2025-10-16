@@ -6,20 +6,6 @@ export async function POST(request: NextRequest) {
   try {
     const { etsy, amazon, shopify } = await request.json();
 
-    // For development, skip actual API tests and return success
-    // This allows onboarding to proceed with mock data
-    if (process.env.NODE_ENV !== 'production') {
-      return NextResponse.json({
-        success: true,
-        results: {
-          etsy: { success: true, message: 'Etsy check skipped in development mode' },
-          amazon: { success: true, message: 'Amazon check skipped in development mode' },
-          shopify: { success: true, message: 'Shopify check skipped in development mode' }
-        },
-        message: 'Marketplace connections check skipped in development mode'
-      });
-    }
-
     const results = {
       etsy: { success: false, message: 'Not configured' },
       amazon: { success: false, message: 'Not configured' },

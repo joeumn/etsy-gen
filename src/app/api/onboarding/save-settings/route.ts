@@ -1,17 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
+import { AuthenticationError, handleAPIError } from '@/lib/errors';
 import { logError } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
-    // For development, use mock user ID (NextAuth not configured)
-    const userId = 'mock-user-1';
+    // Get auth token from header
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new AuthenticationError('No authentication token provided');
+    }
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    const token = authHeader.substring(7);
+    
+    // Decode token to get user ID
+    let userId: string;
+    try {
+      const decoded = Buffer.from(token, 'base64').toString('utf-8');
+      userId = decoded.split(':')[0];
+    } catch {
+      throw new AuthenticationError('Invalid authentication token');
+    }
+
+    // Verify user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
+      throw new AuthenticationError('User not found');
     }
 
     const {
@@ -64,9 +84,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     logError(error, 'SettingsSaveEndpoint');
-    return NextResponse.json(
-      { error: 'Settings save failed' },
-      { status: 500 }
-    );
+    const { response, statusCode } = handleAPIError(error, '/api/onboarding/save-settings');
+    return NextResponse.json(response, { status: statusCode });
   }
 }

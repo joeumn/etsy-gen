@@ -38,82 +38,29 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/dashboard/stats');
+        // Get auth token from localStorage or cookies
+        const token = localStorage.getItem('auth_token');
+        
+        if (!token) {
+          console.error('No authentication token found');
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/dashboard/stats', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
         if (response.ok) {
           const data = await response.json();
           setStats(data.stats);
         } else {
-          // Fallback to mock data if API fails
-          setStats([
-            {
-              title: "Total Revenue",
-              value: "$24,890",
-              description: "Last 30 days",
-              trend: { value: 18.5, label: "vs previous", isPositive: true },
-              icon: DollarSign,
-              gradient: "flame",
-            },
-            {
-              title: "Products Listed",
-              value: "47",
-              description: "Across all platforms",
-              trend: { value: 12.3, label: "this month", isPositive: true },
-              icon: Package,
-              gradient: "ocean",
-            },
-            {
-              title: "Active Scrapes",
-              value: "23",
-              description: "Running now",
-              icon: Activity,
-              gradient: "gold",
-            },
-            {
-              title: "Success Rate",
-              value: "94%",
-              description: "Conversion rate",
-              trend: { value: 3.2, label: "vs previous", isPositive: true },
-              icon: Target,
-              gradient: "forge",
-            },
-          ]);
+          console.error('Failed to fetch stats:', response.statusText);
         }
       } catch (error) {
         console.error('Failed to fetch stats:', error);
-        // Fallback to mock data
-        setStats([
-          {
-            title: "Total Revenue",
-            value: "$24,890",
-            description: "Last 30 days",
-            trend: { value: 18.5, label: "vs previous", isPositive: true },
-            icon: DollarSign,
-            gradient: "flame",
-          },
-          {
-            title: "Products Listed",
-            value: "47",
-            description: "Across all platforms",
-            trend: { value: 12.3, label: "this month", isPositive: true },
-            icon: Package,
-            gradient: "ocean",
-          },
-          {
-            title: "Active Scrapes",
-            value: "23",
-            description: "Running now",
-            icon: Activity,
-            gradient: "gold",
-          },
-          {
-            title: "Success Rate",
-            value: "94%",
-            description: "Conversion rate",
-            trend: { value: 3.2, label: "vs previous", isPositive: true },
-            icon: Target,
-            gradient: "forge",
-          },
-        ]);
       } finally {
         setLoading(false);
       }

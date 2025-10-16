@@ -1,10 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
+import { AuthenticationError, handleAPIError } from '@/lib/errors';
+import { logError } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
-    // For development, use mock user ID
-    const userId = 'mock-user-1'; // Use the admin user ID
+    // Get auth token from header
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new AuthenticationError('No authentication token provided');
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode token to get user ID
+    let userId: string;
+    try {
+      const decoded = Buffer.from(token, 'base64').toString('utf-8');
+      userId = decoded.split(':')[0];
+    } catch {
+      throw new AuthenticationError('Invalid authentication token');
+    }
+
+    // Verify user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
+      throw new AuthenticationError('User not found');
+    }
 
     // Load settings from database
     const { data: settings, error } = await supabase
@@ -69,7 +97,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(mergedSettings);
   } catch (error) {
-    console.error('Settings load error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    logError(error, 'SettingsLoad');
+    const { response, statusCode } = handleAPIError(error, '/api/settings/load');
+    return NextResponse.json(response, { status: statusCode });
   }
 }

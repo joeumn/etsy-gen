@@ -1,11 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { authOptions } from '@/lib/auth';
+import { AuthenticationError, handleAPIError } from '@/lib/errors';
+import { logError } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
-    // For development, skip authentication and use mock user
-    const userId = 'mock-user-1'; // Use the admin user ID
+    // Get auth token from header
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new AuthenticationError('No authentication token provided');
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode token to get user ID
+    let userId: string;
+    try {
+      const decoded = Buffer.from(token, 'base64').toString('utf-8');
+      userId = decoded.split(':')[0];
+    } catch {
+      throw new AuthenticationError('Invalid authentication token');
+    }
+
+    // Verify user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
+      throw new AuthenticationError('User not found');
+    }
+
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || '30d';
 
@@ -99,8 +127,9 @@ export async function GET(request: NextRequest) {
       insights,
     });
   } catch (error) {
-    console.error('Analytics data error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    logError(error, 'AnalyticsData');
+    const { response, statusCode } = handleAPIError(error, '/api/analytics/data');
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 

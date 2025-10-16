@@ -4,15 +4,6 @@ import { logError } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
-    // For development, skip actual database check and return success
-    // This allows onboarding to proceed with mock data
-    if (process.env.NODE_ENV !== 'production') {
-      return NextResponse.json({
-        success: true,
-        message: 'Database check skipped in development mode'
-      });
-    }
-
     // Test database connection
     const { data, error } = await supabase
       .from('users')
