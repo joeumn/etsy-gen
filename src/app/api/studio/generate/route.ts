@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       quality: 'standard',
     });
 
-    const imageUrl = imageResponse.data[0].url;
+    const imageUrl = imageResponse.data?.[0]?.url;
 
     if (!imageUrl) {
       throw new Error('No image URL received from AI generation');
