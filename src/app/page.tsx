@@ -10,7 +10,6 @@ import {
   Bot,
   ShoppingCart,
   Rocket,
-  Lock,
   CheckCircle,
   TrendingUp
 } from "lucide-react";
@@ -73,11 +72,10 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-2 md:gap-4">
               <ThemeToggle />
-              <Button asChild variant="outline" size="sm" className="text-xs md:text-sm">
-                <Link href="/auth/login">
-                  <Lock className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                  <span className="hidden sm:inline">Beta Access</span>
-                  <span className="sm:hidden">Beta</span>
+              <Button asChild variant="outline" size="sm" className="hidden md:flex">
+                <Link href="/dashboard">
+                  <Rocket className="h-4 w-4 mr-2" />
+                  Open Dashboard
                 </Link>
               </Button>
             </div>
@@ -88,9 +86,9 @@ export default function Home() {
         <section className="container mx-auto px-4 py-12 md:py-20 lg:py-32">
           <div className="max-w-5xl mx-auto text-center">
             {/* Beta Badge */}
-            <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-flame-500/10 border border-flame-500/20 rounded-full mb-4 md:mb-6">
-              <Zap className="h-3 w-3 md:h-4 md:w-4 text-flame-500" />
-              <span className="text-xs md:text-sm font-semibold text-flame-500">Private Beta • Invite Only</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-flame-500/10 border border-flame-500/20 rounded-full mb-6">
+              <Zap className="h-4 w-4 text-flame-500" />
+              <span className="text-sm font-semibold text-flame-500">Free & Open Access</span>
             </div>
 
             {/* Main Headline */}
@@ -105,29 +103,20 @@ export default function Home() {
             {/* Subheadline */}
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-6 md:mb-10 max-w-3xl mx-auto leading-relaxed px-4">
               Our AI scrapes marketplaces, identifies trends, creates digital products, 
-              and lists them automatically. You wake up to revenue.
+              and lists them automatically. Start building your product empire now.
             </p>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center px-4">
               <Button 
                 size="lg" 
-                className="w-full sm:w-auto bg-flame-gradient hover:shadow-glow text-white text-base md:text-lg px-6 md:px-8 py-5 md:py-6 h-auto"
-                disabled
-              >
-                <Rocket className="mr-2 h-4 w-4 md:h-5 md:w-5" />
-                Coming Soon
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8 py-5 md:py-6 h-auto border-2"
+                className="bg-flame-gradient hover:shadow-glow text-white text-lg px-8 py-6 h-auto"
                 asChild
               >
-                <Link href="/auth/login">
-                  <Lock className="mr-2 h-4 w-4 md:h-5 md:w-5" />
-                  Beta Access
-                  <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
+                <Link href="/dashboard">
+                  <Rocket className="mr-2 h-5 w-5" />
+                  Launch Dashboard
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
             </div>
@@ -212,7 +201,7 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 1.0 }}
               >
-                Join the exclusive beta and let AI create your product empire.
+                Launch The Forge and let AI create your product empire.
               </motion.p>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -225,8 +214,8 @@ export default function Home() {
                   className="w-full sm:w-auto bg-white text-flame-600 hover:bg-white/90 text-base md:text-lg px-8 md:px-10 py-5 md:py-6 h-auto font-semibold"
                   asChild
                 >
-                  <Link href="/auth/login">
-                    Request Beta Access <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
+                  <Link href="/dashboard">
+                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
               </motion.div>
