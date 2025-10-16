@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { supabase } from '@/lib/db/client';
+import OpenAI from 'openai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,52 +14,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if Zig 3 is enabled
-    if (process.env.ENABLE_ZIG3_STUDIO !== 'true') {
+    // Use OpenAI DALL-E for actual image generation
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: 'AI Design Studio is not enabled' },
-        { status: 403 }
+        { error: 'AI image generation is not configured. Please add OPENAI_API_KEY to environment variables.' },
+        { status: 503 }
       );
     }
 
-    // Initialize Gemini for image generation
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
-    // Generate image using Gemini
-    const result = await model.generateContent([
-      {
-        text: `Create a professional product mockup for: ${prompt}. 
-        The image should be high quality, suitable for e-commerce listings, 
-        with a clean background and professional presentation.`,
-      },
-    ]);
+    // Generate image using DALL-E 3
+    const imageResponse = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: `Create a professional, high-quality product mockup for: ${prompt}. The image should be suitable for e-commerce listings, with a clean background and professional presentation. Style: modern, clean, commercial.`,
+      n: 1,
+      size: '1024x1024',
+      quality: 'standard',
+    });
 
-    // For demo purposes, we'll return a placeholder image
-    // In production, you would use the actual generated image
-    const imageUrl = `https://via.placeholder.com/800x600/2D9CDB/FFFFFF?text=${encodeURIComponent(prompt.slice(0, 30))}`;
+    const imageUrl = imageResponse.data[0].url;
 
-    // In a real implementation, you would:
-    // 1. Generate the actual image using Gemini or another AI service
-    // 2. Upload the image to Supabase Storage
-    // 3. Save the asset metadata to the database
+    if (!imageUrl) {
+      throw new Error('No image URL received from AI generation');
+    }
+
+    // Save the asset to database
+    const { data: asset, error: dbError } = await supabase
+      .from('design_assets')
+      .insert({
+        user_id: userId,
+        product_id: productId,
+        prompt,
+        image_url: imageUrl,
+        image_type: 'png',
+        ai_provider: 'openai-dalle3',
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      throw new Error('Failed to save asset to database');
+    }
 
     return NextResponse.json({
       success: true,
       data: {
-        id: Date.now().toString(),
-        prompt,
-        imageUrl,
-        imageType: 'png',
-        userId,
-        productId,
-        createdAt: new Date().toISOString(),
+        id: asset.id,
+        prompt: asset.prompt,
+        imageUrl: asset.image_url,
+        imageType: asset.image_type,
+        userId: asset.user_id,
+        productId: asset.product_id,
+        createdAt: asset.created_at,
       },
     });
   } catch (error) {
     console.error('Studio generate API error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate design asset' },
+      { error: error instanceof Error ? error.message : 'Failed to generate design asset' },
       { status: 500 }
     );
   }
@@ -76,42 +93,38 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if Zig 3 is enabled
-    if (process.env.ENABLE_ZIG3_STUDIO !== 'true') {
-      return NextResponse.json(
-        { error: 'AI Design Studio is not enabled' },
-        { status: 403 }
-      );
+    // Fetch real assets from database
+    const { data: assets, error } = await supabase
+      .from('design_assets')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error('Database error:', error);
+      throw new Error('Failed to fetch design assets from database');
     }
 
-    // In a real implementation, you would fetch from the database
-    const mockAssets = [
-      {
-        id: '1',
-        prompt: 'Minimalist planner template',
-        imageUrl: 'https://via.placeholder.com/400x300/2D9CDB/FFFFFF?text=Planner+Template',
-        imageType: 'png',
-        userId,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        prompt: 'Watercolor wedding invitation',
-        imageUrl: 'https://via.placeholder.com/400x300/FF6B22/FFFFFF?text=Wedding+Invitation',
-        imageType: 'png',
-        userId,
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-    ];
+    // Transform to expected format
+    const formattedAssets = (assets || []).map(asset => ({
+      id: asset.id,
+      prompt: asset.prompt,
+      imageUrl: asset.image_url,
+      imageType: asset.image_type,
+      userId: asset.user_id,
+      productId: asset.product_id,
+      createdAt: asset.created_at,
+    }));
 
     return NextResponse.json({
       success: true,
-      data: mockAssets,
+      data: formattedAssets,
     });
   } catch (error) {
     console.error('Studio assets API error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch design assets' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch design assets' },
       { status: 500 }
     );
   }
