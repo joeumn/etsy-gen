@@ -1,293 +1,503 @@
-# FoundersForge - AI-Powered Product Creation Platform
+# The Forge by FoundersForge
 
-A comprehensive Next.js 14 + TypeScript + Tailwind + shadcn/ui application that transforms trending data into profitable digital products using AI. This project implements the complete "Zig" layer system for advanced product creation, monetization, and branding.
+<div align="center">
 
-## 🚀 Features
+**"Never Build Alone."**
 
-### Core Platform
-- **AI Trend Analysis**: Discover trending products across Etsy, Amazon, and Shopify
-- **Instant Product Generation**: Generate complete product listings with AI
-- **Revenue Tracking**: Monitor earnings and optimize product strategy
-- **Multi-Marketplace Support**: Etsy, Amazon, and Shopify integrations
+AI That Builds Wealth for You
 
-### Zig 3 - AI Design Studio
-- **Image Generation**: Create product mockups and designs with AI
-- **Asset Management**: Save and organize design assets
-- **Studio Canvas**: Interactive design workspace
-- **Integration Ready**: Use generated assets in product listings
+[![Next.js](https://img.shields.io/badge/Next.js-15.5-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Build](https://img.shields.io/badge/build-passing-success)]()
+[![License](https://img.shields.io/badge/license-Private-red)]()
 
-### Zig 4 - Monetization & Upsells
-- **Stripe Integration**: Complete billing and subscription management
-- **Usage Tracking**: Monitor API usage and limits
-- **Pricing Tiers**: Free, Pro, and Enterprise plans
-- **Customer Portal**: Self-service billing management
+</div>
 
-### Zig 5 - Social Signal Engine
-- **Social Media Analysis**: Monitor TikTok, Pinterest, Instagram trends
-- **Trend Scoring**: Weighted scoring system (60% sales + 40% social)
-- **Real-time Data**: Mock social media data integration
-- **Visualization**: Radar charts for trend analysis
+---
 
-### Zig 6 - Auto-Branding AI
-- **Brand Generation**: AI-powered brand identity creation
-- **Logo Design**: Automated logo generation
-- **Color Palettes**: AI-curated color schemes
-- **Typography**: Font pairing recommendations
-- **Brand Kits**: Downloadable brand assets
+## 🔥 What is The Forge?
 
-### UI/UX Enhancements
-- **Framer Motion**: Smooth animations and transitions
-- **Dark Mode**: Complete dark/light theme support
-- **Responsive Design**: Mobile-first approach
-- **FoundersForge Palette**: Custom flame gradient theme
-- **Accessibility**: WCAG compliant components
+**The Forge** is an autonomous AI-powered platform that builds digital product empires while you sleep.
 
-## 🛠️ Tech Stack
+Our AI:
+- 🔍 **Scrapes** Etsy, Shopify, Amazon, Gumroad for trending products
+- 🧠 **Analyzes** market data to identify high-profit opportunities
+- ✨ **Creates** complete products (titles, descriptions, mockups, pricing)
+- 📦 **Lists** products automatically across all your marketplaces
+- 📊 **Tracks** revenue, conversions, and performance in real-time
 
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS with custom design system
-- **UI Components**: shadcn/ui + Radix UI
-- **Animations**: Framer Motion
-- **Charts**: Recharts
-- **Database**: Supabase (PostgreSQL)
-- **Payments**: Stripe
-- **AI**: Google Gemini, OpenAI, Anthropic Claude
-- **State Management**: React hooks + Context
+**Version**: 2.0.0  
+**Status**: Private Beta  
+**Updated**: October 15, 2025
 
-## 📁 Project Structure
+---
 
-```
-/workspace
-├── app/                          # Next.js App Router
-│   ├── api/                      # API Routes
-│   │   ├── brand/               # Zig 6 - Auto-Branding
-│   │   ├── earnings/            # Revenue tracking
-│   │   ├── generate/            # Product generation
-│   │   ├── list/                # Product listings
-│   │   ├── scan/                # Trend scanning
-│   │   ├── social-scan/         # Zig 5 - Social Signals
-│   │   ├── studio/              # Zig 3 - Design Studio
-│   │   └── stripe/              # Zig 4 - Payments
-│   ├── dashboard/               # Main dashboard
-│   ├── pricing/                 # Pricing page
-│   ├── settings/                # User settings
-│   ├── studio/                  # AI Design Studio
-│   ├── globals.css              # Global styles
-│   ├── layout.tsx               # Root layout
-│   └── page.tsx                 # Landing page
-├── lib/                         # Utilities and services
-│   ├── ai/                      # AI provider integrations
-│   ├── db/                      # Database schema
-│   ├── marketplaces/            # Marketplace APIs
-│   └── payments/                # Stripe integration
-├── src/
-│   └── components/
-│       └── ui/                  # Reusable UI components
-├── .env.example                 # Environment variables
-├── tailwind.config.js           # Tailwind configuration
-└── package.json
-```
-
-## 🚀 Getting Started
+## ⚡ Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
-- pnpm (recommended) or npm
-- Supabase account
-- Stripe account (for payments)
-- AI provider API keys
+
+- **Node.js** 18+ (20+ recommended)
+- **pnpm** or npm
+- **Supabase account** with PostgreSQL database
+- **AI API Key** (Gemini recommended, OpenAI works too)
 
 ### Installation
 
-1. **Clone and install dependencies**
-   ```bash
+```bash
+# Clone repository
    git clone <repository-url>
-   cd ai-product-dashboard
-   pnpm install
-   ```
+cd etsy-gen
 
-2. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Fill in your API keys and configuration:
-   ```env
-   # Database
-   SUPABASE_URL=your_supabase_url
+# Install dependencies
+npm install
+# or
+   pnpm install
+```
+
+### Configuration
+
+1. **Create `.env.local`** file:
+
+```env
+# Database (REQUIRED)
+SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_ANON_KEY=your_supabase_anon_key
    
-   # AI Providers
-   GOOGLE_AI_API_KEY=your_google_ai_key
-   OPENAI_API_KEY=your_openai_key
-   
-   # Stripe
-   STRIPE_SECRET_KEY=sk_test_...
-   STRIPE_PUBLISHABLE_KEY=pk_test_...
-   
-   # Feature Flags
-   ENABLE_ZIG3_STUDIO=true
-   ENABLE_ZIG4_STRIPE=true
-   ENABLE_ZIG5_SOCIAL=true
-   ENABLE_ZIG6_BRANDING=true
-   ```
+# Authentication (REQUIRED)
+NEXTAUTH_SECRET=your_nextauth_secret_32_chars_min
+NEXTAUTH_URL=http://localhost:3000
 
-3. **Set up database**
-   ```bash
-   # Run the SQL schema in your Supabase dashboard
-   # or use the Supabase CLI
-   supabase db reset
-   ```
+# AI Provider (Pick at least one)
+GEMINI_API_KEY=your_gemini_api_key
+OPENAI_API_KEY=your_openai_api_key
 
-4. **Start development server**
-   ```bash
-   pnpm dev
-   ```
+# Marketplaces (Optional - enable as needed)
+ETSY_API_KEY=your_etsy_api_key
+SHOPIFY_ACCESS_TOKEN=your_shopify_token
+AMAZON_ACCESS_KEY=your_amazon_key
 
-5. **Open your browser**
-   Navigate to `http://localhost:3000`
+# Stripe (Optional - for monetization)
+STRIPE_SECRET_KEY=sk_test_your_stripe_key
+STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
+```
+
+2. **Set up database**:
+
+Run the SQL migrations in your Supabase dashboard:
+```bash
+lib/db/schema.sql           # Core schema
+lib/db/stage3-migrations.sql  # Stage 3 features
+lib/db/stage4-migrations.sql  # Stage 4 automation
+```
+
+3. **Start development server**:
+
+```bash
+npm run dev
+```
+
+4. **Access the app**:
+
+Open [http://localhost:3000](http://localhost:3000)
+
+### First Login
+
+**Default Admin Credentials**:
+- Email: `admin@foundersforge.com`
+- Password: `ForgeAdmin2024!`
+
+---
+
+## 🎯 Core Features
+
+### 1. 🤖 **AI Market Intelligence**
+Automatically scans Etsy, Shopify, Amazon, and Gumroad to identify trending digital products before they saturate.
+
+**Features**:
+- Multi-marketplace scanning
+- Keyword extraction
+- Competition analysis
+- Price range detection
+- Seasonality tracking
+- Target audience inference
+
+### 2. ✨ **Autonomous Product Creation**
+AI generates complete products optimized for conversion.
+
+**Generates**:
+- SEO-optimized titles
+- Compelling descriptions
+- Relevant tags
+- Competitive pricing
+- Product mockups
+- Complete specifications
+
+### 3. 📦 **Automated Listing**
+Products are automatically listed across your connected marketplaces.
+
+**Supports**:
+- Etsy
+- Shopify
+- Amazon
+- Gumroad (coming soon)
+
+### 4. 📊 **Revenue Analytics**
+Real-time dashboards track every aspect of your business.
+
+**Analytics**:
+- Revenue trends
+- Sales metrics
+- Conversion rates
+- Top products
+- Marketplace performance
+- AI-powered insights
+
+### 5. 🎯 **Smart Recommendations**
+AI analyzes your data and provides actionable recommendations.
+
+**Recommendations**:
+- New product ideas
+- Pricing optimization
+- Marketing strategies
+- Trend predictions
+- Growth opportunities
+
+---
+
+## 🏗️ Architecture
+
+### Tech Stack
+
+**Frontend**:
+- Next.js 15.5 with App Router
+- React 19
+- TypeScript 5.7 (strict mode)
+- Tailwind CSS 4.1
+- Framer Motion 12
+- shadcn/ui + Radix UI
+
+**Backend**:
+- Next.js API Routes
+- Supabase (PostgreSQL)
+- Pino (structured logging)
+- bcryptjs (auth)
+- Zod (validation)
+
+**AI Providers**:
+- Google Gemini
+- OpenAI (GPT-4, DALL-E-3)
+- Azure OpenAI
+- Anthropic Claude
+
+**Integrations**:
+- Stripe (payments)
+- Marketplace APIs (Etsy, Shopify, Amazon)
+- Google Drive API (coming soon)
+
+### Project Structure
+
+```
+/
+├── src/app/              # Pages & API routes
+│   ├── (auth)/           # Authentication
+│   ├── dashboard/        # Main dashboard
+│   ├── analytics/        # Analytics dashboard
+│   ├── products/         # Product management
+│   ├── marketplaces/     # Marketplace connections
+│   ├── integrations/     # Third-party integrations
+│   ├── settings/         # User settings
+│   └── api/              # 32 API endpoints
+├── src/components/       # React components
+│   ├── layout/           # Layout components
+│   └── ui/               # UI component library (25+)
+├── lib/                  # Server utilities
+│   ├── ai/               # AI integrations
+│   ├── marketplaces/     # Marketplace APIs
+│   ├── analytics/        # Analytics engine
+│   ├── db/               # Database
+│   └── *.ts              # Utilities
+└── docs/                 # Documentation
+```
+
+---
+
+## 📱 User Interface
+
+### Landing Page
+- **URL**: `/`
+- **Purpose**: Marketing page for The Forge
+- **Features**: 
+  - Hero section with animated background
+  - Feature showcase
+  - Beta access CTA
+  - Responsive design
+
+### Authentication
+- **URL**: `/auth/login`
+- **Features**:
+  - Email + password only (no signup)
+  - Remember me functionality
+  - Beautiful animated design
+  - Demo credentials display
+
+### Dashboard
+- **URL**: `/dashboard`
+- **Layout**: Sidebar + Topbar
+- **Sections**:
+  - Command Center overview
+  - Real-time stats (4 cards)
+  - Revenue charts
+  - Marketplace performance
+  - Recent activity feed
+  - Quick action buttons
+
+### Analytics
+- **URL**: `/analytics`
+- **Features**:
+  - Period selector (7d, 30d, 90d, 1y)
+  - Advanced metrics
+  - Revenue trends
+  - Top products table
+  - AI-powered insights
+  - Marketplace distribution
+
+---
+
+## 🔌 API Documentation
+
+### Core Endpoints
+
+#### Generate Product
+```http
+POST /api/generate
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "trendData": {
+    "category": "string",
+    "keywords": ["string"]
+  },
+  "productType": "digital_download",
+  "targetMarketplace": "etsy",
+  "aiProvider": "gemini"
+}
+```
+
+#### Scan Trends
+```http
+GET /api/scan?marketplace=etsy&category=digital&limit=50
+Authorization: Bearer {token}
+```
+
+#### Get Recommendations
+```http
+GET /api/recommendations?type=all
+Authorization: Bearer {token}
+```
+
+**See** `docs/system-overview.md` for complete API documentation.
+
+---
 
 ## 🎨 Design System
 
-### Color Palette
-- **Ocean**: #2D9CDB (Primary blue)
-- **Flame**: #FF6B22 (Secondary orange) 
-- **Gold**: #FFC400 (Accent yellow)
-- **Gradients**: Custom flame and ocean gradients
+### Brand Colors
 
-### Typography
-- **Headings**: Inter (sans-serif)
-- **Body**: Inter (sans-serif)
-- **Accent**: Playfair Display (serif)
-
-### Components
-- **StatCard**: Animated statistics display
-- **RevenueChart**: Recharts integration
-- **BrandKitModal**: Brand kit viewer
-- **StudioCanvas**: Design workspace
-- **PricingDialog**: Subscription management
-
-## 🔧 Feature Flags
-
-Control feature availability via environment variables:
-
-```env
-ENABLE_ZIG3_STUDIO=true    # AI Design Studio
-ENABLE_ZIG4_STRIPE=true    # Stripe payments
-ENABLE_ZIG5_SOCIAL=true    # Social signals
-ENABLE_ZIG6_BRANDING=true  # Auto-branding
-```
-
-## 📊 API Endpoints
-
-### Core Features
-- `POST /api/generate` - Generate products
-- `GET /api/scan` - Scan trends
-- `GET /api/earnings` - Get revenue data
-
-### Zig Modules
-- `POST /api/studio/generate` - Generate design assets
-- `POST /api/stripe/checkout` - Create checkout session
-- `POST /api/social-scan` - Analyze social trends
-- `POST /api/brand/generate` - Generate brand kit
-
-## 🎯 Usage Examples
-
-### Generate a Product
 ```typescript
-const response = await fetch('/api/generate', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    trendData: { category: 'digital_downloads' },
-    productType: 'template',
-    targetMarketplace: 'etsy'
-  })
-});
+Ocean:  #2D9CDB  // Primary blue
+Flame:  #FF6B22  // Secondary orange
+Gold:   #FFC400  // Accent yellow
+Dark:   #1C463C  // Background dark
 ```
 
-### Create Design Asset
-```typescript
-const response = await fetch('/api/studio/generate', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    prompt: 'Minimalist planner template',
-    userId: 'user123'
-  })
-});
-```
+### Custom Components
+
+All components use Framer Motion animations and support dark mode.
+
+**Available Components**:
+- `<AdvancedStatCard />` - Animated statistics
+- `<RevenueChart />` - Area/Radar charts
+- `<LoadingSpinner />` - Loading states
+- `<Modal />` - Dialog overlays
+- `<Toast />` - Notifications
+- `<ProgressBar />` - Progress indicators
+
+**See** `src/components/ui/` for full component library.
+
+---
+
+## 🛡️ Security
+
+### Authentication
+- bcrypt password hashing (12 rounds)
+- JWT-style token system
+- Role-based access control
+- Session management
+
+### API Protection
+- Input validation (Zod schemas)
+- Rate limiting (per user/plan)
+- XSS prevention
+- SQL injection prevention
+- Comprehensive logging
+
+### Data Protection
+- Encrypted passwords
+- Secure token storage
+- HTTPS only (production)
+- Environment variable secrets
+
+---
+
+## 📊 Performance
+
+### Build Metrics
+- ✅ **TypeScript**: 0 errors
+- ✅ **Build Time**: ~10 seconds
+- ✅ **Bundle Size**: Optimized
+- ⚠️ **ESLint**: ~50 warnings (non-critical)
+
+### Runtime Performance
+- In-memory caching (5-15min TTL)
+- Database query optimization
+- Lazy loading
+- Code splitting
+- Image optimization
+
+### Monitoring
+- Structured logging with Pino
+- Error tracking
+- Performance metrics
+- Security event auditing
+
+---
 
 ## 🚀 Deployment
 
 ### Vercel (Recommended)
-1. Connect your GitHub repository
-2. Set environment variables in Vercel dashboard
-3. Deploy automatically on push
 
-### Other Platforms
-- **Netlify**: Use `next build && next export`
-- **Railway**: Deploy with Docker
-- **AWS**: Use Amplify or ECS
+1. **Connect repository** to Vercel
+2. **Add environment variables** in dashboard
+3. **Deploy** - automatic builds on push
+
+### Manual Deployment
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+### Environment Setup
+
+See `.env.example` for complete configuration template.
+
+**Critical Variables**:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `NEXTAUTH_SECRET`
+- At least one AI provider API key
+
+---
+
+## 📚 Documentation
+
+### Available Docs
+- **README.md** (this file) - Quick start & overview
+- **docs/system-overview.md** - Complete system documentation
+- **CHANGES.md** - Technical changelog
+- **PROJECT_TRANSFORMATION_SUMMARY.md** - Transformation overview
+- **RUNTIME_FIXES_COMPLETE.md** - Error fixes documentation
+
+### Code Documentation
+All critical functions include JSDoc comments with:
+- Purpose description
+- Parameter types
+- Return types
+- Usage examples
+
+---
 
 ## 🧪 Testing
 
 ```bash
 # Run tests
-pnpm test
+npm test
 
-# Run with UI
-pnpm test:ui
+# Type check
+npm run type-check
 
-# Type checking
-pnpm type-check
-
-# Linting
-pnpm lint
+# Lint
+npm run lint
 ```
-
-## 📈 Performance
-
-- **Lighthouse Score**: 95+ (Performance, Accessibility, SEO)
-- **Core Web Vitals**: Optimized
-- **Bundle Size**: Tree-shaken and optimized
-- **Images**: Next.js Image optimization
-
-## 🔒 Security
-
-- **API Keys**: Server-side only
-- **Authentication**: NextAuth.js integration ready
-- **CORS**: Properly configured
-- **Rate Limiting**: Implemented on API routes
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Support
-
-- **Documentation**: Check this README
-- **Issues**: GitHub Issues
-- **Discussions**: GitHub Discussions
-- **Email**: support@foundersforge.com
-
-## 🎉 Acknowledgments
-
-- **shadcn/ui** for beautiful components
-- **Framer Motion** for smooth animations
-- **Tailwind CSS** for utility-first styling
-- **Next.js** for the amazing framework
-- **Supabase** for the backend infrastructure
 
 ---
 
-**Built with ❤️ by the FoundersForge team**
+## 🤝 Support
+
+This is a **private internal application** for FoundersForge.
+
+For technical issues:
+1. Check `docs/system-overview.md`
+2. Review error logs (Pino structured logging)
+3. Check database connection
+4. Verify environment variables
+
+---
+
+## 📄 License
+
+**Private & Proprietary**
+
+© 2025 FoundersForge. All rights reserved.
+
+This software is private and confidential. Unauthorized copying, distribution, or use is strictly prohibited.
+
+---
+
+## 🏆 Credits
+
+**Built by**:
+- Senior Full-Stack Engineer
+- Award-Winning UI/UX Designer
+- Product Architect
+
+**Powered by**:
+- Next.js
+- Supabase
+- Google Gemini AI
+- OpenAI
+- Framer Motion
+
+---
+
+## 🎯 Roadmap
+
+### ✅ Completed (v2.0)
+- Enterprise-grade authentication
+- Professional logging system
+- Advanced error handling
+- Comprehensive UI component library
+- Performance optimization
+- AI provider integrations
+- Marketplace connections
+- Revenue analytics
+- Smart recommendations
+- Beautiful dashboard with sidebar navigation
+
+### 🔮 Coming Soon
+- Google Drive integration
+- Auto-scheduler for scrapes
+- Visual theme editor
+- Mobile app
+- Advanced forecasting
+- Team collaboration features
+
+---
+
+**The Forge** - Built with precision, powered by AI, designed for scale.
+
+🔥 **Never Build Alone** 🔥

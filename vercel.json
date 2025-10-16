@@ -1,0 +1,18 @@
+{
+  "buildCommand": "npm run build",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/intelligence",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/operations",
+      "schedule": "0 */12 * * *"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_APP_NAME": "The Forge",
+    "NEXT_PUBLIC_COMPANY": "FoundersForge"
+  }
+}

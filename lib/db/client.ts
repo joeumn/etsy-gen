@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Create a fallback client for build time (will error gracefully at runtime if not configured)
+export const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey)
+  : createClient('https://placeholder.supabase.co', 'placeholder-key');
 
 // Database types
 export interface Database {
@@ -13,24 +16,39 @@ export interface Database {
         Row: {
           id: string;
           email: string;
+          password_hash: string;
           name: string | null;
           avatar_url: string | null;
+          role: string;
+          is_active: boolean;
+          email_verified: boolean;
+          last_login_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           email: string;
+          password_hash: string;
           name?: string | null;
           avatar_url?: string | null;
+          role?: string;
+          is_active?: boolean;
+          email_verified?: boolean;
+          last_login_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           email?: string;
+          password_hash?: string;
           name?: string | null;
           avatar_url?: string | null;
+          role?: string;
+          is_active?: boolean;
+          email_verified?: boolean;
+          last_login_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

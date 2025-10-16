@@ -4,8 +4,13 @@
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
   name VARCHAR(255),
   avatar_url TEXT,
+  role VARCHAR(50) DEFAULT 'user' CHECK (role IN ('user', 'admin', 'super_admin')),
+  is_active BOOLEAN DEFAULT true,
+  email_verified BOOLEAN DEFAULT false,
+  last_login_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -173,17 +178,7 @@ CREATE INDEX idx_ai_generation_logs_created_at ON ai_generation_logs(created_at)
 CREATE INDEX idx_marketplace_api_logs_user_id ON marketplace_api_logs(user_id);
 CREATE INDEX idx_marketplace_api_logs_created_at ON marketplace_api_logs(created_at);
 
--- New indexes for Zig modules
-CREATE INDEX idx_design_assets_user_id ON design_assets(user_id);
-CREATE INDEX idx_design_assets_product_id ON design_assets(product_id);
-CREATE INDEX idx_design_assets_created_at ON design_assets(created_at);
-CREATE INDEX idx_user_usage_user_id ON user_usage(user_id);
-CREATE INDEX idx_user_usage_plan ON user_usage(plan);
-CREATE INDEX idx_brands_user_id ON brands(user_id);
-CREATE INDEX idx_brands_created_at ON brands(created_at);
-CREATE INDEX idx_social_trends_trend_id ON social_trends(trend_id);
-CREATE INDEX idx_social_trends_platform ON social_trends(platform);
-CREATE INDEX idx_social_trends_created_at ON social_trends(created_at);
+-- These indexes will be created after the tables are defined below
 
 -- Insert default AI providers
 INSERT INTO ai_providers (name, is_active, config) VALUES
@@ -275,6 +270,18 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- Create indexes for Zig module tables
+CREATE INDEX idx_design_assets_user_id ON design_assets(user_id);
+CREATE INDEX idx_design_assets_product_id ON design_assets(product_id);
+CREATE INDEX idx_design_assets_created_at ON design_assets(created_at);
+CREATE INDEX idx_user_usage_user_id ON user_usage(user_id);
+CREATE INDEX idx_user_usage_plan ON user_usage(plan);
+CREATE INDEX idx_brands_user_id ON brands(user_id);
+CREATE INDEX idx_brands_created_at ON brands(created_at);
+CREATE INDEX idx_social_trends_trend_id ON social_trends(trend_id);
+CREATE INDEX idx_social_trends_platform ON social_trends(platform);
+CREATE INDEX idx_social_trends_created_at ON social_trends(created_at);
+
 -- Triggers for updating timestamps
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_ai_providers_updated_at BEFORE UPDATE ON ai_providers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -283,3 +290,16 @@ CREATE TRIGGER update_generated_products_updated_at BEFORE UPDATE ON generated_p
 CREATE TRIGGER update_product_listings_updated_at BEFORE UPDATE ON product_listings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_feature_flags_updated_at BEFORE UPDATE ON feature_flags FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_design_assets_updated_at BEFORE UPDATE ON design_assets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_user_usage_updated_at BEFORE UPDATE ON user_usage FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_brands_updated_at BEFORE UPDATE ON brands FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Insert default admin user (password: ForgeAdmin2024!)
+-- Password hash generated with bcrypt, rounds=12
+INSERT INTO users (email, password_hash, name, role, is_active, email_verified) VALUES
+('admin@foundersforge.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIeWcrcQwO', 'FoundersForge Admin', 'super_admin', true, true)
+ON CONFLICT (email) DO UPDATE SET
+  password_hash = EXCLUDED.password_hash,
+  role = EXCLUDED.role,
+  is_active = EXCLUDED.is_active,
+  email_verified = EXCLUDED.email_verified;

@@ -1,289 +1,235 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { 
   Sparkles, 
-  TrendingUp, 
-  Palette, 
-  DollarSign, 
-  Users, 
   Zap,
   ArrowRight,
+  Bot,
+  ShoppingCart,
+  Rocket,
+  Lock,
   CheckCircle,
-  Star,
-  BarChart3,
-  Image as ImageIcon,
-  Target
+  TrendingUp
 } from "lucide-react";
 import Link from "next/link";
+import { APP_CONFIG } from "@/lib/config";
 
 export default function Home() {
   const features = [
     {
-      icon: TrendingUp,
-      title: "AI Trend Analysis",
-      description: "Discover trending products across Etsy, Amazon, and Shopify with advanced AI analysis.",
-      color: "text-ocean-500"
+      icon: Bot,
+      title: "AI Market Intelligence",
+      description: "Our AI scrapes Etsy, Shopify, Amazon, and Gumroad to identify high-profit digital products before they saturate.",
     },
     {
       icon: Sparkles,
-      title: "Instant Product Generation",
-      description: "Generate complete product listings with descriptions, tags, and SEO optimization.",
-      color: "text-flame-500"
+      title: "Autonomous Product Creation",
+      description: "Generate complete products — titles, descriptions, mockups, and pricing — all optimized for maximum conversion.",
     },
     {
-      icon: Palette,
-      title: "AI Design Studio",
-      description: "Create stunning product mockups and designs with AI-powered image generation.",
-      color: "text-gold-500"
+      icon: ShoppingCart,
+      title: "Automated Listing",
+      description: "Products are automatically listed across your connected marketplaces. Set it and forget it.",
     },
     {
-      icon: DollarSign,
-      title: "Revenue Optimization",
-      description: "Track earnings, analyze performance, and optimize your product strategy.",
-      color: "text-green-500"
+      icon: TrendingUp,
+      title: "Revenue Analytics",
+      description: "Real-time dashboards track sales, impressions, and profit. Know exactly what's working.",
     },
-    {
-      icon: Users,
-      title: "Social Signals",
-      description: "Monitor social media trends and viral content to stay ahead of the curve.",
-      color: "text-purple-500"
-    },
-    {
-      icon: Target,
-      title: "Auto-Branding",
-      description: "Generate complete brand kits with logos, colors, and typography for your products.",
-      color: "text-pink-500"
-    }
   ];
 
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "Etsy Seller",
-      content: "FoundersForge helped me discover a trending product that generated $10k in my first month!",
-      rating: 5
-    },
-    {
-      name: "Mike Rodriguez",
-      role: "Amazon FBA",
-      content: "The AI design studio is incredible. I can create professional mockups in minutes.",
-      rating: 5
-    },
-    {
-      name: "Emily Johnson",
-      role: "Digital Entrepreneur",
-      content: "The social signals feature keeps me ahead of trends. My products go viral regularly now.",
-      rating: 5
-    }
+  const benefits = [
+    "Zero manual product research",
+    "Automated marketplace listing",
+    "AI-powered pricing optimization",
+    "Real-time revenue analytics",
+    "Multi-platform synchronization",
+    "Trend prediction algorithms",
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Navigation */}
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2"
-          >
-            <div className="w-8 h-8 bg-flame-gradient rounded-lg flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold">FoundersForge</span>
-          </motion.div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Button asChild>
-              <Link href="/dashboard">Get Started</Link>
-            </Button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1C463C] via-background to-background">
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-flame-500/10 rounded-full blur-3xl opacity-40" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-ocean-500/10 rounded-full blur-3xl opacity-40" />
+      </div>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-4xl mx-auto"
-        >
-          <Badge className="mb-6 bg-flame-500 text-white">
-            🚀 AI-Powered Product Creation
-          </Badge>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-flame-gradient bg-clip-text text-transparent">
-            Turn Trends Into
-            <br />
-            <span className="text-ocean-500">Profitable Products</span>
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Discover trending products, generate complete listings, and create stunning designs with AI. 
-            Launch your digital product empire in minutes, not months.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-flame-gradient hover:opacity-90 text-white" asChild>
-              <Link href="/dashboard">
-                Start Creating <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="#features">Learn More</Link>
-            </Button>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="container mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-4xl font-bold mb-4">Everything You Need to Succeed</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Our AI-powered platform handles every aspect of digital product creation, 
-            from trend discovery to brand generation.
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ y: -5 }}
-            >
-              <Card className="h-full hover:shadow-lg transition-all duration-300">
-                <CardHeader>
-                  <div className={`w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-4`}>
-                    <feature.icon className={`h-6 w-6 ${feature.color}`} />
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="bg-muted/50 py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            {[
-              { number: "10K+", label: "Products Generated" },
-              { number: "$2M+", label: "Revenue Created" },
-              { number: "500+", label: "Happy Customers" },
-              { number: "95%", label: "Success Rate" }
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <div className="text-4xl font-bold text-flame-500 mb-2">{stat.number}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="container mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-4xl font-bold mb-4">What Our Customers Say</h2>
-          <p className="text-xl text-muted-foreground">
-            Join thousands of successful entrepreneurs who've transformed their businesses with FoundersForge.
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={testimonial.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <Card className="h-full">
-                <CardContent className="p-6">
-                  <div className="flex mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-gold-500 text-gold-500" />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-4">"{testimonial.content}"</p>
-                  <div>
-                    <div className="font-semibold">{testimonial.name}</div>
-                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-flame-gradient py-20">
-        <div className="container mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl mx-auto"
-          >
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Ready to Launch Your Product Empire?
-            </h2>
-            <p className="text-xl text-white/90 mb-8">
-              Join thousands of entrepreneurs who are already using AI to create profitable digital products.
-            </p>
-            <Button size="lg" variant="secondary" className="bg-white text-flame-600 hover:bg-white/90" asChild>
-              <Link href="/dashboard">
-                Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-muted/50 py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-flame-gradient rounded-lg flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
+      <div className="relative z-10">
+        {/* Navigation */}
+        <nav className="border-b bg-background/80 backdrop-blur-xl">
+          <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-flame-gradient rounded-xl flex items-center justify-center shadow-glow">
+                <Sparkles className="h-7 w-7 text-white" />
               </div>
-              <span className="text-xl font-bold">FoundersForge</span>
+              <div>
+                <h1 className="text-2xl font-bold">{APP_CONFIG.company}</h1>
+                <p className="text-xs text-muted-foreground">{APP_CONFIG.tagline}</p>
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              © 2024 FoundersForge. All rights reserved.
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <Button asChild variant="outline" size="sm" className="hidden md:flex">
+                <Link href="/auth/login">
+                  <Lock className="h-4 w-4 mr-2" />
+                  Beta Access
+                </Link>
+              </Button>
             </div>
           </div>
-        </div>
-      </footer>
+        </nav>
+
+        {/* Hero Section */}
+        <section className="container mx-auto px-4 py-20 md:py-32">
+          <div className="max-w-5xl mx-auto text-center">
+            {/* Beta Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-flame-500/10 border border-flame-500/20 rounded-full mb-6">
+              <Zap className="h-4 w-4 text-flame-500" />
+              <span className="text-sm font-semibold text-flame-500">Private Beta • Invite Only</span>
+            </div>
+
+            {/* Main Headline */}
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6">
+              <span className="text-forge-gradient">The Forge</span>
+              <br />
+              <span className="text-foreground">AI That Builds</span>
+              <br />
+              <span className="text-foreground">Wealth for You</span>
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
+              Our AI scrapes marketplaces, identifies trends, creates digital products, 
+              and lists them automatically. You wake up to revenue.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button 
+                size="lg" 
+                className="bg-flame-gradient hover:shadow-glow text-white text-lg px-8 py-6 h-auto"
+                disabled
+              >
+                <Rocket className="mr-2 h-5 w-5" />
+                Coming Soon
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8 py-6 h-auto border-2"
+                asChild
+              >
+                <Link href="/auth/login">
+                  <Lock className="mr-2 h-5 w-5" />
+                  Beta Access
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Grid */}
+        <section className="container mx-auto px-4 py-20">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              How <span className="text-flame-gradient">The Forge</span> Works
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Four powerful pillars working 24/7 to build your digital product empire
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {features.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div key={feature.title} className="group relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-flame-500/5 to-ocean-500/5 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300" />
+                  <div className="relative bg-card/80 backdrop-blur-sm border-2 border-border hover:border-flame-500/30 rounded-2xl p-8 transition-all duration-300 card-hover">
+                    <div className="w-14 h-14 bg-flame-gradient rounded-xl flex items-center justify-center mb-6 shadow-glow-sm">
+                      <Icon className="h-7 w-7 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-3">{feature.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Benefits Section */}
+        <section className="container mx-auto px-4 py-20">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-card/50 backdrop-blur-sm border-2 border-flame-500/20 rounded-3xl p-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">
+                What You Get with <span className="text-ocean-gradient">The Forge</span>
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {benefits.map((benefit) => (
+                  <div
+                    key={benefit}
+                    className="flex items-center gap-3"
+                  >
+                    <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />
+                    <span className="text-lg">{benefit}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="container mx-auto px-4 py-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="bg-flame-gradient rounded-3xl p-12 shadow-2xl shadow-flame-500/20">
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                Ready to Build Wealth on Autopilot?
+              </h2>
+              <p className="text-xl text-white/90 mb-8">
+                Join the exclusive beta and let AI create your product empire.
+              </p>
+              <Button 
+                size="lg" 
+                variant="secondary" 
+                className="bg-white text-flame-600 hover:bg-white/90 text-lg px-10 py-6 h-auto font-semibold"
+                asChild
+              >
+                <Link href="/auth/login">
+                  Request Beta Access <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="border-t bg-background/50 backdrop-blur-sm py-12">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-flame-gradient rounded-xl flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold">{APP_CONFIG.company}</p>
+                  <p className="text-sm text-muted-foreground">{APP_CONFIG.tagline}</p>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                © 2025 {APP_CONFIG.company}. Private Beta.
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

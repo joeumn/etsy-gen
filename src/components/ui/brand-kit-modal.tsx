@@ -139,7 +139,7 @@ export function BrandKitModal({
                 </CardHeader>
                 <CardContent>
                   <p className="text-lg italic text-muted-foreground">
-                    "{brandKit.tagline}"
+                    &ldquo;{brandKit.tagline}&rdquo;
                   </p>
                 </CardContent>
               </Card>

@@ -3,13 +3,47 @@ import { AIProviderFactory } from '@/lib/ai/aiFactory';
 import { EtsyMarketplace } from '@/lib/marketplaces/etsy';
 import { AmazonMarketplace } from '@/lib/marketplaces/amazon';
 import { ShopifyMarketplace } from '@/lib/marketplaces/shopify';
+import { validate, scanTrendsSchema } from '@/lib/validation';
+import { handleAPIError, ExternalServiceError, ValidationError } from '@/lib/errors';
+import { logRequest, logError, PerformanceLogger } from '@/lib/logger';
+import { rateLimit } from '@/lib/rate-limit';
+import { getCache, setCache, CACHE_TTL } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
+    // Get user ID from auth header
+    const authHeader = request.headers.get('authorization');
+    const userId = authHeader ? Buffer.from(authHeader.replace('Bearer ', ''), 'base64').toString().split(':')[0] : 'anonymous';
+
+    // Apply rate limiting
+    rateLimit(userId, 'free');
+
     const { searchParams } = new URL(request.url);
     const marketplace = searchParams.get('marketplace') || 'etsy';
     const category = searchParams.get('category') || undefined;
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100); // Max 100
+
+    // Validate inputs
+    if (!['etsy', 'amazon', 'shopify'].includes(marketplace)) {
+      throw new ValidationError('Invalid marketplace', { marketplace });
+    }
+
+    // Check cache
+    const cacheKey = `scan:${marketplace}:${category || 'all'}:${limit}`;
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      logRequest('GET', '/api/scan', 200, Date.now() - startTime, userId, { cached: true });
+      return NextResponse.json({
+        success: true,
+        data: cachedData,
+        cached: true,
+      });
+    }
+
+    const perfLogger = new PerformanceLogger('API', 'scan-trends');
 
     // Get AI provider
     const aiProvider = await AIProviderFactory.getProvider();
@@ -50,9 +84,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (!marketplaceService.isAvailable) {
-      return NextResponse.json(
-        { error: `${marketplace} marketplace not available` },
-        { status: 500 }
+      throw new ExternalServiceError(
+        marketplace,
+        `${marketplace} marketplace not available. Please check your API configuration.`
       );
     }
 
@@ -65,30 +99,47 @@ export async function GET(request: NextRequest) {
     // Get categories for the marketplace
     const categories = await marketplaceService.getCategories();
 
+    const result = {
+      trends: analyzedTrends,
+      categories,
+      marketplace,
+      timestamp: new Date().toISOString(),
+      summary: `Found ${analyzedTrends.length} trending products in ${marketplace}`,
+    };
+
+    // Cache the result
+    await setCache(cacheKey, result, CACHE_TTL.MEDIUM);
+
+    perfLogger.end({ marketplace, category, trendCount: analyzedTrends.length });
+    logRequest('GET', '/api/scan', 200, Date.now() - startTime, userId);
+
     return NextResponse.json({
       success: true,
-      data: {
-        trends: analyzedTrends,
-        categories,
-        marketplace,
-        timestamp: new Date().toISOString(),
-        summary: `Found ${analyzedTrends.length} trending products in ${marketplace}`,
-      },
+      data: result,
     });
   } catch (error) {
-    console.error('Scan API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to scan trends' },
-      { status: 500 }
-    );
+    logError(error, 'ScanAPI', { path: '/api/scan' });
+    const { response, statusCode } = handleAPIError(error, '/api/scan');
+    logRequest('GET', '/api/scan', statusCode, Date.now() - startTime);
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
+    // Get user ID from auth header
+    const authHeader = request.headers.get('authorization');
+    const userId = authHeader ? Buffer.from(authHeader.replace('Bearer ', ''), 'base64').toString().split(':')[0] : 'anonymous';
+
+    // Apply rate limiting (higher cost for bulk operations)
+    rateLimit(userId, 'free');
+
     const body = await request.json();
     const { marketplaces = ['etsy'], categories = [], limit = 50 } = body;
 
+    const perfLogger = new PerformanceLogger('API', 'bulk-scan-trends');
     const results = [];
 
     for (const marketplace of marketplaces) {
@@ -150,19 +201,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const finalResults = {
+      results,
+      totalTrends: results.reduce((sum, r) => sum + (r.count || 0), 0),
+      timestamp: new Date().toISOString(),
+    };
+
+    perfLogger.end({ marketplaceCount: marketplaces.length, totalTrends: finalResults.totalTrends });
+    logRequest('POST', '/api/scan', 200, Date.now() - startTime, userId, { bulk: true });
+
     return NextResponse.json({
       success: true,
-      data: {
-        results,
-        totalTrends: results.reduce((sum, r) => sum + (r.count || 0), 0),
-        timestamp: new Date().toISOString(),
-      },
+      data: finalResults,
     });
   } catch (error) {
-    console.error('Bulk scan API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to perform bulk scan' },
-      { status: 500 }
-    );
+    logError(error, 'BulkScanAPI', { path: '/api/scan' });
+    const { response, statusCode } = handleAPIError(error, '/api/scan');
+    logRequest('POST', '/api/scan', statusCode, Date.now() - startTime);
+    return NextResponse.json(response, { status: statusCode });
   }
 }

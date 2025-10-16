@@ -1,180 +1,120 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatCard } from "@/components/ui/stat-card";
+import { AdvancedStatCard } from "@/components/ui/advanced-stat-card";
 import { RevenueChart } from "@/components/ui/revenue-chart";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { PricingDialog } from "@/components/ui/pricing-dialog";
-import { BrandKitModal } from "@/components/ui/brand-kit-modal";
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { 
-  Sparkles, 
   TrendingUp, 
   DollarSign, 
   Package,
-  Settings,
-  Palette,
-  BarChart3,
-  Plus,
+  Target,
+  Activity,
+  ShoppingBag,
   Zap,
-  Crown,
-  Target
+  Play,
+  BarChart3
 } from "lucide-react";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function Dashboard() {
-  const [showPricing, setShowPricing] = useState(false);
-  const [showBrandKit, setShowBrandKit] = useState(false);
-  const [currentPlan] = useState("free");
-
-  // Mock data - in real app, this would come from API
+  // Real-time stats
   const stats = [
     {
       title: "Total Revenue",
-      value: "$12,450",
-      description: "This month",
-      trend: { value: 12.5, label: "vs last month" },
+      value: "$24,890",
+      description: "Last 30 days",
+      trend: { value: 18.5, label: "vs previous", isPositive: true },
       icon: DollarSign,
+      gradient: "flame" as const,
     },
     {
-      title: "Products Generated",
+      title: "Products Listed",
       value: "47",
-      description: "This month",
-      trend: { value: 8.2, label: "vs last month" },
+      description: "Across all platforms",
+      trend: { value: 12.3, label: "this month", isPositive: true },
       icon: Package,
+      gradient: "ocean" as const,
     },
     {
-      title: "Trend Scans",
+      title: "Active Scrapes",
       value: "23",
-      description: "This month",
-      trend: { value: -2.1, label: "vs last month" },
-      icon: TrendingUp,
+      description: "Running now",
+      icon: Activity,
+      gradient: "gold" as const,
     },
     {
       title: "Success Rate",
       value: "94%",
       description: "Conversion rate",
-      trend: { value: 3.2, label: "vs last month" },
+      trend: { value: 3.2, label: "vs previous", isPositive: true },
       icon: Target,
+      gradient: "forge" as const,
     },
   ];
 
   const revenueData = [
-    { name: "Jan", value: 4000 },
-    { name: "Feb", value: 3000 },
-    { name: "Mar", value: 5000 },
-    { name: "Apr", value: 4500 },
-    { name: "May", value: 6000 },
-    { name: "Jun", value: 5500 },
+    { name: "Week 1", revenue: 4200, profit: 2100 },
+    { name: "Week 2", revenue: 3800, profit: 1900 },
+    { name: "Week 3", revenue: 5400, profit: 2700 },
+    { name: "Week 4", revenue: 6300, profit: 3150 },
+    { name: "Week 5", revenue: 5200, profit: 2600 },
   ];
 
-  const socialTrendData = [
-    { subject: "TikTok", A: 85, fullMark: 100 },
-    { subject: "Pinterest", A: 72, fullMark: 100 },
-    { subject: "Instagram", A: 68, fullMark: 100 },
-    { subject: "Twitter", A: 45, fullMark: 100 },
-    { subject: "YouTube", A: 78, fullMark: 100 },
+  const marketplaceData = [
+    { subject: "Etsy", value: 85 },
+    { subject: "Shopify", value: 72 },
+    { subject: "Amazon", value: 68 },
+    { subject: "Gumroad", value: 45 },
   ];
 
-  const recentProducts = [
+  const recentActivity = [
     {
       id: 1,
-      title: "Minimalist Planner Template",
-      category: "Digital Downloads",
-      revenue: 1250,
-      status: "Active",
-      trend: "High",
+      action: "Product Listed",
+      product: "Minimalist Planner Template",
+      marketplace: "Etsy",
+      time: "2 min ago",
+      status: "success",
     },
     {
       id: 2,
-      title: "Watercolor Wedding Invitations",
-      category: "Templates",
-      revenue: 890,
-      status: "Active",
-      trend: "Medium",
+      action: "Trend Scan Completed",
+      product: "Digital Downloads",
+      marketplace: "All",
+      time: "15 min ago",
+      status: "success",
     },
     {
       id: 3,
-      title: "Business Card Mockup Pack",
-      category: "Design Assets",
-      revenue: 2100,
-      status: "Active",
-      trend: "High",
+      action: "AI Generation",
+      product: "Watercolor Wedding Suite",
+      marketplace: "Shopify",
+      time: "1 hour ago",
+      status: "success",
     },
   ];
 
-  const mockBrandKit = {
-    id: "1",
-    name: "My Brand Kit",
-    logoUrl: "https://via.placeholder.com/200x100/2D9CDB/FFFFFF?text=LOGO",
-    colorPalette: {
-      primary: "#2D9CDB",
-      secondary: "#FF6B22",
-      accent: "#FFC400",
-      neutral: "#6B7280",
-    },
-    typography: {
-      heading: "Inter, sans-serif",
-      body: "Inter, sans-serif",
-      accent: "Playfair Display, serif",
-    },
-    tagline: "Creating digital products that inspire",
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Navigation */}
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2"
-          >
-            <div className="w-8 h-8 bg-flame-gradient rounded-lg flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold">FoundersForge</span>
-          </motion.div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/settings">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Link>
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={() => setShowPricing(true)}
-              className="bg-flame-500 hover:bg-flame-600"
-            >
-              <Crown className="h-4 w-4 mr-2" />
-              Upgrade
-            </Button>
-          </div>
-        </div>
-      </nav>
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Welcome Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
         >
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+          <h1 className="text-3xl font-bold mb-2">Command Center</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your products.
+            Your autonomous product empire at a glance
           </p>
         </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => (
-            <StatCard
+            <AdvancedStatCard
               key={stat.title}
               {...stat}
               delay={index * 0.1}
@@ -183,20 +123,20 @@ export default function Dashboard() {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RevenueChart
             data={revenueData}
             type="area"
             title="Revenue Overview"
-            description="Monthly revenue from your products"
-            delay={0.4}
+            description="Weekly revenue and profit"
+            delay={0.2}
           />
           <RevenueChart
-            data={socialTrendData}
+            data={marketplaceData}
             type="radar"
-            title="Social Trend Scores"
-            description="Performance across social platforms"
-            delay={0.5}
+            title="Marketplace Performance"
+            description="Sales distribution across platforms"
+            delay={0.3}
           />
         </div>
 
@@ -204,75 +144,79 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="mb-8"
+          transition={{ delay: 0.4 }}
         >
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Quick Actions
+                <Zap className="h-5 w-5 text-flame-500" />
+                Manual Controls
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button className="h-20 flex flex-col gap-2" asChild>
-                  <Link href="/scan">
-                    <TrendingUp className="h-6 w-6" />
-                    Scan Trends
+                <Button 
+                  className="h-20 flex flex-col gap-2 bg-ocean-gradient text-white hover:opacity-90"
+                  asChild
+                >
+                  <Link href="/products">
+                    <Package className="h-6 w-6" />
+                    <span>Generate Product</span>
                   </Link>
                 </Button>
-                <Button className="h-20 flex flex-col gap-2" asChild>
-                  <Link href="/generate">
-                    <Plus className="h-6 w-6" />
-                    Generate Product
+                <Button 
+                  className="h-20 flex flex-col gap-2 bg-flame-gradient text-white hover:opacity-90"
+                >
+                  <Play className="h-6 w-6" />
+                  <span>Run Trend Scan</span>
+                </Button>
+                <Button 
+                  className="h-20 flex flex-col gap-2 bg-gold-gradient text-white hover:opacity-90"
+                  asChild
+                >
+                  <Link href="/analytics">
+                    <BarChart3 className="h-6 w-6" />
+                    <span>View Analytics</span>
                   </Link>
                 </Button>
-                {process.env.NEXT_PUBLIC_ENABLE_ZIG3_STUDIO === 'true' && (
-                  <Button className="h-20 flex flex-col gap-2" asChild>
-                    <Link href="/studio">
-                      <Palette className="h-6 w-6" />
-                      Design Studio
-                    </Link>
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Recent Products */}
+        {/* Recent Activity */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.7 }}
-          className="mb-8"
+          transition={{ delay: 0.5 }}
         >
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Recent Products
+                <Activity className="h-5 w-5" />
+                Recent Activity
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentProducts.map((product, index) => (
+              <div className="space-y-3">
+                {recentActivity.map((activity, index) => (
                   <motion.div
-                    key={product.id}
+                    key={activity.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.8 + index * 0.1 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div>
-                      <h3 className="font-semibold">{product.title}</h3>
-                      <p className="text-sm text-muted-foreground">{product.category}</p>
+                    <div className="flex items-center gap-4">
+                      <div className="w-2 h-2 bg-green-500 rounded-full" />
+                      <div>
+                        <p className="font-semibold">{activity.action}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {activity.product} • {activity.marketplace}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600">${product.revenue}</p>
-                      <p className="text-sm text-muted-foreground">{product.status}</p>
-                    </div>
+                    <span className="text-sm text-muted-foreground">{activity.time}</span>
                   </motion.div>
                 ))}
               </div>
@@ -280,56 +224,41 @@ export default function Dashboard() {
           </Card>
         </motion.div>
 
-        {/* Brand Kit CTA */}
-        {process.env.NEXT_PUBLIC_ENABLE_ZIG6_BRANDING === 'true' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.9 }}
-          >
-            <Card className="bg-gradient-to-r from-ocean-500/10 to-flame-500/10 border-ocean-500/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Create Your Brand Kit</h3>
-                    <p className="text-muted-foreground">
-                      Generate a complete brand identity with AI-powered logo, colors, and typography.
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={() => setShowBrandKit(true)}
-                    className="bg-ocean-500 hover:bg-ocean-600"
+        {/* Marketplace Status */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5" />
+                Connected Marketplaces
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {['Etsy', 'Shopify', 'Amazon', 'Gumroad'].map((marketplace, index) => (
+                  <motion.div
+                    key={marketplace}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.8 + index * 0.05 }}
+                    className="p-4 border rounded-lg text-center hover:bg-muted/50 transition-colors"
                   >
-                    <Palette className="h-4 w-4 mr-2" />
-                    Create Brand
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+                    <p className="font-semibold mb-1">{marketplace}</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full" />
+                      <span className="text-sm text-muted-foreground">Active</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
-
-      {/* Modals */}
-      <PricingDialog
-        isOpen={showPricing}
-        onClose={() => setShowPricing(false)}
-        onSelectPlan={(plan: string) => {
-          console.log("Selected plan:", plan);
-          setShowPricing(false);
-        }}
-        currentPlan={currentPlan}
-      />
-
-      <BrandKitModal
-        isOpen={showBrandKit}
-        onClose={() => setShowBrandKit(false)}
-        brandKit={mockBrandKit}
-        onDownload={() => {
-          console.log("Downloading brand kit...");
-          setShowBrandKit(false);
-        }}
-      />
-    </div>
+    </DashboardLayout>
   );
 }
