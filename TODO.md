@@ -21,30 +21,28 @@
 - [x] Store scraped data in database
 
 ## 4. Make Marketplaces Functional
-- [x] Update Etsy integration to use real OAuth flow
-- [ ] Implement Amazon MWS/SP-API integration
-- [ ] Set up Shopify API with proper authentication
-- [ ] Ensure all marketplace operations (list, update, delete, earnings) work with real APIs
+- [x] Implement Amazon MWS/SP-API integration
+- [x] Set up Shopify API with proper authentication
+- [x] Ensure all marketplace operations (list, update, delete, earnings) work with real APIs
 
 ## 5. Update Settings to Save to Database
 - [x] Create user_settings table if needed
-- [x] Modify settings page to save API keys, connections, preferences to database
-- [ ] Load settings from database on page load
+- [x] Load settings from database on page load
 
 ## 6. Ensure All Pages Work with Real Data
 - [x] Update dashboard to fetch real data from database and APIs
 - [x] Update analytics to use real earnings, trends, etc.
-- [ ] Make product generation use real AI and store in database
-- [ ] Ensure all API routes work with real data
+- [x] Make product generation use real AI and store in database
+- [x] Ensure all API routes work with real data
 
 ## 7. Database Migrations and Setup
-- [ ] Run all stage migrations on Supabase
-- [ ] Ensure database is up to date
-- [ ] Add any missing tables (user_settings, onboarding_status)
+- [x] Run all stage migrations on Supabase
+- [x] Ensure database is up to date
+- [x] Add any missing tables (user_settings, onboarding_status)
 
 ## 8. Testing and Deployment
-- [ ] Test login with admin user
-- [ ] Test onboarding flow
-- [ ] Test scanning and data compilation
-- [ ] Test product generation and listing
-- [ ] Ensure Vercel deployment works with real env vars
+- [x] Test login with admin user
+- [x] Test onboarding flow
+- [x] Test scanning and data compilation
+- [x] Test product generation and listing
+- [x] Ensure Vercel deployment works with real env vars

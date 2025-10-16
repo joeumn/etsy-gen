@@ -114,12 +114,43 @@ export default function ProductsPage() {
     },
   ];
 
-  const handleGenerateProduct = () => {
+  const handleGenerateProduct = async () => {
     setIsGenerating(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Call real API to generate product
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trendData: {
+            keywords: ['planner', 'template', '2025'],
+            salesVelocity: 85,
+            priceRange: { min: 9.99, max: 29.99 },
+            competitionLevel: 'medium',
+            seasonality: ['year-round'],
+            targetAudience: ['professionals', 'students'],
+          },
+          productType: 'digital_download',
+          targetMarketplace: 'etsy',
+          aiProvider: 'gemini',
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Handle successful generation
+        console.log('Product generated:', data);
+        // Refresh products list or add new product to state
+      } else {
+        console.error('Failed to generate product');
+      }
+    } catch (error) {
+      console.error('Error generating product:', error);
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   const filteredProducts = products.filter(p =>

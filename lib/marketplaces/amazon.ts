@@ -1,45 +1,87 @@
 import axios from 'axios';
 import { BaseMarketplace, MarketplaceConfig, ListingRequest, ListingResponse, ProductListing, EarningsData, TrendData } from './BaseMarketplace';
+import * as crypto from 'crypto';
+import * as aws4 from 'aws4';
 
 export class AmazonMarketplace extends BaseMarketplace {
   private baseUrl = 'https://sellingpartnerapi-na.amazon.com';
+  private region = 'us-east-1';
+  private service = 'execute-api';
 
   constructor(config: MarketplaceConfig) {
     super(config, 'Amazon');
   }
 
+  async authenticate(): Promise<any> {
+    try {
+      // For development, use provided credentials directly
+      // In production, this would use STS to assume a role
+      return {
+        accessKeyId: this.config.apiKey,
+        secretAccessKey: this.config.secret,
+        sessionToken: this.config.sessionToken || '',
+      };
+    } catch (error) {
+      console.error('Amazon authentication error:', error);
+      throw new Error('Failed to authenticate with Amazon');
+    }
+  }
+
+  private signRequest(request: any, credentials: any): void {
+    const opts = {
+      service: this.service,
+      region: this.region,
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
+      sessionToken: credentials.sessionToken,
+    };
+
+    aws4.sign(opts, request);
+  }
+
   async listProduct(request: ListingRequest): Promise<ListingResponse> {
     try {
-      // Amazon SP-API requires complex authentication and product catalog setup
-      // This is a simplified implementation
-      const response = await axios.post(
-        `${this.baseUrl}/catalog/2022-04-01/items`,
-        {
-          marketplaceIds: ['ATVPDKIKX0DER'], // US marketplace
-          items: [{
-            attributes: {
-              product_type: 'DIGITAL_DOWNLOAD',
-              item_name: request.title,
-              bullet_point: request.description.split('. ').slice(0, 5),
-              item_keywords: request.tags.join(','),
-              list_price: {
-                value: request.price,
-                currency: 'USD',
-              },
-              external_product_id: {
-                value: `AI-${Date.now()}`,
-                type: 'ASIN',
-              },
+      const credentials = await this.authenticate();
+
+      const productData = {
+        marketplaceIds: ['ATVPDKIKX0DER'], // US marketplace
+        items: [{
+          attributes: {
+            product_type: 'DIGITAL_DOWNLOAD',
+            item_name: request.title,
+            bullet_point: request.description.split('. ').slice(0, 5),
+            item_keywords: request.tags.join(','),
+            list_price: {
+              value: request.price,
+              currency: 'USD',
             },
-          }],
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json',
+            external_product_id: {
+              value: `AI-${Date.now()}`,
+              type: 'ASIN',
+            },
           },
-        }
-      );
+        }],
+      };
+
+      const signedRequest = {
+        host: 'sellingpartnerapi-na.amazon.com',
+        path: '/catalog/2022-04-01/items',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
+        },
+        body: JSON.stringify(productData),
+      };
+
+      this.signRequest(signedRequest, credentials);
+
+      const response = await axios({
+        method: 'POST',
+        url: `https://${signedRequest.host}${signedRequest.path}`,
+        headers: signedRequest.headers,
+        data: signedRequest.body,
+      });
 
       const item = response.data.items[0];
       return {
@@ -59,27 +101,41 @@ export class AmazonMarketplace extends BaseMarketplace {
 
   async updateProduct(listingId: string, request: Partial<ListingRequest>): Promise<ListingResponse> {
     try {
-      // Amazon SP-API update implementation
-      const response = await axios.patch(
-        `${this.baseUrl}/catalog/2022-04-01/items/${listingId}`,
-        {
-          attributes: {
-            item_name: request.title,
-            bullet_point: request.description?.split('. ').slice(0, 5),
-            item_keywords: request.tags?.join(','),
-            list_price: request.price ? {
-              value: request.price,
-              currency: 'USD',
-            } : undefined,
-          },
+      const credentials = await this.authenticate();
+
+      const updateData: any = {
+        attributes: {},
+      };
+
+      if (request.title) updateData.attributes.item_name = request.title;
+      if (request.description) updateData.attributes.bullet_point = request.description.split('. ').slice(0, 5);
+      if (request.tags) updateData.attributes.item_keywords = request.tags.join(',');
+      if (request.price) {
+        updateData.attributes.list_price = {
+          value: request.price,
+          currency: 'USD',
+        };
+      }
+
+      const signedRequest = {
+        host: 'sellingpartnerapi-na.amazon.com',
+        path: `/catalog/2022-04-01/items/${listingId}`,
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
         },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+        body: JSON.stringify(updateData),
+      };
+
+      this.signRequest(signedRequest, credentials);
+
+      const response = await axios({
+        method: 'PATCH',
+        url: `https://${signedRequest.host}${signedRequest.path}`,
+        headers: signedRequest.headers,
+        data: signedRequest.body,
+      });
 
       return {
         success: true,
@@ -97,14 +153,25 @@ export class AmazonMarketplace extends BaseMarketplace {
 
   async deleteProduct(listingId: string): Promise<boolean> {
     try {
-      await axios.delete(
-        `${this.baseUrl}/catalog/2022-04-01/items/${listingId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
+      const credentials = await this.authenticate();
+
+      const signedRequest = {
+        host: 'sellingpartnerapi-na.amazon.com',
+        path: `/catalog/2022-04-01/items/${listingId}`,
+        method: 'DELETE',
+        headers: {
+          'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
+        },
+      };
+
+      this.signRequest(signedRequest, credentials);
+
+      await axios({
+        method: 'DELETE',
+        url: `https://${signedRequest.host}${signedRequest.path}`,
+        headers: signedRequest.headers,
+      });
+
       return true;
     } catch (error) {
       console.error('Amazon delete error:', error);
@@ -114,14 +181,24 @@ export class AmazonMarketplace extends BaseMarketplace {
 
   async getProduct(listingId: string): Promise<ProductListing | null> {
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/catalog/2022-04-01/items/${listingId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
+      const credentials = await this.authenticate();
+
+      const signedRequest = {
+        host: 'sellingpartnerapi-na.amazon.com',
+        path: `/catalog/2022-04-01/items/${listingId}`,
+        method: 'GET',
+        headers: {
+          'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
+        },
+      };
+
+      this.signRequest(signedRequest, credentials);
+
+      const response = await axios({
+        method: 'GET',
+        url: `https://${signedRequest.host}${signedRequest.path}`,
+        headers: signedRequest.headers,
+      });
 
       return this.mapToProductListing(response.data);
     } catch (error) {
@@ -132,19 +209,30 @@ export class AmazonMarketplace extends BaseMarketplace {
 
   async getEarnings(period: string): Promise<EarningsData> {
     try {
-      // Amazon SP-API earnings implementation
-      const response = await axios.get(
-        `${this.baseUrl}/reports/2021-06-30/reports`,
-        {
-          params: {
-            reportTypes: 'GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE',
-            processingStatuses: 'DONE',
-          },
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
+      const credentials = await this.authenticate();
+
+      // Get settlement reports
+      const signedRequest = {
+        host: 'sellingpartnerapi-na.amazon.com',
+        path: '/reports/2021-06-30/reports',
+        method: 'GET',
+        headers: {
+          'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
+        },
+        params: {
+          reportTypes: 'GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE_V2',
+          processingStatuses: 'DONE',
+        },
+      };
+
+      this.signRequest(signedRequest, credentials);
+
+      const response = await axios({
+        method: 'GET',
+        url: `https://${signedRequest.host}${signedRequest.path}`,
+        headers: signedRequest.headers,
+        params: signedRequest.params,
+      });
 
       // Parse settlement report data
       const reports = response.data.reports || [];
@@ -175,23 +263,32 @@ export class AmazonMarketplace extends BaseMarketplace {
 
   async scanTrends(category?: string, limit: number = 50): Promise<TrendData[]> {
     try {
-      // Amazon Product Advertising API for trend analysis
-      const response = await axios.get(
-        `${this.baseUrl}/paapi5/searchitems`,
-        {
-          params: {
-            Keywords: category || 'digital download',
-            SearchIndex: 'DigitalDownloads',
-            ItemCount: limit,
-            SortBy: 'Relevance',
-          },
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
+      const credentials = await this.authenticate();
 
-      const items = response.data.SearchResult?.Items || [];
+      const signedRequest = {
+        host: 'sellingpartnerapi-na.amazon.com',
+        path: '/catalog/2022-04-01/items',
+        method: 'GET',
+        headers: {
+          'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
+        },
+        params: {
+          marketplaceIds: ['ATVPDKIKX0DER'],
+          keywords: category || 'digital download',
+          itemCount: limit,
+        },
+      };
+
+      this.signRequest(signedRequest, credentials);
+
+      const response = await axios({
+        method: 'GET',
+        url: `https://${signedRequest.host}${signedRequest.path}`,
+        headers: signedRequest.headers,
+        params: signedRequest.params,
+      });
+
+      const items = response.data.items || [];
       return this.analyzeTrends(items);
     } catch (error) {
       console.error('Amazon trends error:', error);

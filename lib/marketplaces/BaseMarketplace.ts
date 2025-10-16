@@ -3,6 +3,7 @@ export interface MarketplaceConfig {
   secret?: string;
   baseUrl?: string;
   region?: string;
+  sessionToken?: string;
 }
 
 export interface ProductListing {
