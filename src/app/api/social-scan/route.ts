@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SocialMediaScraper } from '@/lib/scrapers/social-scraper';
+import { scrapeTikTokTrends, scrapePinterestTrends, scrapeInstagramTrends, aggregateSocialTrends, SocialTrend } from '@/lib/scrapers/social-scraper';
 import { AuthenticationError, handleAPIError } from '@/lib/errors';
 import { logError } from '@/lib/logger';
 import { supabase } from '@/lib/db/client';
@@ -53,20 +53,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use real social media scraper to get live data
-    const scraper = new SocialMediaScraper();
-    const socialData = await scraper.scrapeSocialTrends(keywords, platforms);
+    // Use real social media scraper functions to get live data
+    const socialTrends: SocialTrend[] = [];
+    
+    for (const platform of platforms) {
+      try {
+        let platformTrends: SocialTrend[] = [];
+        
+        switch (platform.toLowerCase()) {
+          case 'tiktok':
+            platformTrends = await scrapeTikTokTrends(keywords);
+            break;
+          case 'pinterest':
+            platformTrends = await scrapePinterestTrends(keywords);
+            break;
+          case 'instagram':
+            platformTrends = await scrapeInstagramTrends(keywords);
+            break;
+        }
+        
+        socialTrends.push(...platformTrends);
+      } catch (error) {
+        logError(error, `SocialScan${platform}`);
+        // Continue with other platforms if one fails
+      }
+    }
 
-    // Calculate overall trend score based on real social data
-    const avgSocialScore = socialData.reduce((sum: number, data: any) => sum + (data.socialTrendScore || 0), 0) / socialData.length;
+    // Aggregate and calculate overall trend score
+    const aggregated = aggregateSocialTrends(socialTrends);
 
     return NextResponse.json({
       success: true,
       data: {
-        socialTrends: socialData,
-        overallTrendScore: Math.round(avgSocialScore),
+        socialTrends,
+        overallTrendScore: Math.round(aggregated.avgEngagement),
         keywords,
         platforms,
+        aggregated,
         timestamp: new Date().toISOString(),
       },
     });
@@ -121,8 +144,32 @@ export async function GET(request: NextRequest) {
     }
 
     // Use real social media scraper to get live data for specific platform
-    const scraper = new SocialMediaScraper();
-    const data = await scraper.scrapePlatformData(platform, hashtag);
+    let trends: SocialTrend[] = [];
+    
+    switch (platform.toLowerCase()) {
+      case 'tiktok':
+        trends = await scrapeTikTokTrends([hashtag]);
+        break;
+      case 'pinterest':
+        trends = await scrapePinterestTrends([hashtag]);
+        break;
+      case 'instagram':
+        trends = await scrapeInstagramTrends([hashtag]);
+        break;
+    }
+
+    const data = trends[0] || {
+      platform,
+      hashtag,
+      engagementScore: 0,
+      reachScore: 0,
+      viralScore: 0,
+      mentions: 0,
+      growth: 0,
+      keywords: [hashtag],
+      sentiment: 'neutral' as const,
+      timestamp: new Date(),
+    };
 
     return NextResponse.json({
       success: true,
