@@ -10,13 +10,18 @@ export class EtsyMarketplace extends BaseMarketplace {
 
   async listProduct(request: ListingRequest): Promise<ListingResponse> {
     try {
-      // Etsy API requires OAuth, so this is a simplified implementation
+      // Etsy API requires OAuth 2.0, so this implementation uses the access token
+      // In production, this would be obtained through OAuth flow
       const response = await axios.post(
         `${this.baseUrl}/application/shops/${this.config.apiKey}/listings`,
         {
           title: request.title,
           description: request.description,
-          price: request.price,
+          price: {
+            amount: request.price,
+            divisor: 100,
+            currency_code: 'USD',
+          },
           who_made: 'i_did',
           when_made: 'made_to_order',
           taxonomy_id: this.getCategoryId(request.category),
@@ -30,11 +35,12 @@ export class EtsyMarketplace extends BaseMarketplace {
           headers: {
             'Authorization': `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',
+            'x-api-key': this.config.apiKey, // Etsy requires API key in header
           },
         }
       );
 
-      const listing = response.data.results[0];
+      const listing = response.data;
       return {
         success: true,
         listingId: listing.listing_id.toString(),
@@ -45,7 +51,7 @@ export class EtsyMarketplace extends BaseMarketplace {
       console.error('Etsy listing error:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to create Etsy listing',
+        error: error.response?.data?.error || 'Failed to create Etsy listing. Please check your API key and shop ID.',
       };
     }
   }

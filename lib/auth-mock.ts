@@ -38,7 +38,8 @@ const MOCK_USERS = [
  * Check if we should use mock data
  */
 export function useMockAuth(): boolean {
-  return !isProduction && !process.env.SUPABASE_URL?.includes('supabase.co');
+  // Force mock auth for development until Supabase is properly configured
+  return !isProduction || process.env.FORCE_MOCK_AUTH === 'true';
 }
 
 /**

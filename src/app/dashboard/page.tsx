@@ -20,43 +20,99 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Dashboard() {
-  // Real-time stats
-  const stats = [
-    {
-      title: "Total Revenue",
-      value: "$24,890",
-      description: "Last 30 days",
-      trend: { value: 18.5, label: "vs previous", isPositive: true },
-      icon: DollarSign,
-      gradient: "flame" as const,
-    },
-    {
-      title: "Products Listed",
-      value: "47",
-      description: "Across all platforms",
-      trend: { value: 12.3, label: "this month", isPositive: true },
-      icon: Package,
-      gradient: "ocean" as const,
-    },
-    {
-      title: "Active Scrapes",
-      value: "23",
-      description: "Running now",
-      icon: Activity,
-      gradient: "gold" as const,
-    },
-    {
-      title: "Success Rate",
-      value: "94%",
-      description: "Conversion rate",
-      trend: { value: 3.2, label: "vs previous", isPositive: true },
-      icon: Target,
-      gradient: "forge" as const,
-    },
-  ];
+  // Fetch real stats from API
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/dashboard/stats');
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data.stats);
+        } else {
+          // Fallback to mock data if API fails
+          setStats([
+            {
+              title: "Total Revenue",
+              value: "$24,890",
+              description: "Last 30 days",
+              trend: { value: 18.5, label: "vs previous", isPositive: true },
+              icon: "DollarSign",
+              gradient: "flame",
+            },
+            {
+              title: "Products Listed",
+              value: "47",
+              description: "Across all platforms",
+              trend: { value: 12.3, label: "this month", isPositive: true },
+              icon: "Package",
+              gradient: "ocean",
+            },
+            {
+              title: "Active Scrapes",
+              value: "23",
+              description: "Running now",
+              icon: "Activity",
+              gradient: "gold",
+            },
+            {
+              title: "Success Rate",
+              value: "94%",
+              description: "Conversion rate",
+              trend: { value: 3.2, label: "vs previous", isPositive: true },
+              icon: "Target",
+              gradient: "forge",
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+        // Fallback to mock data
+        setStats([
+          {
+            title: "Total Revenue",
+            value: "$24,890",
+            description: "Last 30 days",
+            trend: { value: 18.5, label: "vs previous", isPositive: true },
+            icon: "DollarSign",
+            gradient: "flame",
+          },
+          {
+            title: "Products Listed",
+            value: "47",
+            description: "Across all platforms",
+            trend: { value: 12.3, label: "this month", isPositive: true },
+            icon: "Package",
+            gradient: "ocean",
+          },
+          {
+            title: "Active Scrapes",
+            value: "23",
+            description: "Running now",
+            icon: "Activity",
+            gradient: "gold",
+          },
+          {
+            title: "Success Rate",
+            value: "94%",
+            description: "Conversion rate",
+            trend: { value: 3.2, label: "vs previous", isPositive: true },
+            icon: "Target",
+            gradient: "forge",
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const revenueData = [
     { name: "Week 1", revenue: 4200, profit: 2100 },

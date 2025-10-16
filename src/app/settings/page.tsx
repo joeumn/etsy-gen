@@ -75,16 +75,21 @@ export default function Settings() {
   const handleSave = async () => {
     setIsSaving(true);
     setSaveStatus("idle");
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In real app, this would save to Supabase
-      console.log("Saving settings:", settings);
-      
-      setSaveStatus("success");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      const response = await fetch('/api/settings/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+
+      if (response.ok) {
+        setSaveStatus("success");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      } else {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
     } catch (error) {
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
