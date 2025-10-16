@@ -14,18 +14,58 @@ import {
   Target,
   AlertCircle,
   Zap,
+  LucideIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+
+// Interfaces for analytics data
+interface Stat {
+  title: string;
+  value: string;
+  description: string;
+  trend: { value: number; label: string; isPositive: boolean };
+  icon: LucideIcon;
+  gradient: "flame" | "ocean" | "gold" | "forge";
+}
+
+interface RevenueData {
+  name: string;
+  revenue: number;
+  profit: number;
+  orders: number;
+}
+
+interface TopProduct {
+  id: number;
+  name: string;
+  revenue: number;
+  orders: number;
+  conversionRate: number;
+  trending: 'up' | 'down';
+}
+
+interface MarketplacePerformance {
+  marketplace: string;
+  revenue: number;
+  orders: number;
+  share: number;
+}
+
+interface Insight {
+  type: 'opportunity' | 'trend' | 'optimization';
+  title: string;
+  description: string;
+}
 
 export default function AnalyticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("30d");
 
   // Fetch real analytics data
-  const [stats, setStats] = useState([]);
-  const [revenueData, setRevenueData] = useState([]);
-  const [topProducts, setTopProducts] = useState([]);
-  const [marketplacePerformance, setMarketplacePerformance] = useState([]);
-  const [insights, setInsights] = useState([]);
+  const [stats, setStats] = useState<Stat[]>([]);
+  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [marketplacePerformance, setMarketplacePerformance] = useState<MarketplacePerformance[]>([]);
+  const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,10 +80,10 @@ export default function AnalyticsPage() {
           setInsights(data.insights || []);
 
           // Calculate stats from the data
-          const totalRevenue = data.revenueData?.reduce((sum, item) => sum + item.revenue, 0) || 0;
-          const totalOrders = data.revenueData?.reduce((sum, item) => sum + item.orders, 0) || 0;
+          const totalRevenue = data.revenueData?.reduce((sum: number, item: { revenue: number }) => sum + item.revenue, 0) || 0;
+          const totalOrders = data.revenueData?.reduce((sum: number, item: { orders: number }) => sum + item.orders, 0) || 0;
           const avgConversionRate = data.topProducts?.length > 0
-            ? data.topProducts.reduce((sum, p) => sum + p.conversionRate, 0) / data.topProducts.length
+            ? data.topProducts.reduce((sum: number, p: { conversionRate: number }) => sum + p.conversionRate, 0) / data.topProducts.length
             : 3.8;
           const uniqueCustomers = Math.floor(totalOrders * 0.7); // Estimate
 
@@ -499,4 +539,3 @@ export default function AnalyticsPage() {
     </DashboardLayout>
   );
 }
-

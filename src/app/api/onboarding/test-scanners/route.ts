@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scrapeGoogleTrends, scrapeBlogMentions } from '@/lib/scrapers/web-scraper';
-import { scrapeSocialMedia } from '@/lib/scrapers/social-scraper';
+import { scrapeAllSocialPlatforms } from '@/lib/scrapers/social-scraper';
 import { logError } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Test social scraper with sample queries
     try {
-      const socialResults = await scrapeSocialMedia(['test query']);
+      const socialResults = await scrapeAllSocialPlatforms(['test query']);
       if (socialResults && socialResults.length > 0) {
         results.socialScraper = {
           success: true,
