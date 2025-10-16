@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "buildCommand": "pnpm install && pnpm run build",
   "crons": [
     {
       "path": "/api/cron/intelligence",
