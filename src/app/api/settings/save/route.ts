@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { authOptions } from '@/lib/auth';
-import getServerSession from 'next-auth';
 
 export async function POST(request: NextRequest) {
   try {
