@@ -22,7 +22,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Settings() {
   const [settings, setSettings] = useState({
@@ -70,7 +70,32 @@ export default function Settings() {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+
+  // Load settings from API on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch('/api/settings/load?userId=mock-user-1');
+        if (response.ok) {
+          const data = await response.json();
+          setSettings(prev => ({
+            ...prev,
+            ...data,
+          }));
+        } else {
+          console.error('Failed to load settings:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -181,6 +206,12 @@ export default function Settings() {
           </motion.div>
         )}
 
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-flame-500 border-t-transparent" />
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Settings */}
           <div className="lg:col-span-2 space-y-6">
@@ -513,6 +544,7 @@ export default function Settings() {
             </motion.div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
