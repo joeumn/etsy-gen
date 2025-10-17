@@ -18,16 +18,14 @@ describe('Database Client', () => {
   });
 
   describe('Production environment', () => {
-    it('should warn if Supabase URL is missing in production', async () => {
+    it('should error if Supabase URL is missing in production', async () => {
       const originalEnv = process.env.NODE_ENV;
-      const originalUrl = process.env.SUPABASE_URL;
-      const originalKey = process.env.SUPABASE_ANON_KEY;
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const originalKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       try {
         process.env.NODE_ENV = 'production';
-        process.env.SUPABASE_URL = '';
-        process.env.SUPABASE_ANON_KEY = 'test-key';
         process.env.NEXT_PUBLIC_SUPABASE_URL = '';
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = '';
         delete process.env.NEXT_PHASE; // Ensure not in build phase
@@ -35,54 +33,62 @@ describe('Database Client', () => {
         vi.resetModules();
         await import('@/lib/db/client');
         
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-          expect.stringContaining('WARNING: Supabase configuration is missing in production')
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('--- DATABASE CONNECTION FAILED ---')
+        );
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('MISSING: NEXT_PUBLIC_SUPABASE_URL')
         );
       } finally {
         process.env.NODE_ENV = originalEnv;
-        process.env.SUPABASE_URL = originalUrl;
-        process.env.SUPABASE_ANON_KEY = originalKey;
-        consoleWarnSpy.mockRestore();
+        process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey;
+        consoleErrorSpy.mockRestore();
       }
     });
 
-    it('should warn if Supabase anon key is missing in production', async () => {
+    it('should error if Supabase anon key is missing in production', async () => {
       const originalEnv = process.env.NODE_ENV;
-      const originalUrl = process.env.SUPABASE_URL;
-      const originalKey = process.env.SUPABASE_ANON_KEY;
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const originalKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       try {
         process.env.NODE_ENV = 'production';
-        process.env.SUPABASE_URL = 'https://test.supabase.co';
-        process.env.SUPABASE_ANON_KEY = '';
-        process.env.NEXT_PUBLIC_SUPABASE_URL = '';
+        process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = '';
         delete process.env.NEXT_PHASE; // Ensure not in build phase
 
         vi.resetModules();
         await import('@/lib/db/client');
 
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-          expect.stringContaining('WARNING: Supabase configuration is missing in production')
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('--- DATABASE CONNECTION FAILED ---')
+        );
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('MISSING: NEXT_PUBLIC_SUPABASE_ANON_KEY')
         );
       } finally {
         process.env.NODE_ENV = originalEnv;
-        process.env.SUPABASE_URL = originalUrl;
-        process.env.SUPABASE_ANON_KEY = originalKey;
-        consoleWarnSpy.mockRestore();
+        process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey;
+        consoleErrorSpy.mockRestore();
       }
     });
 
     it('should create clients successfully when env vars are set in production', async () => {
       const originalEnv = process.env.NODE_ENV;
+      const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const originalKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const originalServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
       try {
         process.env.NODE_ENV = 'production';
-        process.env.SUPABASE_URL = 'https://test.supabase.co';
-        process.env.SUPABASE_ANON_KEY = 'test-anon-key';
+        process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
         process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 
+        vi.resetModules();
         const { supabase, supabaseAdmin } = await import('@/lib/db/client');
 
         expect(supabase).toBeDefined();
@@ -100,6 +106,9 @@ describe('Database Client', () => {
         );
       } finally {
         process.env.NODE_ENV = originalEnv;
+        process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey;
+        process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceKey;
       }
     });
   });
@@ -107,42 +116,46 @@ describe('Database Client', () => {
   describe('Development environment', () => {
     it('should create placeholder client when env vars are missing', async () => {
       const originalEnv = process.env.NODE_ENV;
-      const originalUrl = process.env.SUPABASE_URL;
-      const originalKey = process.env.SUPABASE_ANON_KEY;
+      const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const originalKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
       try {
         process.env.NODE_ENV = 'development';
-        process.env.SUPABASE_URL = '';
-        process.env.SUPABASE_ANON_KEY = '';
         process.env.NEXT_PUBLIC_SUPABASE_URL = '';
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = '';
 
+        vi.resetModules();
         const { supabase } = await import('@/lib/db/client');
 
         expect(supabase).toBeDefined();
         expect(mockCreateClient).toHaveBeenCalledWith('https://placeholder.supabase.co', 'placeholder-key');
       } finally {
         process.env.NODE_ENV = originalEnv;
-        process.env.SUPABASE_URL = originalUrl;
-        process.env.SUPABASE_ANON_KEY = originalKey;
+        process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey;
       }
     });
 
-    it('should create admin client as null when service role key is missing', async () => {
+    it('should fallback to regular client when service role key is missing', async () => {
       const originalEnv = process.env.NODE_ENV;
+      const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const originalKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       const originalServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
       try {
         process.env.NODE_ENV = 'development';
-        process.env.SUPABASE_URL = 'https://test.supabase.co';
-        process.env.SUPABASE_ANON_KEY = 'test-anon-key';
+        process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
         process.env.SUPABASE_SERVICE_ROLE_KEY = '';
 
-        const { supabaseAdmin } = await import('@/lib/db/client');
+        vi.resetModules();
+        const { supabase, supabaseAdmin } = await import('@/lib/db/client');
 
-        expect(supabaseAdmin).toBeNull();
+        expect(supabaseAdmin).toBe(supabase);
       } finally {
         process.env.NODE_ENV = originalEnv;
+        process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey;
         process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceKey;
       }
     });
@@ -151,13 +164,17 @@ describe('Database Client', () => {
   describe('Service role client', () => {
     it('should create service role client with correct options', async () => {
       const originalEnv = process.env.NODE_ENV;
+      const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const originalKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const originalServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
       try {
         process.env.NODE_ENV = 'development';
-        process.env.SUPABASE_URL = 'https://test.supabase.co';
-        process.env.SUPABASE_ANON_KEY = 'test-anon-key';
+        process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
         process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 
+        vi.resetModules();
         const { supabaseAdmin } = await import('@/lib/db/client');
 
         expect(supabaseAdmin).toBeDefined();
@@ -173,6 +190,9 @@ describe('Database Client', () => {
         );
       } finally {
         process.env.NODE_ENV = originalEnv;
+        process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey;
+        process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceKey;
       }
     });
   });
