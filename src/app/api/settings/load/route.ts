@@ -20,7 +20,11 @@ export async function GET(request: NextRequest) {
 
     if (!userId) {
       const { searchParams } = new URL(request.url);
-      userId = searchParams.get('userId') || 'mock-user-1';
+      userId = searchParams.get('userId');
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
     // Verify user exists
@@ -72,10 +76,16 @@ export async function GET(request: NextRequest) {
         newTrends: true,
       },
       features: {
-        zig3Studio: process.env.NEXT_PUBLIC_ENABLE_ZIG3_STUDIO === 'true',
-        zig4Stripe: process.env.NEXT_PUBLIC_ENABLE_ZIG4_STRIPE === 'true',
-        zig5Social: process.env.NEXT_PUBLIC_ENABLE_ZIG5_SOCIAL === 'true',
-        zig6Branding: process.env.NEXT_PUBLIC_ENABLE_ZIG6_BRANDING === 'true',
+        zig3Studio: process.env.NEXT_PUBLIC_ENABLE_ZIG3_STUDIO === 'true' || false,
+        zig4Stripe: process.env.NEXT_PUBLIC_ENABLE_ZIG4_STRIPE === 'true' || false,
+        zig5Social: process.env.NEXT_PUBLIC_ENABLE_ZIG5_SOCIAL === 'true' || false,
+        zig6Branding: process.env.NEXT_PUBLIC_ENABLE_ZIG6_BRANDING === 'true' || false,
+      },
+      featureDescriptions: {
+        zig3Studio: 'AI Design Studio - Generate product mockups and designs',
+        zig4Stripe: 'Payment Processing - Stripe integration for payments',
+        zig5Social: 'Social Media Signals - Analyze social media trends',
+        zig6Branding: 'Auto-Branding Engine - Generate brand assets automatically',
       },
     };
 

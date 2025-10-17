@@ -21,96 +21,77 @@ import {
   Eye,
   RefreshCw
 } from "lucide-react";
+import { getCurrentUserId } from "@/lib/session";
 
 export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    activeListings: 0,
+    totalRevenue: 0,
+    avgPerformance: '0.0',
+  });
 
-  const stats = [
+  // Load products data from API
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const userId = getCurrentUserId();
+        if (!userId) {
+          console.error('No user ID found');
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch(`/api/products?userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data.products || []);
+          setStats(data.stats || {});
+        } else {
+          console.error('Failed to load products:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
+  const statsCards = [
     {
       title: "Total Products",
-      value: "127",
+      value: String(stats.totalProducts),
       description: "All-time created",
       icon: Package,
       gradient: "ocean" as const,
     },
     {
       title: "Active Listings",
-      value: "94",
+      value: String(stats.activeListings),
       description: "Live on marketplaces",
-      trend: { value: 8.2, label: "this week", isPositive: true },
       icon: TrendingUp,
       gradient: "flame" as const,
     },
     {
       title: "Total Revenue",
-      value: "$18,450",
+      value: `$${stats.totalRevenue.toLocaleString()}`,
       description: "From products",
-      trend: { value: 15.3, label: "vs last month", isPositive: true },
       icon: DollarSign,
       gradient: "gold" as const,
     },
     {
       title: "Avg Performance",
-      value: "3.8/5",
+      value: `${stats.avgPerformance}/5`,
       description: "Product rating",
       icon: Eye,
       gradient: "forge" as const,
-    },
-  ];
-
-  const products = [
-    {
-      id: 1,
-      title: "Minimalist Daily Planner 2025",
-      category: "Printables",
-      marketplace: ["Etsy", "Shopify"],
-      price: 12.99,
-      revenue: 3450,
-      sales: 266,
-      status: "active",
-      performance: "high",
-      createdAt: "2025-01-15",
-      aiProvider: "Gemini",
-    },
-    {
-      id: 2,
-      title: "Watercolor Wedding Invitation Suite",
-      category: "Templates",
-      marketplace: ["Etsy"],
-      price: 24.99,
-      revenue: 4890,
-      sales: 196,
-      status: "active",
-      performance: "high",
-      createdAt: "2025-01-10",
-      aiProvider: "OpenAI",
-    },
-    {
-      id: 3,
-      title: "Social Media Content Calendar",
-      category: "Templates",
-      marketplace: ["Shopify", "Gumroad"],
-      price: 19.99,
-      revenue: 2100,
-      sales: 105,
-      status: "active",
-      performance: "medium",
-      createdAt: "2025-01-08",
-      aiProvider: "Gemini",
-    },
-    {
-      id: 4,
-      title: "Business Logo Mockup Pack",
-      category: "Graphics",
-      marketplace: ["Etsy", "Amazon"],
-      price: 29.99,
-      revenue: 5680,
-      sales: 189,
-      status: "active",
-      performance: "high",
-      createdAt: "2025-01-05",
-      aiProvider: "DALL-E",
     },
   ];
 
@@ -188,15 +169,22 @@ export default function ProductsPage() {
           </Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <AdvancedStatCard key={stat.title} {...stat} delay={index * 0.1} />
-          ))}
-        </div>
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-flame-500 border-t-transparent" />
+          </div>
+        ) : (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {statsCards.map((stat, index) => (
+                <AdvancedStatCard key={stat.title} {...stat} delay={index * 0.1} />
+              ))}
+            </div>
 
-        {/* Filters & Search */}
-        <Card>
+            {/* Filters & Search */}
+            <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
@@ -222,8 +210,8 @@ export default function ProductsPage() {
           </CardContent>
         </Card>
 
-        {/* Products Table */}
-        <Card>
+            {/* Products Table */}
+            <Card>
           <CardHeader>
             <CardTitle>All Products ({filteredProducts.length})</CardTitle>
           </CardHeader>
@@ -253,7 +241,7 @@ export default function ProductsPage() {
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex gap-1 flex-wrap">
-                          {product.marketplace.map((mp) => (
+                          {product.marketplace.map((mp: string) => (
                             <Badge key={mp} variant="outline" className="text-xs">
                               {mp}
                             </Badge>
@@ -308,7 +296,9 @@ export default function ProductsPage() {
               </table>
             </div>
           </CardContent>
-        </Card>
+            </Card>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

@@ -21,13 +21,13 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       const { searchParams } = new URL(request.url);
-      userId = searchParams.get('userId') || 'mock-user-1';
+      userId = searchParams.get('userId');
     }
 
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'User ID required' },
+        { status: 400 }
       );
     }
 
