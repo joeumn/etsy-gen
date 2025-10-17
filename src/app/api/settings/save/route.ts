@@ -1,65 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/db/client';
-import { getUserById } from '@/lib/auth-helper';
+import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
+import { z } from 'zod';
+
+const settingsSchema = z.object({
+    aiProvider: z.string(),
+    aiKeys: z.object({
+        gemini: z.string().optional(),
+        openai: z.string().optional(),
+        anthropic: z.string().optional(),
+        azureOpenAI: z.string().optional(),
+    }).optional(),
+    etsy: z.object({
+        connected: z.boolean(),
+        apiKey: z.string().optional(),
+    }).optional(),
+    amazon: z.object({
+        connected: z.boolean(),
+        accessKey: z.string().optional(),
+        secretKey: z.string().optional(),
+        region: z.string().optional(),
+    }).optional(),
+    shopify: z.object({
+        connected: z.boolean(),
+        accessToken: z.string().optional(),
+        shopDomain: z.string().optional(),
+    }).optional(),
+    notifications: z.object({
+        email: z.boolean(),
+        push: z.boolean(),
+        weeklyReport: z.boolean(),
+        newTrends: z.boolean(),
+    }).optional(),
+});
 
 export async function POST(request: NextRequest) {
-  try {
-    // Get user ID from authorization header or query params
-    const authHeader = request.headers.get('authorization');
-    let userId: string | null = null;
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      try {
-        const decoded = Buffer.from(token, 'base64').toString('utf-8');
-        userId = decoded.split(':')[0];
-      } catch {
-        // Continue without userId
-      }
+    try {
+        const { data: { session }, } = await supabase.auth.getSession();
+
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+        const userId = session.user.id;
+
+        const body = await request.json();
+        const parsedSettings = settingsSchema.safeParse(body);
+
+        if (!parsedSettings.success) {
+            return NextResponse.json({ error: 'Invalid settings format', details: parsedSettings.error.flatten() }, { status: 400 });
+        }
+
+        const { aiProvider, aiKeys, etsy, amazon, shopify, notifications } = parsedSettings.data;
+
+        const { error } = await supabase
+            .from('user_settings')
+            .upsert({
+                user_id: userId,
+                // The column names in the DB are snake_case
+                ai_provider: aiProvider,
+                ai_keys: aiKeys,
+                marketplace_connections: { etsy, amazon, shopify },
+                notifications: notifications,
+                updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' });
+
+        if (error) {
+            console.error('Error saving settings:', error);
+            return NextResponse.json({ error: 'Failed to save settings to the database.' }, { status: 500 });
+        }
+
+        return NextResponse.json({ message: 'Settings saved successfully' });
+
+    } catch (error) {
+        console.error('An unexpected error occurred in settings save route:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
-
-    if (!userId) {
-      const { searchParams } = new URL(request.url);
-      userId = searchParams.get('userId');
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-    }
-
-    // Verify user exists
-    const user = await getUserById(userId);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const settings = await request.json();
-
-    // Save settings to database
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({
-        user_id: userId,
-        ai_provider: settings.aiProvider,
-        ai_keys: settings.aiKeys,
-        marketplace_connections: {
-          etsy: settings.etsy,
-          amazon: settings.amazon,
-          shopify: settings.shopify,
-        },
-        notifications: settings.notifications,
-        feature_flags: settings.features,
-        updated_at: new Date().toISOString(),
-      });
-
-    if (error) {
-      console.error('Error saving settings:', error);
-      return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Settings save error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
 }

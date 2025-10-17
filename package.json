@@ -35,6 +35,7 @@
     "@radix-ui/react-toast": "^1.1.5",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@stripe/stripe-js": "^8.0.0",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.45.4",
     "aws4": "^1.13.2",
     "axios": "^1.12.2",
