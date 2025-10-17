@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/db/client';
+import { supabase, supabaseAdmin } from '@/lib/db/client';
 import { getUserById } from '@/lib/auth-helper';
 
 export async function GET(request: NextRequest) {
@@ -26,8 +26,11 @@ export async function GET(request: NextRequest) {
     
     const offset = (page - 1) * limit;
 
+    // Use admin client for listing users (bypasses RLS)
+    const client = supabaseAdmin || supabase;
+    
     // Build query
-    let query = supabase
+    let query = client
       .from('users')
       .select('id, email, name, role, is_active, email_verified, last_login_at, created_at, updated_at', { count: 'exact' });
 
@@ -88,9 +91,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, targetUserId, ...updates } = body;
 
+    // Use admin client for user management (bypasses RLS)
+    const client = supabaseAdmin || supabase;
+
     if (action === 'update') {
       // Update user
-      const { error } = await supabase
+      const { error } = await client
         .from('users')
         .update({
           ...updates,
@@ -108,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     if (action === 'delete') {
       // Delete user (soft delete by setting is_active to false)
-      const { error } = await supabase
+      const { error } = await client
         .from('users')
         .update({
           is_active: false,

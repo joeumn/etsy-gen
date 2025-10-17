@@ -2,11 +2,31 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// Create a fallback client for build time (will error gracefully at runtime if not configured)
+// In production, fail fast if Supabase is not configured
+if (process.env.NODE_ENV === 'production' && (!supabaseUrl || !supabaseKey)) {
+  throw new Error(
+    'FATAL: Supabase configuration is missing in production. ' +
+    'Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.'
+  );
+}
+
+// Create a fallback client for build/dev time (will error gracefully at runtime if not configured)
 export const supabase = supabaseUrl && supabaseKey 
   ? createClient(supabaseUrl, supabaseKey)
   : createClient('https://placeholder.supabase.co', 'placeholder-key');
+
+// Service role client for admin operations (bypasses RLS)
+// Only available when SUPABASE_SERVICE_ROLE_KEY is set
+export const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null;
 
 // Database types
 export interface Database {
