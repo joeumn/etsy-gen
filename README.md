@@ -63,6 +63,10 @@ npm install
 SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_ANON_KEY=your_supabase_anon_key
    
+# Server-side admin routes (REQUIRED for admin operations)
+# Never expose to client - server-side only
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   
 # Authentication (REQUIRED)
 NEXTAUTH_SECRET=your_nextauth_secret_32_chars_min
 NEXTAUTH_URL=http://localhost:3000

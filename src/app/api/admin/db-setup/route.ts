@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/db/client';
+import { supabase, adminSupabase } from '@/lib/db/client';
 import { getUserById } from '@/lib/auth-helper';
 
 export async function POST(request: NextRequest) {
@@ -21,14 +21,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const action = body.action;
 
-    if (action === 'test') {
-      // Test database connection
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('count')
-          .limit(1);
+    const db = adminSupabase ?? supabase;
 
+    if (action === 'test') {
+      try {
+        const { error } = await db.from('users').select('count').limit(1);
         if (error) {
           return NextResponse.json({
             success: false,
@@ -54,7 +51,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'check-tables') {
-      // Check if all required tables exist
       const requiredTables = [
         'users',
         'user_settings',
@@ -72,15 +68,9 @@ export async function POST(request: NextRequest) {
 
       for (const table of requiredTables) {
         try {
-          const { error } = await supabase
-            .from(table)
-            .select('count')
-            .limit(1);
-
+          const { error } = await db.from(table).select('count').limit(1);
           tableStatus[table] = !error;
-          if (error) {
-            allTablesExist = false;
-          }
+          if (error) allTablesExist = false;
         } catch {
           tableStatus[table] = false;
           allTablesExist = false;
@@ -98,21 +88,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'fix-user-settings') {
-      // Fix user_settings table structure
-      try {
-        // This would need to be run in Supabase SQL editor
-        // We can't execute raw SQL from the Supabase JS client for security reasons
-        return NextResponse.json({
-          success: false,
-          message: 'Please run the fix-user-settings-migration.sql file in your Supabase SQL Editor',
-          sql_file: '/lib/db/fix-user-settings-migration.sql',
-        });
-      } catch (error) {
-        return NextResponse.json({
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        }, { status: 500 });
-      }
+      return NextResponse.json({
+        success: false,
+        message: 'Please run the fix-user-settings-migration.sql file in your Supabase SQL Editor',
+        sql_file: '/lib/db/fix-user-settings-migration.sql',
+      });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
@@ -131,58 +111,47 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user ID from request
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
-    
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
-    // Verify user exists and is admin
     const user = await getUserById(userId);
     if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Get database status
+    const db = adminSupabase ?? supabase;
+
     let dbConnected = false;
-    let dbError = null;
+    let dbError: string | null = null;
 
     try {
-      const { error } = await supabase
-        .from('users')
-        .select('count')
-        .limit(1);
-      
+      const { error } = await db.from('users').select('count').limit(1);
       dbConnected = !error;
       dbError = error?.message || null;
     } catch (error) {
       dbError = error instanceof Error ? error.message : 'Unknown error';
     }
 
-    // Check if environment variables are set
     const hasSupabaseConfig = !!(
-      process.env.SUPABASE_URL && 
-      process.env.SUPABASE_ANON_KEY
+      process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
     );
 
     return NextResponse.json({
       connected: dbConnected,
       hasConfig: hasSupabaseConfig,
       error: dbError,
-      supabaseUrl: process.env.SUPABASE_URL ? 
-        process.env.SUPABASE_URL.replace(/^https?:\/\/([^.]+)\..*$/, '***$1***') : 
-        null,
+      supabaseUrl: process.env.SUPABASE_URL
+        ? process.env.SUPABASE_URL.replace(/^https?:\/\/([^.]+)\..*$/, '***$1***')
+        : null,
     });
 
   } catch (error) {
     console.error('Database status check error:', error);
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Internal server error' 
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Internal server error' 
+    }, { status: 500 });
   }
 }

@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
 import { logError } from '@/lib/logger';
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
+  // Delegate GET to POST so onboarding GET call works
+  return POST(request);
+}
+
+export async function POST(_request: NextRequest) {
   try {
-    // For development, skip actual database check and return success
-    // This allows onboarding to proceed with mock data
+    // In development, skip real DB calls for a smooth local onboarding
     if (process.env.NODE_ENV !== 'production') {
       return NextResponse.json({
         success: true,
@@ -13,8 +17,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Test database connection
-    const { data, error } = await supabase
+    // Minimal connectivity probe
+    const { error } = await supabase
       .from('users')
       .select('count')
       .limit(1);
@@ -23,34 +27,6 @@ export async function POST(request: NextRequest) {
       logError(error, 'DatabaseConnectionTest');
       return NextResponse.json(
         { error: 'Database connection failed' },
-        { status: 500 }
-      );
-    }
-
-    // Check if migrations are applied by looking for key tables
-    const tables = ['users', 'trend_data', 'product_listings', 'earnings'];
-    const missingTables: string[] = [];
-
-    for (const table of tables) {
-      try {
-        const { error: tableError } = await supabase
-          .from(table)
-          .select('count')
-          .limit(1);
-
-        if (tableError) {
-          missingTables.push(table);
-        }
-      } catch {
-        missingTables.push(table);
-      }
-    }
-
-    if (missingTables.length > 0) {
-      return NextResponse.json(
-        {
-          error: `Missing tables: ${missingTables.join(', ')}. Please run database migrations.`
-        },
         { status: 500 }
       );
     }

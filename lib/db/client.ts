@@ -1,12 +1,42 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl =
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey =
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// Create a fallback client for build time (will error gracefully at runtime if not configured)
-export const supabase = supabaseUrl && supabaseKey 
-  ? createClient(supabaseUrl, supabaseKey)
-  : createClient('https://placeholder.supabase.co', 'placeholder-key');
+// In production, fail fast if required env vars are missing
+if (
+  process.env.NODE_ENV === 'production' && (!supabaseUrl || !supabaseAnonKey)
+) {
+  throw new Error(
+    'Missing Supabase configuration (SUPABASE_URL and/or SUPABASE_ANON_KEY).'
+  );
+}
+
+// In development, warn if missing (placeholder will be used)
+if (
+  process.env.NODE_ENV !== 'production' && (!supabaseUrl || !supabaseAnonKey)
+) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[dev] Supabase env not set. Using placeholder client; DB calls will fail.'
+  );
+}
+
+// Public (anon) client for client-side and non-privileged server routes
+export const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : createClient('https://placeholder.supabase.co', 'placeholder-key');
+
+// Admin client for privileged server-side operations (only if service role provided)
+export const adminSupabase =
+  supabaseUrl && supabaseServiceRoleKey
+    ? createClient(supabaseUrl, supabaseServiceRoleKey)
+    : undefined;
 
 // Database types
 export interface Database {
