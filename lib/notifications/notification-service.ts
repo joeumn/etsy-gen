@@ -28,7 +28,7 @@ export interface Notification {
 export async function createNotification(notification: Omit<Notification, 'id' | 'createdAt'>): Promise<void> {
   try {
     // Save to database (when notifications table exists)
-    logger.info({ type: notification.type, title: notification.title }, 'Notification created');
+    logger.info('Notification created', { type: notification.type, title: notification.title });
     
     // If email notification needed
     if (notification.priority === 'urgent' || notification.priority === 'high') {
@@ -45,10 +45,10 @@ export async function createNotification(notification: Omit<Notification, 'id' |
 async function sendEmailNotification(notification: Omit<Notification, 'id' | 'createdAt'>): Promise<void> {
   try {
     // In production, use SendGrid, AWS SES, or other email service
-    logger.info({ 
-      to: notification.userId, 
-      subject: notification.title 
-    }, 'Email notification sent');
+    logger.info('Email notification sent', {
+      to: notification.userId,
+      subject: notification.title
+    });
   } catch (error) {
     logError(error, 'SendEmailNotification');
   }
@@ -170,7 +170,7 @@ export async function getUnreadNotifications(userId: string): Promise<Notificati
 export async function markNotificationRead(notificationId: string): Promise<void> {
   try {
     // Update in database
-    logger.info({ notificationId }, 'Notification marked as read');
+    logger.info('Notification marked as read', { notificationId });
   } catch (error) {
     logError(error, 'MarkNotificationRead');
   }

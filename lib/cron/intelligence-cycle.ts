@@ -63,15 +63,15 @@ export async function runIntelligenceCycle(): Promise<{
 
     // Step 1: Scrape all sources
     const scrapedData = await scrapeAllSources();
-    logger.info({ count: scrapedData.length }, 'Scraped data from all sources');
+    logger.info('Scraped data from all sources', { count: scrapedData.length });
 
     // Step 2: Clean and aggregate data
     const cleanedData = await cleanAndAggregateData(scrapedData);
-    logger.info({ count: cleanedData.length }, 'Cleaned and aggregated data');
+    logger.info('Cleaned and aggregated data', { count: cleanedData.length });
 
     // Step 3: AI trend analysis
     const opportunities = await analyzeTrendsWithAI(cleanedData);
-    logger.info({ count: opportunities.length }, 'Identified trend opportunities');
+    logger.info('Identified trend opportunities', { count: opportunities.length });
 
     // Step 4: Save to database
     await saveTrendsToDatabase(opportunities);
@@ -182,7 +182,7 @@ async function scrapeAllSources(): Promise<any[]> {
     sources.map(async (source) => {
       try {
         const data = await source.scraper();
-        logger.info({ source: source.name, count: data.length }, 'Scrape completed');
+        logger.info('Scrape completed', { source: source.name, count: data.length });
         return data.map(d => ({ ...d, source: source.name, sourceType: source.type }));
       } catch (error) {
         logError(error, `Scraper-${source.name}`);

@@ -150,7 +150,7 @@ export async function generateSmartRecommendations(
 
     return recommendations;
   } catch (error) {
-    logger.error({ error }, 'Failed to generate recommendations');
+    logger.error('Failed to generate recommendations', { error });
     return getFallbackRecommendations();
   }
 }

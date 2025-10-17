@@ -129,12 +129,12 @@ export async function autoAdjustPricing(): Promise<{
           });
 
           adjusted++;
-          logger.info({
+          logger.info('Auto-adjusted pricing', {
             product: product.title,
             oldPrice: product.price,
             newPrice,
             action,
-          }, 'Auto-adjusted pricing');
+          });
         }
       } catch (error) {
         logError(error, 'AdjustSinglePrice');
@@ -203,7 +203,7 @@ export async function selfLearnFromPerformance(): Promise<OptimizationMetrics> {
       improvementSuggestions,
     };
 
-    logger.info(metrics, 'Self-learning metrics calculated');
+    logger.info('Self-learning metrics calculated', { metrics });
     return metrics;
   } catch (error) {
     logError(error, 'SelfLearn');

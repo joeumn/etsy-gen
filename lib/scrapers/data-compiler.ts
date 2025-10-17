@@ -137,7 +137,7 @@ export async function compileTrendData(
       return b.totalSearchVolume - a.totalSearchVolume;
     });
 
-    logger.info({ count: compiledData.length }, 'Compiled trend data');
+    logger.info('Compiled trend data', { count: compiledData.length });
     return compiledData;
   } catch (error) {
     logError(error, 'DataCompiler');
@@ -173,7 +173,7 @@ export async function storeCompiledTrends(compiledData: CompiledTrendData[]): Pr
       throw error;
     }
 
-    logger.info({ count: trendsToInsert.length }, 'Stored compiled trends in database');
+    logger.info('Stored compiled trends in database', { count: trendsToInsert.length });
   } catch (error) {
     logError(error, 'StoreCompiledTrends');
     throw error;

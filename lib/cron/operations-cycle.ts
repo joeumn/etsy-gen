@@ -44,11 +44,11 @@ export async function runOperationsCycle(): Promise<AutomationResult> {
 
     // Step 1: Auto-create products from top opportunities
     const created = await autoCreateProducts();
-    logger.info({ count: created }, 'Auto-created products');
+    logger.info('Auto-created products', { count: created });
 
     // Step 2: List products across marketplaces
     const listed = await autoListProducts();
-    logger.info({ count: listed }, 'Auto-listed products');
+    logger.info('Auto-listed products', { count: listed });
 
     // Step 3: Sync integrations
     await syncIntegrations();
@@ -56,7 +56,7 @@ export async function runOperationsCycle(): Promise<AutomationResult> {
 
     // Step 4: Optimize pricing
     const priceAdjustments = await optimizePricing();
-    logger.info({ count: priceAdjustments }, 'Price adjustments made');
+    logger.info('Price adjustments made', { count: priceAdjustments });
 
     // Step 5: Update metrics
     await updateMetrics();
@@ -64,7 +64,7 @@ export async function runOperationsCycle(): Promise<AutomationResult> {
 
     // Step 6: Send notifications
     const notifications = await sendNotifications();
-    logger.info({ count: notifications }, 'Notifications sent');
+    logger.info('Notifications sent', { count: notifications });
 
     // Step 7: Refresh caches
     await refreshCaches();
@@ -147,7 +147,7 @@ async function autoCreateProducts(): Promise<number> {
         });
 
         created++;
-        logger.info({ product: product.title }, 'Auto-created product');
+        logger.info('Auto-created product', { product: product.title });
       } catch (error) {
         logError(error, 'AutoCreateProduct');
       }
@@ -197,7 +197,7 @@ async function autoListProducts(): Promise<number> {
 
           if (result.success) {
             listed++;
-            logger.info({ product: product.title }, 'Auto-listed product');
+            logger.info('Auto-listed product', { product: product.title });
           }
         }
       } catch (error) {

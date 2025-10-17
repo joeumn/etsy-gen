@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
     // Run the intelligence cycle
     const result = await runIntelligenceCycle();
 
-    logger.info({
+    logger.info('Intelligence Cycle completed', {
       ...result,
       duration: Date.now() - startTime,
-    }, 'Intelligence Cycle completed');
+    });
 
     return NextResponse.json({
       cycle: 'intelligence',

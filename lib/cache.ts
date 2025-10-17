@@ -100,7 +100,7 @@ export async function clearCacheNamespace(namespace: string): Promise<void> {
     
     keysToDelete.forEach(key => memoryCache.delete(key));
     
-    logger.info({ namespace, count: keysToDelete.length }, 'Cleared cache namespace');
+    logger.info('Cleared cache namespace', { namespace, count: keysToDelete.length });
   } catch (error) {
     logError(error, 'CacheClearNamespace', { namespace });
   }
@@ -113,7 +113,7 @@ export async function clearAllCache(): Promise<void> {
   try {
     const size = memoryCache.size;
     memoryCache.clear();
-    logger.info({ count: size }, 'Cleared all cache');
+    logger.info('Cleared all cache', { count: size });
   } catch (error) {
     logError(error, 'CacheClearAll');
   }
@@ -136,7 +136,7 @@ function cleanupExpiredCache(): void {
   keysToDelete.forEach(key => memoryCache.delete(key));
   
   if (keysToDelete.length > 0) {
-    logger.debug({ count: keysToDelete.length }, 'Cleaned up expired cache entries');
+    logger.debug('Cleaned up expired cache entries', { count: keysToDelete.length });
   }
 }
 
@@ -160,12 +160,12 @@ export function cached<T extends (...args: any[]) => Promise<any>>(
     // Try to get from cache
     const cachedResult = await getCache(cacheKey);
     if (cachedResult !== null) {
-      logger.debug({ key: cacheKey }, 'Cache hit');
+      logger.debug('Cache hit', { key: cacheKey });
       return cachedResult;
     }
     
     // Execute function
-    logger.debug({ key: cacheKey }, 'Cache miss, executing function');
+    logger.debug('Cache miss, executing function', { key: cacheKey });
     const result = await fn(...args);
     
     // Store in cache
