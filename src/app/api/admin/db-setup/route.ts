@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, adminSupabase } from '@/lib/db/client';
+import { supabase, supabaseAdmin } from '@/lib/db/client';
 import { getUserById } from '@/lib/auth-helper';
 
 export async function POST(request: NextRequest) {
@@ -21,11 +21,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const action = body.action;
 
-    const db = adminSupabase ?? supabase;
+    // Use admin client for database checks (bypasses RLS)
+    const client = supabaseAdmin || supabase;
 
     if (action === 'test') {
       try {
-        const { error } = await db.from('users').select('count').limit(1);
+        const { data, error } = await client
+          .from('users')
+          .select('count')
+          .limit(1);
+
         if (error) {
           return NextResponse.json({
             success: false,
@@ -68,7 +73,11 @@ export async function POST(request: NextRequest) {
 
       for (const table of requiredTables) {
         try {
-          const { error } = await db.from(table).select('count').limit(1);
+          const { error } = await client
+            .from(table)
+            .select('count')
+            .limit(1);
+
           tableStatus[table] = !error;
           if (error) allTablesExist = false;
         } catch {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/db/client';
+import { supabase, supabaseAdmin } from '@/lib/db/client';
 import { logError } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
@@ -17,8 +17,11 @@ export async function POST(_request: NextRequest) {
       });
     }
 
-    // Minimal connectivity probe
-    const { error } = await supabase
+    // Use admin client for reliable database checks (bypasses RLS)
+    const client = supabaseAdmin || supabase;
+
+    // Test database connection
+    const { data, error } = await client
       .from('users')
       .select('count')
       .limit(1);
@@ -27,6 +30,34 @@ export async function POST(_request: NextRequest) {
       logError(error, 'DatabaseConnectionTest');
       return NextResponse.json(
         { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
+
+    // Check if migrations are applied by looking for key tables
+    const tables = ['users', 'trend_data', 'product_listings', 'earnings'];
+    const missingTables: string[] = [];
+
+    for (const table of tables) {
+      try {
+        const { error: tableError } = await client
+          .from(table)
+          .select('count')
+          .limit(1);
+
+        if (tableError) {
+          missingTables.push(table);
+        }
+      } catch {
+        missingTables.push(table);
+      }
+    }
+
+    if (missingTables.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Missing tables: ${missingTables.join(', ')}. Please run database migrations.`
+        },
         { status: 500 }
       );
     }

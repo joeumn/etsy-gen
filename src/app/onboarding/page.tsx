@@ -108,7 +108,9 @@ export default function OnboardingPage() {
   const testDatabaseConnection = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/onboarding/test-db");
+      const response = await fetch("/api/onboarding/test-db", {
+        method: "POST",
+      });
       const data = await response.json();
 
       if (data.success) {
