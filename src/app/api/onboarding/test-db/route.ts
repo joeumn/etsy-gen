@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/db/client';
+import { supabase, supabaseAdmin } from '@/lib/db/client';
 import { logError } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -13,8 +13,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Use admin client for reliable database checks (bypasses RLS)
+    const client = supabaseAdmin || supabase;
+
     // Test database connection
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from('users')
       .select('count')
       .limit(1);
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     for (const table of tables) {
       try {
-        const { error: tableError } = await supabase
+        const { error: tableError } = await client
           .from(table)
           .select('count')
           .limit(1);

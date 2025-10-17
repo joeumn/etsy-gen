@@ -2,11 +2,36 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// Create a fallback client for build time (will error gracefully at runtime if not configured)
+// Helper to check if we're in a build phase (Next.js sets these during build)
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                     process.env.NEXT_PHASE === 'phase-export';
+
+// In production, log warning if Supabase is not configured (but don't break build)
+// The actual runtime checks will happen when the clients are used
+if (process.env.NODE_ENV === 'production' && !isBuildTime && (!supabaseUrl || !supabaseKey)) {
+  console.warn(
+    'WARNING: Supabase configuration is missing in production. ' +
+    'Database operations will fail. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.'
+  );
+}
+
+// Create a fallback client for build/dev time (will error gracefully at runtime if not configured)
 export const supabase = supabaseUrl && supabaseKey 
   ? createClient(supabaseUrl, supabaseKey)
   : createClient('https://placeholder.supabase.co', 'placeholder-key');
+
+// Service role client for admin operations (bypasses RLS)
+// Only available when SUPABASE_SERVICE_ROLE_KEY is set
+export const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null;
 
 // Database types
 export interface Database {
