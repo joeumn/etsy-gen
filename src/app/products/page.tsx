@@ -241,7 +241,7 @@ export default function ProductsPage() {
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex gap-1 flex-wrap">
-                          {product.marketplace.map((mp) => (
+                          {product.marketplace.map((mp: string) => (
                             <Badge key={mp} variant="outline" className="text-xs">
                               {mp}
                             </Badge>

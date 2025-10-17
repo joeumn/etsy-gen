@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         missing: critical.missing,
       },
       features,
-      variables: summary.results.map(r => ({
+      variables: summary.results.map((r: any) => ({
         name: r.name,
         isSet: r.isSet,
         isPublic: r.isPublic,
