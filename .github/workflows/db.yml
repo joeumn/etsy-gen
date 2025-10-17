@@ -17,8 +17,10 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install Supabase CLI
-        run: npm install -g supabase
+        name: Install Supabase CLI
+        run: |
+    curl -sL https://github.com/supabase/cli/releases/latest/download/install.sh | sh
+    export PATH="$HOME/.supabase/bin:$PATH"
 
       - name: Configure environment
         env:
