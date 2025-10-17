@@ -1,12 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { authOptions } from '@/lib/auth';
-import getServerSession from 'next-auth';
+import { getUserById } from '@/lib/auth-helper';
 
 export async function POST(request: NextRequest) {
   try {
-    // For development, skip authentication and use mock user
-    const userId = 'mock-user-1'; // Use the admin user ID
+    // Get user ID from authorization header or query params
+    const authHeader = request.headers.get('authorization');
+    let userId: string | null = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = Buffer.from(token, 'base64').toString('utf-8');
+        userId = decoded.split(':')[0];
+      } catch {
+        // Continue without userId
+      }
+    }
+
+    if (!userId) {
+      const { searchParams } = new URL(request.url);
+      userId = searchParams.get('userId');
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    }
+
+    // Verify user exists
+    const user = await getUserById(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const settings = await request.json();
 

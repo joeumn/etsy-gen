@@ -1,17 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { authOptions } from '@/lib/auth';
+import { getUserById } from '@/lib/auth-helper';
 
 export async function GET(request: NextRequest) {
   try {
-    // For development, skip authentication and use mock user
-    const userId = 'mock-user-1'; // Use the admin user ID
+    // Get user ID from authorization header or cookie
+    const authHeader = request.headers.get('authorization');
+    let userId: string | null = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      // Decode token to get user ID
+      try {
+        const decoded = Buffer.from(token, 'base64').toString('utf-8');
+        userId = decoded.split(':')[0];
+      } catch {
+        // If token decode fails, continue without userId
+      }
+    }
+
+    // If no userId from auth header, try to get from query params
+    if (!userId) {
+      const { searchParams } = new URL(request.url);
+      userId = searchParams.get('userId');
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    }
+
+    // Verify user exists
+    const user = await getUserById(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Get real stats from database
     const [
       { data: revenueData },
       { count: productsCount },
-      { data: activeScrapes },
       { data: successRate }
     ] = await Promise.all([
       // Total revenue (last 30 days)
@@ -28,9 +55,6 @@ export async function GET(request: NextRequest) {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId),
 
-      // Active scrapes (simulated - could be from a jobs table)
-      Promise.resolve({ data: { count: Math.floor(Math.random() * 10) + 5 } }),
-
       // Success rate (from AI generation logs)
       supabase
         .from('ai_generation_logs')
@@ -39,21 +63,44 @@ export async function GET(request: NextRequest) {
         .limit(100)
     ]);
 
+    // Get active scrapes from database
+    const { count: activeScrapesCount } = await supabase
+      .from('scrape_jobs')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'running');
+
     const totalRevenue = revenueData?.total_revenue || 0;
     const productsListed = productsCount || 0;
-    const activeScrapesCount = activeScrapes?.count || 0;
+    const activeScrapes = activeScrapesCount || 0;
 
     // Calculate success rate
     const totalGenerations = successRate?.length || 0;
     const successfulGenerations = successRate?.filter(log => log.success).length || 0;
-    const successRatePercent = totalGenerations > 0 ? (successfulGenerations / totalGenerations) * 100 : 94;
+    const successRatePercent = totalGenerations > 0 ? (successfulGenerations / totalGenerations) * 100 : 0;
+
+    // Get trend data for revenue
+    const { data: previousRevenue } = await supabase
+      .from('earnings')
+      .select('total_revenue')
+      .eq('user_id', userId)
+      .eq('period', '30d')
+      .order('created_at', { ascending: false })
+      .limit(2);
+
+    let revenueTrend = 0;
+    if (previousRevenue && previousRevenue.length >= 2) {
+      const current = previousRevenue[0].total_revenue;
+      const previous = previousRevenue[1].total_revenue;
+      revenueTrend = previous > 0 ? ((current - previous) / previous) * 100 : 0;
+    }
 
     const stats = [
       {
         title: "Total Revenue",
         value: `$${totalRevenue.toLocaleString()}`,
         description: "Last 30 days",
-        trend: { value: 18.5, label: "vs previous", isPositive: true },
+        trend: { value: Math.abs(revenueTrend), label: "vs previous", isPositive: revenueTrend >= 0 },
         icon: "DollarSign",
         gradient: "flame",
       },
@@ -61,13 +108,13 @@ export async function GET(request: NextRequest) {
         title: "Products Listed",
         value: productsListed.toString(),
         description: "Across all platforms",
-        trend: { value: 12.3, label: "this month", isPositive: true },
+        trend: { value: 0, label: "this month", isPositive: true },
         icon: "Package",
         gradient: "ocean",
       },
       {
         title: "Active Scrapes",
-        value: activeScrapesCount.toString(),
+        value: activeScrapes.toString(),
         description: "Running now",
         icon: "Activity",
         gradient: "gold",
@@ -76,7 +123,7 @@ export async function GET(request: NextRequest) {
         title: "Success Rate",
         value: `${successRatePercent.toFixed(1)}%`,
         description: "Conversion rate",
-        trend: { value: 3.2, label: "vs previous", isPositive: true },
+        trend: { value: 0, label: "vs previous", isPositive: true },
         icon: "Target",
         gradient: "forge",
       },

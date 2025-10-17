@@ -32,14 +32,28 @@ async function setupAdminUser() {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Check if user already exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: selectError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, role')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
     if (existingUser) {
-      console.log('Admin user already exists');
+      console.log('Admin user already exists with role:', existingUser.role);
+      
+      // Update to super_admin if needed
+      if (existingUser.role !== 'super_admin') {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ role: 'super_admin' })
+          .eq('id', existingUser.id);
+        
+        if (updateError) {
+          console.error('Error updating admin role:', updateError);
+        } else {
+          console.log('Updated user role to super_admin');
+        }
+      }
       return;
     }
 
@@ -63,6 +77,8 @@ async function setupAdminUser() {
     }
 
     console.log('Admin user created successfully:', data.email);
+    console.log('Email: joeinduluth@gmail.com');
+    console.log('Password: Two1Eight');
   } catch (error) {
     console.error('Setup failed:', error);
     process.exit(1);

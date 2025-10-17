@@ -25,54 +25,68 @@ interface DesignAsset {
 export default function Studio() {
   const [assets, setAssets] = useState<DesignAsset[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - in real app, this would come from API
+  // Fetch real assets from API
   useEffect(() => {
-    const mockAssets: DesignAsset[] = [
-      {
-        id: "1",
-        prompt: "Minimalist planner template with clean typography",
-        imageUrl: "https://via.placeholder.com/400x300/2D9CDB/FFFFFF?text=Planner+Template",
-        imageType: "png",
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "2",
-        prompt: "Watercolor wedding invitation design",
-        imageUrl: "https://via.placeholder.com/400x300/FF6B22/FFFFFF?text=Wedding+Invitation",
-        imageType: "png",
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-    ];
-    setAssets(mockAssets);
+    const fetchAssets = async () => {
+      try {
+        const response = await fetch('/api/studio/generate?userId=mock-user-1');
+        if (response.ok) {
+          const data = await response.json();
+          setAssets(data.data || []);
+        } else {
+          console.error('Failed to fetch assets:', await response.text());
+          setAssets([]);
+        }
+      } catch (error) {
+        console.error('Error fetching assets:', error);
+        setAssets([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchAssets();
   }, []);
 
   const handleGenerate = async (prompt: string) => {
     setIsGenerating(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const newAsset: DesignAsset = {
-      id: Date.now().toString(),
-      prompt,
-      imageUrl: `https://via.placeholder.com/400x300/FFC400/FFFFFF?text=${encodeURIComponent(prompt.slice(0, 20))}`,
-      imageType: "png",
-      createdAt: new Date().toISOString(),
-    };
-    
-    setAssets(prev => [newAsset, ...prev]);
-    setIsGenerating(false);
+    try {
+      const response = await fetch('/api/studio/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          userId: 'mock-user-1',
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newAsset: DesignAsset = data.data;
+        setAssets(prev => [newAsset, ...prev]);
+      } else {
+        console.error('Failed to generate asset:', await response.text());
+        alert('Failed to generate design. Please check your API configuration.');
+      }
+    } catch (error) {
+      console.error('Error generating asset:', error);
+      alert('An error occurred while generating the design.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSave = async (assetId: string) => {
-    console.log("Saving asset:", assetId);
-    // In real app, this would save to Supabase
+    console.log("Asset already saved to database:", assetId);
+    // Asset is already saved during generation
   };
 
   const handleUseForListing = async (assetId: string) => {
     console.log("Using asset for listing:", assetId);
-    // In real app, this would navigate to listing creation
+    // In real app, this would navigate to listing creation with the asset
   };
 
   return (

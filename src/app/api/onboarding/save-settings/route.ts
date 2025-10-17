@@ -1,18 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getUserById } from '@/lib/auth-helper';
 import { logError } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Get user ID from authorization header or query params
+    const authHeader = request.headers.get('authorization');
+    let userId: string | null = null;
 
-    if (!session?.user?.id) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = Buffer.from(token, 'base64').toString('utf-8');
+        userId = decoded.split(':')[0];
+      } catch {
+        // Continue without userId
+      }
+    }
+
+    if (!userId) {
+      const { searchParams } = new URL(request.url);
+      userId = searchParams.get('userId');
+    }
+
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'User ID required' },
+        { status: 400 }
       );
+    }
+
+    // Verify user exists
+    const user = await getUserById(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const {
@@ -20,8 +42,6 @@ export async function POST(request: NextRequest) {
       marketplaceKeys,
       features
     } = await request.json();
-
-    const userId = session.user.id;
 
     // Save API keys (in production, these should be encrypted)
     const settingsData = {

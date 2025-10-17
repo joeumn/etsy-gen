@@ -17,89 +17,77 @@ import {
   CheckCircle,
   AlertCircle
 } from "lucide-react";
-import { useState } from "react";
-import { getEnabledMarketplaces } from "@/lib/config";
+import { useState, useEffect } from "react";
+import { getCurrentUserId } from "@/lib/session";
 
 export default function MarketplacesPage() {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [marketplaces, setMarketplaces] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    connectedPlatforms: 0,
+    totalSales: 0,
+    totalRevenue: 0,
+    syncStatus: 0,
+  });
 
-  const stats = [
+  // Load marketplace data from API
+  useEffect(() => {
+    const loadMarketplaces = async () => {
+      try {
+        const userId = getCurrentUserId();
+        if (!userId) {
+          console.error('No user ID found');
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch(`/api/marketplaces?userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setMarketplaces(data.marketplaces || []);
+          setStats(data.stats || {});
+        } else {
+          console.error('Failed to load marketplaces:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error loading marketplaces:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMarketplaces();
+  }, []);
+
+  const statsCards = [
     {
       title: "Connected Platforms",
-      value: "4",
+      value: String(stats.connectedPlatforms),
       description: "Active integrations",
       icon: Store,
       gradient: "ocean" as const,
     },
     {
       title: "Total Sales",
-      value: "1,247",
+      value: stats.totalSales.toLocaleString(),
       description: "Across all platforms",
-      trend: { value: 12.5, label: "this month", isPositive: true },
       icon: Package,
       gradient: "flame" as const,
     },
     {
       title: "Total Revenue",
-      value: "$24,890",
+      value: `$${stats.totalRevenue.toLocaleString()}`,
       description: "Combined earnings",
-      trend: { value: 18.2, label: "vs last month", isPositive: true },
       icon: DollarSign,
       gradient: "gold" as const,
     },
     {
       title: "Sync Status",
-      value: "100%",
+      value: `${stats.syncStatus}%`,
       description: "All platforms synced",
       icon: Activity,
       gradient: "forge" as const,
-    },
-  ];
-
-  const marketplaces = [
-    {
-      name: "Etsy",
-      icon: "🎨",
-      status: "connected",
-      products: 45,
-      revenue: 14500,
-      sales: 445,
-      lastSync: "2 min ago",
-      syncProgress: 100,
-      apiHealth: "healthy",
-    },
-    {
-      name: "Shopify",
-      icon: "🛍️",
-      status: "connected",
-      products: 32,
-      revenue: 6800,
-      sales: 312,
-      lastSync: "5 min ago",
-      syncProgress: 100,
-      apiHealth: "healthy",
-    },
-    {
-      name: "Amazon",
-      icon: "📦",
-      status: "connected",
-      products: 17,
-      revenue: 3590,
-      sales: 190,
-      lastSync: "10 min ago",
-      syncProgress: 100,
-      apiHealth: "healthy",
-    },
-    {
-      name: "Gumroad",
-      icon: "💰",
-      status: "available",
-      products: 0,
-      revenue: 0,
-      sales: 0,
-      lastSync: "Never",
-      syncProgress: 0,
-      apiHealth: "not_connected",
     },
   ];
 
@@ -121,16 +109,23 @@ export default function MarketplacesPage() {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <AdvancedStatCard key={stat.title} {...stat} delay={index * 0.1} />
-          ))}
-        </div>
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-flame-500 border-t-transparent" />
+          </div>
+        ) : (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {statsCards.map((stat, index) => (
+                <AdvancedStatCard key={stat.title} {...stat} delay={index * 0.1} />
+              ))}
+            </div>
 
-        {/* Marketplace Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {marketplaces.map((mp) => (
+            {/* Marketplace Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {marketplaces.map((mp) => (
             <Card key={mp.name} className="card-hover">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -229,8 +224,10 @@ export default function MarketplacesPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );
