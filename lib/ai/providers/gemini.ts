@@ -14,7 +14,7 @@ export class GeminiProvider implements AIProvider {
     try {
       this.client = new GoogleGenerativeAI(config.apiKey);
       this.isAvailable = !!config.apiKey;
-      logger.info({ provider: 'Gemini' }, 'Gemini provider initialized');
+      logger.info('Gemini provider initialized', { provider: 'Gemini' });
     } catch (error) {
       logError(error, 'GeminiProvider', { action: 'initialize' });
       this.isAvailable = false;
@@ -151,7 +151,7 @@ Return only valid JSON with this structure:
     const startTime = Date.now();
     
     if (!this.isAvailable) {
-      logger.warn({ provider: 'Gemini' }, 'Gemini unavailable, using product description');
+      logger.warn('Gemini unavailable, using product description', { provider: 'Gemini' });
       return product.description;
     }
 
