@@ -7,6 +7,7 @@
 import { logger, logError } from '../logger';
 import { retry } from '../performance';
 import axios from 'axios';
+import puppeteer from 'puppeteer';
 
 export interface SocialTrend {
   platform: string;
@@ -27,7 +28,6 @@ export interface SocialTrend {
 export async function scrapeTikTokTrends(keywords: string[]): Promise<SocialTrend[]> {
   try {
     // Use puppeteer for real TikTok scraping
-    const puppeteer = require('puppeteer');
 
     const browser = await puppeteer.launch({
       headless: true,
@@ -46,7 +46,7 @@ export async function scrapeTikTokTrends(keywords: string[]): Promise<SocialTren
         await page.goto(url, { waitUntil: 'networkidle2' });
 
         // Wait for content to load
-        await page.waitForTimeout(3000);
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
         // Extract trend data
         const trendData = await page.evaluate(() => {
@@ -111,7 +111,7 @@ export async function scrapeTikTokTrends(keywords: string[]): Promise<SocialTren
     }
 
     await browser.close();
-    logger.info({ count: trends.length }, 'Scraped TikTok trends with Puppeteer');
+    logger.info(`Scraped TikTok trends with Puppeteer - count: ${trends.length}`);
     return trends;
   } catch (error) {
     logError(error, 'TikTokScraper');
@@ -151,7 +151,7 @@ export async function scrapePinterestTrends(keywords: string[]): Promise<SocialT
       timestamp: new Date(),
     }));
 
-    logger.info({ count: trends.length }, 'Scraped Pinterest trends');
+    logger.info(`Scraped Pinterest trends - count: ${trends.length}`);
     return trends;
   } catch (error) {
     logError(error, 'PinterestScraper');
@@ -177,7 +177,7 @@ export async function scrapeInstagramTrends(keywords: string[]): Promise<SocialT
       timestamp: new Date(),
     }));
 
-    logger.info({ count: trends.length }, 'Scraped Instagram trends');
+    logger.info(`Scraped Instagram trends - count: ${trends.length}`);
     return trends;
   } catch (error) {
     logError(error, 'InstagramScraper');
@@ -203,7 +203,7 @@ export async function scrapeRedditTrends(keywords: string[]): Promise<SocialTren
       timestamp: new Date(),
     }));
 
-    logger.info({ count: trends.length }, 'Scraped Reddit trends');
+    logger.info(`Scraped Reddit trends - count: ${trends.length}`);
     return trends;
   } catch (error) {
     logError(error, 'RedditScraper');

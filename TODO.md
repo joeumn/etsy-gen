@@ -1,48 +1,30 @@
-# TODO: Make App Fully Functional
+/
+# Critical Issues Fixes TODO
 
-## 1. Set Up Default Admin User
-- [x] Create script to insert default admin user (joeinduluth@gmail.com, Two1Eight) into Supabase
-- [x] Hash password using bcryptjs
-- [x] Ensure user has super_admin role
+## 1. Fix Logger Worker Thread Crash
+- [x] Replace Pino with worker-thread safe console-based logging in lib/logger.ts
+- [x] Ensure all logging functions work without Pino dependency
 
-## 2. Create Onboarding Flow
-- [x] Create new page `/onboarding` for first-time users
-- [x] Check database connection and run migrations
-- [x] Prompt for Gemini API key setup
-- [x] Guide through marketplace API key setup (Etsy, Amazon, Shopify)
-- [x] Test scanner functionality
-- [x] Allow customization of feature flags and settings
-- [x] Mark onboarding complete in user profile
+## 2. Fix ESLint Errors in API Routes
+- [x] Remove React hooks from src/app/api/auth/login/route.ts
+- [x] Remove React hooks from src/app/api/auth/me/route.ts
+- [x] Implement proper authentication logic without hooks
 
-## 3. Make Scrapers Functional
-- [x] Implement real Google Trends scraping (use unofficial API or puppeteer)
-- [x] Implement real social media scraping (Twitter, Instagram, etc.) using APIs or puppeteer
-- [x] Add data compilation logic to aggregate and analyze scraped data
-- [x] Store scraped data in database
+## 3. Fix Require Imports in Scrapers
+- [x] Convert require('puppeteer') to ES6 import in lib/scrapers/social-scraper.ts
+- [x] Convert require('puppeteer') to ES6 import in lib/scrapers/web-scraper.ts
 
-## 4. Make Marketplaces Functional
-- [x] Implement Amazon MWS/SP-API integration
-- [x] Set up Shopify API with proper authentication
-- [x] Ensure all marketplace operations (list, update, delete, earnings) work with real APIs
+## 4. Clean Unused Code
+- [ ] Search for and remove unused imports across all TypeScript files
+- [ ] Remove unused variables and functions (50+ warnings)
 
-## 5. Update Settings to Save to Database
-- [x] Create user_settings table if needed
-- [x] Load settings from database on page load
+## 5. Add Basic Unit Tests
+- [x] Create unit tests for logger (lib/logger.ts)
+- [ ] Create unit tests for AI providers (lib/ai/providers/)
+- [ ] Create unit tests for utilities (lib/utils.ts, lib/validation.ts)
+- [ ] Create unit tests for core functions
 
-## 6. Ensure All Pages Work with Real Data
-- [x] Update dashboard to fetch real data from database and APIs
-- [x] Update analytics to use real earnings, trends, etc.
-- [x] Make product generation use real AI and store in database
-- [x] Ensure all API routes work with real data
-
-## 7. Database Migrations and Setup
-- [x] Run all stage migrations on Supabase
-- [x] Ensure database is up to date
-- [x] Add any missing tables (user_settings, onboarding_status)
-
-## 8. Testing and Deployment
-- [x] Test login with admin user
-- [x] Test onboarding flow
-- [x] Test scanning and data compilation
-- [x] Test product generation and listing
-- [x] Ensure Vercel deployment works with real env vars
+## 6. Verification
+- [ ] Run ESLint to ensure no errors remain
+- [ ] Run Vitest to verify tests pass
+- [ ] Test application functionality end-to-end

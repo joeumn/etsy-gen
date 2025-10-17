@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 import { logSecurityEvent, logError } from '@/lib/logger';
 import { validate, loginSchema } from '@/lib/validation';
 import { AuthenticationError, handleAPIError } from '@/lib/errors';
-import { useMockAuth, mockLogin } from '@/lib/auth-mock';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,18 +13,23 @@ export async function POST(request: NextRequest) {
     const { email, password } = validate(loginSchema, body);
 
     // Use mock auth in development without Supabase
-    if (useMockAuth()) {
-      const result = await mockLogin(email, password);
-      
-      if (!result.success) {
-        throw new AuthenticationError(result.error || 'Invalid credentials');
+    if (process.env.NODE_ENV === 'development' && !process.env.SUPABASE_URL) {
+      // Simple mock authentication for development
+      if (email === 'test@example.com' && password === 'password') {
+        return NextResponse.json({
+          success: true,
+          token: Buffer.from('test-user-id:1234567890').toString('base64'),
+          user: {
+            id: 'test-user-id',
+            email: 'test@example.com',
+            name: 'Test User',
+            role: 'user',
+            avatar_url: null,
+          },
+        });
+      } else {
+        throw new AuthenticationError('Invalid credentials');
       }
-
-      return NextResponse.json({
-        success: true,
-        token: result.token,
-        user: result.user,
-      });
     }
 
     // Production: Use real Supabase authentication

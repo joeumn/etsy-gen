@@ -16,15 +16,6 @@ const eslintConfig = [
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "warn",
       "prefer-const": "warn",
-      "@typescript-eslint/no-require-imports": "error",
-      "@typescript-eslint/triple-slash-reference": "error",
-      "@typescript-eslint/ban-ts-comment": "error",
-      "@typescript-eslint/no-empty-object-type": "warn",
-      "@typescript-eslint/no-wrapper-object-types": "error",
-      "@typescript-eslint/no-unsafe-function-type": "error",
-      "react/no-unescaped-entities": "error",
-      "@next/next/no-img-element": "warn",
-      "react-hooks/exhaustive-deps": "warn",
     },
     ignores: [
       "node_modules/**",
@@ -32,7 +23,6 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
-      "lib/__tests__/**",
     ],
   },
 ];

@@ -24,20 +24,33 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if using mock auth
-    const { useMockAuth, mockVerifyToken } = await import('@/lib/auth-mock');
-    if (useMockAuth()) {
-      const user = await mockVerifyToken(token);
-      if (!user) {
+    if (process.env.NODE_ENV === 'development' && !process.env.SUPABASE_URL) {
+      // Simple mock token verification for development
+      try {
+        const decoded = Buffer.from(token, 'base64').toString('utf-8');
+        const userId = decoded.split(':')[0];
+
+        if (userId === 'test-user-id') {
+          return NextResponse.json({
+            success: true,
+            user: {
+              id: 'test-user-id',
+              email: 'test@example.com',
+              name: 'Test User',
+              role: 'user',
+              avatar_url: null,
+              is_active: true,
+              email_verified: true,
+              created_at: new Date().toISOString(),
+              usage: null, // Mock users don't have usage data
+            },
+          });
+        } else {
+          throw new AuthenticationError('Invalid authentication token');
+        }
+      } catch {
         throw new AuthenticationError('Invalid authentication token');
       }
-
-      return NextResponse.json({
-        success: true,
-        user: {
-          ...user,
-          usage: null, // Mock users don't have usage data
-        },
-      });
     }
 
     // Get user from database

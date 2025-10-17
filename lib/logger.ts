@@ -1,8 +1,8 @@
 /**
  * Comprehensive Logging System for FoundersForge
- * 
+ *
  * Features:
- * - Structured logging with Pino
+ * - Worker-thread safe console-based logging
  * - Different log levels (trace, debug, info, warn, error, fatal)
  * - Request tracking and correlation IDs
  * - Performance monitoring
@@ -10,36 +10,80 @@
  * - Production and development modes
  */
 
-import pino from 'pino';
-
 // Environment configuration
 const isDevelopment = process.env.NODE_ENV === 'development';
 const logLevel = process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info');
 
+// Log levels mapping
+const LOG_LEVELS = {
+  trace: 10,
+  debug: 20,
+  info: 30,
+  warn: 40,
+  error: 50,
+  fatal: 60,
+} as const;
+
+type LogLevel = keyof typeof LOG_LEVELS;
+
+// Get current log level value
+const currentLogLevel = LOG_LEVELS[logLevel as LogLevel] || LOG_LEVELS.info;
+
+// Helper function to format log messages
+function formatLogMessage(level: string, message: string, data?: any): string {
+  const timestamp = new Date().toISOString();
+  const env = process.env.NODE_ENV || 'development';
+  const formattedData = data ? ` ${JSON.stringify(data)}` : '';
+  return `[${timestamp}] ${env.toUpperCase()} ${level.toUpperCase()}: ${message}${formattedData}`;
+}
+
+// Core logging function
+function logMessage(level: LogLevel, message: string, data?: any) {
+  if (LOG_LEVELS[level] < currentLogLevel) return;
+
+  const formattedMessage = formatLogMessage(level, message, data);
+
+  switch (level) {
+    case 'trace':
+    case 'debug':
+      console.debug(formattedMessage);
+      break;
+    case 'info':
+      console.info(formattedMessage);
+      break;
+    case 'warn':
+      console.warn(formattedMessage);
+      break;
+    case 'error':
+    case 'fatal':
+      console.error(formattedMessage);
+      break;
+  }
+}
+
+// Create child logger function
+function createChildLogger(context: Record<string, any>) {
+  return {
+    trace: (message: string, data?: any) => logMessage('trace', `[${JSON.stringify(context)}] ${message}`, data),
+    debug: (message: string, data?: any) => logMessage('debug', `[${JSON.stringify(context)}] ${message}`, data),
+    info: (message: string, data?: any) => logMessage('info', `[${JSON.stringify(context)}] ${message}`, data),
+    warn: (message: string, data?: any) => logMessage('warn', `[${JSON.stringify(context)}] ${message}`, data),
+    error: (message: string, data?: any) => logMessage('error', `[${JSON.stringify(context)}] ${message}`, data),
+    fatal: (message: string, data?: any) => logMessage('fatal', `[${JSON.stringify(context)}] ${message}`, data),
+    child: (additionalContext: Record<string, any>) => createChildLogger({ ...context, ...additionalContext }),
+  };
+}
+
 // Create base logger
-export const logger = pino({
-  level: logLevel,
-  ...(isDevelopment && {
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'HH:MM:ss',
-        ignore: 'pid,hostname',
-        singleLine: false,
-      },
-    },
-  }),
-  formatters: {
-    level: (label) => {
-      return { level: label.toUpperCase() };
-    },
-  },
-  base: {
-    env: process.env.NODE_ENV,
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-});
+export const logger = {
+  trace: (message: string, data?: any) => logMessage('trace', message, data),
+  debug: (message: string, data?: any) => logMessage('debug', message, data),
+  info: (message: string, data?: any) => logMessage('info', message, data),
+  warn: (message: string, data?: any) => logMessage('warn', message, data),
+  error: (message: string, data?: any) => logMessage('error', message, data),
+  fatal: (message: string, data?: any) => logMessage('fatal', message, data),
+  child: (context: Record<string, any>) => createChildLogger(context),
+};
 
 /**
  * Create a child logger with context
@@ -62,8 +106,6 @@ export function logRequest(
   userId?: string,
   metadata?: Record<string, any>
 ) {
-  const log = logger.child({ context: 'API' });
-  
   const logData = {
     method,
     url,
@@ -74,11 +116,11 @@ export function logRequest(
   };
 
   if (statusCode >= 500) {
-    log.error(logData, 'API request failed');
+    logger.error('API request failed', logData);
   } else if (statusCode >= 400) {
-    log.warn(logData, 'API request error');
+    logger.warn('API request error', logData);
   } else {
-    log.info(logData, 'API request completed');
+    logger.info('API request completed', logData);
   }
 }
 
@@ -90,22 +132,22 @@ export function logError(
   context: string,
   metadata?: Record<string, any>
 ) {
-  const log = logger.child({ context });
-  
   if (error instanceof Error) {
-    log.error({
+    logger.error('Error occurred', {
+      context,
       error: {
         message: error.message,
         stack: error.stack,
         name: error.name,
       },
       ...metadata,
-    }, 'Error occurred');
+    });
   } else {
-    log.error({
+    logger.error('Unknown error occurred', {
+      context,
       error: String(error),
       ...metadata,
-    }, 'Unknown error occurred');
+    });
   }
 }
 
@@ -119,15 +161,14 @@ export function logAIGeneration(
   duration: number,
   metadata?: Record<string, any>
 ) {
-  const log = logger.child({ context: 'AI' });
-  
-  log.info({
+  logger.info(`AI ${operation} ${success ? 'completed' : 'failed'}`, {
+    context: 'AI',
     provider,
     operation,
     success,
     duration: `${duration}ms`,
     ...metadata,
-  }, `AI ${operation} ${success ? 'completed' : 'failed'}`);
+  });
 }
 
 /**
@@ -140,15 +181,14 @@ export function logDatabase(
   duration?: number,
   metadata?: Record<string, any>
 ) {
-  const log = logger.child({ context: 'Database' });
-  
-  log.info({
+  logger.info(`Database ${operation} on ${table}`, {
+    context: 'Database',
     operation,
     table,
     success,
     ...(duration && { duration: `${duration}ms` }),
     ...metadata,
-  }, `Database ${operation} on ${table}`);
+  });
 }
 
 /**
@@ -167,14 +207,14 @@ export class PerformanceLogger {
 
   end(metadata?: Record<string, any>) {
     const duration = Date.now() - this.startTime;
-    const log = logger.child({ context: this.context });
-    
-    log.info({
+
+    logger.info(`${this.operation} completed`, {
+      context: this.context,
       operation: this.operation,
       duration: `${duration}ms`,
       ...metadata,
-    }, `${this.operation} completed`);
-    
+    });
+
     return duration;
   }
 
@@ -199,9 +239,8 @@ export function logSecurityEvent(
   userId?: string,
   metadata?: Record<string, any>
 ) {
-  const log = logger.child({ context: 'Security' });
-  
   const logData = {
+    context: 'Security',
     event,
     severity,
     userId,
@@ -212,13 +251,13 @@ export function logSecurityEvent(
   switch (severity) {
     case 'critical':
     case 'high':
-      log.error(logData, `Security event: ${event}`);
+      logger.error(`Security event: ${event}`, logData);
       break;
     case 'medium':
-      log.warn(logData, `Security event: ${event}`);
+      logger.warn(`Security event: ${event}`, logData);
       break;
     case 'low':
-      log.info(logData, `Security event: ${event}`);
+      logger.info(`Security event: ${event}`, logData);
       break;
   }
 }
@@ -232,15 +271,14 @@ export function logUserActivity(
   resource?: string,
   metadata?: Record<string, any>
 ) {
-  const log = logger.child({ context: 'UserActivity' });
-  
-  log.info({
+  logger.info(`User action: ${action}`, {
+    context: 'UserActivity',
     userId,
     action,
     resource,
     timestamp: new Date().toISOString(),
     ...metadata,
-  }, `User action: ${action}`);
+  });
 }
 
 /**
@@ -254,9 +292,8 @@ export function logAudit(
   changes?: Record<string, any>,
   metadata?: Record<string, any>
 ) {
-  const log = logger.child({ context: 'Audit' });
-  
-  log.info({
+  logger.info(`Audit: ${action} on ${entityType}`, {
+    context: 'Audit',
     action,
     userId,
     entityType,
@@ -264,7 +301,7 @@ export function logAudit(
     changes,
     timestamp: new Date().toISOString(),
     ...metadata,
-  }, `Audit: ${action} on ${entityType}`);
+  });
 }
 
 export default logger;

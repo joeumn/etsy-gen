@@ -6,6 +6,7 @@
 
 import { logger, logError } from '../logger';
 import axios from 'axios';
+import puppeteer from 'puppeteer';
 
 export interface WebTrend {
   source: string;
@@ -24,7 +25,6 @@ export interface WebTrend {
 export async function scrapeGoogleTrends(keywords: string[]): Promise<WebTrend[]> {
   try {
     // Use puppeteer for real Google Trends scraping
-    const puppeteer = require('puppeteer');
 
     const browser = await puppeteer.launch({
       headless: true,
@@ -43,7 +43,7 @@ export async function scrapeGoogleTrends(keywords: string[]): Promise<WebTrend[]
         await page.goto(url, { waitUntil: 'networkidle2' });
 
         // Wait for content to load
-        await page.waitForTimeout(2000);
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Extract trend data
         const trendData = await page.evaluate(() => {
@@ -115,7 +115,7 @@ export async function scrapeGoogleTrends(keywords: string[]): Promise<WebTrend[]
     }
 
     await browser.close();
-    logger.info({ count: trends.length }, 'Scraped Google Trends with Puppeteer');
+    logger.info(`Scraped Google Trends with Puppeteer - count: ${trends.length}`);
     return trends;
   } catch (error) {
     logError(error, 'GoogleTrendsScraper');
@@ -157,7 +157,7 @@ export async function scrapeBlogMentions(keywords: string[]): Promise<WebTrend[]
       timestamp: new Date(),
     }));
 
-    logger.info({ count: trends.length }, 'Scraped blog mentions');
+    logger.info(`Scraped blog mentions - count: ${trends.length}`);
     return trends;
   } catch (error) {
     logError(error, 'BlogScraper');
