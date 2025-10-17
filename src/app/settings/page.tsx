@@ -525,17 +525,51 @@ export default function Settings() {
                     Feature Status
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {Object.entries(settings.features).map(([key, enabled]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm capitalize">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                      </span>
-                      <div className={`w-2 h-2 rounded-full ${
-                        enabled ? 'bg-green-500' : 'bg-gray-400'
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Zig 3: Studio</p>
+                        <p className="text-xs text-muted-foreground">AI Design Studio</p>
+                      </div>
+                      <div className={`w-2 h-2 rounded-full mt-1 ${
+                        settings.features.zig3Studio ? 'bg-green-500' : 'bg-gray-400'
                       }`} />
                     </div>
-                  ))}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Zig 4: Stripe</p>
+                        <p className="text-xs text-muted-foreground">Payment Processing</p>
+                      </div>
+                      <div className={`w-2 h-2 rounded-full mt-1 ${
+                        settings.features.zig4Stripe ? 'bg-green-500' : 'bg-gray-400'
+                      }`} />
+                    </div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Zig 5: Social</p>
+                        <p className="text-xs text-muted-foreground">Social Media Signals</p>
+                      </div>
+                      <div className={`w-2 h-2 rounded-full mt-1 ${
+                        settings.features.zig5Social ? 'bg-green-500' : 'bg-gray-400'
+                      }`} />
+                    </div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Zig 6: Branding</p>
+                        <p className="text-xs text-muted-foreground">Auto-Branding Engine</p>
+                      </div>
+                      <div className={`w-2 h-2 rounded-full mt-1 ${
+                        settings.features.zig6Branding ? 'bg-green-500' : 'bg-gray-400'
+                      }`} />
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      Feature flags are controlled by environment variables in your Vercel deployment. 
+                      Set NEXT_PUBLIC_ENABLE_ZIG*_* variables to enable features.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
