@@ -19,10 +19,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // If no userId from auth header, try to get from query params (for development)
+    // If no userId from auth header, try to get from query params
     if (!userId) {
       const { searchParams } = new URL(request.url);
-      userId = searchParams.get('userId') || 'mock-user-1';
+      userId = searchParams.get('userId');
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
     // Verify user exists

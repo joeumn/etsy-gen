@@ -20,7 +20,11 @@ export async function GET(request: NextRequest) {
 
     if (!userId) {
       const { searchParams } = new URL(request.url);
-      userId = searchParams.get('userId') || 'mock-user-1';
+      userId = searchParams.get('userId');
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
     // Verify user exists

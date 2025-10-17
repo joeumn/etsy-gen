@@ -77,7 +77,17 @@ export default function Settings() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const response = await fetch('/api/settings/load?userId=mock-user-1');
+        // Import getCurrentUserId dynamically to avoid SSR issues
+        const { getCurrentUserId } = await import('@/lib/session');
+        const userId = getCurrentUserId();
+        
+        if (!userId) {
+          console.error('No user ID found');
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch(`/api/settings/load?userId=${userId}`);
         if (response.ok) {
           const data = await response.json();
           setSettings(prev => ({
@@ -102,7 +112,19 @@ export default function Settings() {
     setSaveStatus("idle");
 
     try {
-      const response = await fetch('/api/settings/save', {
+      // Import getCurrentUserId dynamically to avoid SSR issues
+      const { getCurrentUserId } = await import('@/lib/session');
+      const userId = getCurrentUserId();
+      
+      if (!userId) {
+        console.error('No user ID found');
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+        setIsSaving(false);
+        return;
+      }
+
+      const response = await fetch(`/api/settings/save?userId=${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
