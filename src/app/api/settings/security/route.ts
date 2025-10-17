@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
 
 const securityUpdateSchema = z.object({
   newPassword: z.string().min(8, { message: "New password must be at least 8 characters long" }),
 });
 
 export async function POST(req: NextRequest) {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const {
     data: { session },

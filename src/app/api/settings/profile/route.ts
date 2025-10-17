@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
 
 const profileUpdateSchema = z.object({
   name: z.string().min(1, { message: "Name cannot be empty" }).max(255),
@@ -9,8 +8,7 @@ const profileUpdateSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
 
   const {
     data: { session },
