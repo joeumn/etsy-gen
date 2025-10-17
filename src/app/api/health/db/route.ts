@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, adminSupabase } from '@/lib/db/client';
+import { supabase, supabaseAdmin } from '@/lib/db/client';
 
 export async function GET(_req: NextRequest) {
-  const db = adminSupabase ?? supabase;
+  const db = supabaseAdmin ?? supabase;
   try {
     const { error } = await db.from('users').select('count').limit(1);
     if (error) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, supabaseAdmin, adminSupabase } from '@/lib/db/client';
+import { supabase, supabaseAdmin } from '@/lib/db/client';
 import { getUserById } from '@/lib/auth-helper';
 
 export async function POST(request: NextRequest) {
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const db = adminSupabase ?? supabase;
+    const db = supabaseAdmin ?? supabase;
 
     let dbConnected = false;
     let dbError: string | null = null;
