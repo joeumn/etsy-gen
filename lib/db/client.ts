@@ -4,11 +4,16 @@ const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// In production, fail fast if Supabase is not configured
-if (process.env.NODE_ENV === 'production' && (!supabaseUrl || !supabaseKey)) {
-  throw new Error(
-    'FATAL: Supabase configuration is missing in production. ' +
-    'Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.'
+// Helper to check if we're in a build phase (Next.js sets these during build)
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                     process.env.NEXT_PHASE === 'phase-export';
+
+// In production, log warning if Supabase is not configured (but don't break build)
+// The actual runtime checks will happen when the clients are used
+if (process.env.NODE_ENV === 'production' && !isBuildTime && (!supabaseUrl || !supabaseKey)) {
+  console.warn(
+    'WARNING: Supabase configuration is missing in production. ' +
+    'Database operations will fail. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.'
   );
 }
 
