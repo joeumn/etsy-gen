@@ -318,7 +318,7 @@ export default function OnboardingPage() {
         return (
           <div className="space-y-4">
             <p className="text-muted-foreground">
-              We're checking your Supabase database connection and ensuring all migrations are up to date.
+              We&apos;re checking your Supabase database connection and ensuring all migrations are up to date.
             </p>
             <Button onClick={testDatabaseConnection} disabled={isLoading}>
               {isLoading ? "Testing..." : "Test Database Connection"}
@@ -423,7 +423,7 @@ export default function OnboardingPage() {
         return (
           <div className="space-y-4">
             <p className="text-muted-foreground">
-              We're testing your web scraping and social media scanning capabilities.
+              We&apos;re testing your web scraping and social media scanning capabilities.
             </p>
             <Button onClick={testScanners} disabled={isLoading}>
               {isLoading ? "Testing..." : "Test Scanners"}
@@ -478,7 +478,7 @@ export default function OnboardingPage() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2">Welcome to EtsyGen!</h1>
             <p className="text-muted-foreground">
-              Let's get your app set up and running in just a few steps.
+              Let&apos;s get your app set up and running in just a few steps.
             </p>
           </div>
 

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from 'lucide-react';
 import type { SaveStatus } from '../page';
-import { createClient } from '@/lib/db/client';
+import { createClient } from '@/lib/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProfileSettingsProps {
@@ -49,11 +49,10 @@ const ProfileSettings = forwardRef((props: ProfileSettingsProps, ref) => {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  const supabase = createClient();
-
   useEffect(() => {
     const fetchUserData = async () => {
       setIsLoading(true);
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setEmail(user.email || '');
@@ -71,10 +70,11 @@ const ProfileSettings = forwardRef((props: ProfileSettingsProps, ref) => {
       setIsLoading(false);
     };
     fetchUserData();
-  }, [supabase]);
+  }, []);
 
   useImperativeHandle(ref, () => ({
     handleSave: async () => {
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 

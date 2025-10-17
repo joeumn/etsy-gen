@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
 
 const settingsSchema = z.object({
@@ -35,8 +34,7 @@ const settingsSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await createClient();
 
     try {
         const { data: { session }, } = await supabase.auth.getSession();

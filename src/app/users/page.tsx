@@ -531,7 +531,7 @@ export default function UsersPage() {
                           <li className="text-xs font-mono">fix-user-settings-migration.sql</li>
                         </ul>
                       </li>
-                      <li>Click "Test Connection" to verify</li>
+                      <li>Click &quot;Test Connection&quot; to verify</li>
                     </ol>
                   </div>
                   <Button
