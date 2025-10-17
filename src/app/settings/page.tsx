@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -19,7 +19,13 @@ import {
   Download,
   Save,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Bell,
+  Shield,
+  Server,
+  RefreshCw,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -60,52 +66,88 @@ export default function Settings() {
       newTrends: true,
     },
 
-    // Feature Flags
+    // Feature Flags (from server)
     features: {
-      zig3Studio: process.env.NEXT_PUBLIC_ENABLE_ZIG3_STUDIO === 'true',
-      zig4Stripe: process.env.NEXT_PUBLIC_ENABLE_ZIG4_STRIPE === 'true',
-      zig5Social: process.env.NEXT_PUBLIC_ENABLE_ZIG5_SOCIAL === 'true',
-      zig6Branding: process.env.NEXT_PUBLIC_ENABLE_ZIG6_BRANDING === 'true',
+      zig3Studio: false,
+      zig4Stripe: false,
+      zig5Social: false,
+      zig6Branding: false,
     },
+
+    // System Config Status (from server)
+    systemConfig: {
+      hasGeminiKey: false,
+      hasOpenAIKey: false,
+      hasAnthropicKey: false,
+      hasAzureOpenAIKey: false,
+      hasEtsyConfig: false,
+      hasShopifyConfig: false,
+      hasAmazonConfig: false,
+      hasStripeConfig: false,
+      hasSupabaseConfig: false,
+    },
+  });
+
+  const [showApiKeys, setShowApiKeys] = useState({
+    gemini: false,
+    openai: false,
+    anthropic: false,
+    azureOpenAI: false,
+    etsy: false,
+    amazonAccess: false,
+    amazonSecret: false,
+    shopify: false,
   });
 
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
 
   // Load settings from API on mount
   useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        // Import getCurrentUserId dynamically to avoid SSR issues
-        const { getCurrentUserId } = await import('@/lib/session');
-        const userId = getCurrentUserId();
-        
-        if (!userId) {
-          console.error('No user ID found');
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await fetch(`/api/settings/load?userId=${userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setSettings(prev => ({
-            ...prev,
-            ...data,
-          }));
-        } else {
-          console.error('Failed to load settings:', await response.text());
-        }
-      } catch (error) {
-        console.error('Error loading settings:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadSettings();
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      setIsLoading(true);
+      // Import getCurrentUserId dynamically to avoid SSR issues
+      const { getCurrentUserId } = await import('@/lib/session');
+      const userId = getCurrentUserId();
+      
+      if (!userId) {
+        console.error('No user ID found');
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch(`/api/settings/load?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(prev => ({
+          ...prev,
+          ...data,
+        }));
+      } else {
+        console.error('Failed to load settings:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadSettings();
+    setIsRefreshing(false);
+  };
+
+  const toggleApiKeyVisibility = (key: keyof typeof showApiKeys) => {
+    setShowApiKeys(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -180,6 +222,15 @@ export default function Settings() {
           </motion.div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
+            <Button 
+              onClick={handleRefresh} 
+              disabled={isRefreshing} 
+              variant="outline" 
+              size="sm"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Button onClick={handleSave} disabled={isSaving} className="bg-ocean-500 hover:bg-ocean-600">
               {isSaving ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -271,59 +322,142 @@ export default function Settings() {
 
                   {/* AI API Keys */}
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold">API Keys</Label>
+                    <Label className="text-sm font-semibold">API Keys (User Level)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      These keys are specific to your account. System-level keys are configured in Vercel environment variables.
+                    </p>
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor="gemini-key" className="text-xs text-muted-foreground">Google Gemini API Key</Label>
-                        <Input
-                          id="gemini-key"
-                          type="password"
-                          placeholder="Enter your Gemini API key"
-                          value={settings.aiKeys.gemini}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
-                            ...prev,
-                            aiKeys: { ...prev.aiKeys, gemini: e.target.value }
-                          }))}
-                        />
+                        <div className="flex items-center justify-between mb-1">
+                          <Label htmlFor="gemini-key" className="text-xs text-muted-foreground">
+                            Google Gemini API Key
+                          </Label>
+                          {settings.systemConfig?.hasGeminiKey && (
+                            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              System configured
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <Input
+                            id="gemini-key"
+                            type={showApiKeys.gemini ? "text" : "password"}
+                            placeholder="Enter your Gemini API key"
+                            value={settings.aiKeys.gemini}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
+                              ...prev,
+                              aiKeys: { ...prev.aiKeys, gemini: e.target.value }
+                            }))}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => toggleApiKeyVisibility('gemini')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showApiKeys.gemini ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
                       <div>
-                        <Label htmlFor="openai-key" className="text-xs text-muted-foreground">OpenAI API Key</Label>
-                        <Input
-                          id="openai-key"
-                          type="password"
-                          placeholder="Enter your OpenAI API key"
-                          value={settings.aiKeys.openai}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
-                            ...prev,
-                            aiKeys: { ...prev.aiKeys, openai: e.target.value }
-                          }))}
-                        />
+                        <div className="flex items-center justify-between mb-1">
+                          <Label htmlFor="openai-key" className="text-xs text-muted-foreground">
+                            OpenAI API Key
+                          </Label>
+                          {settings.systemConfig?.hasOpenAIKey && (
+                            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              System configured
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <Input
+                            id="openai-key"
+                            type={showApiKeys.openai ? "text" : "password"}
+                            placeholder="Enter your OpenAI API key"
+                            value={settings.aiKeys.openai}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
+                              ...prev,
+                              aiKeys: { ...prev.aiKeys, openai: e.target.value }
+                            }))}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => toggleApiKeyVisibility('openai')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showApiKeys.openai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
                       <div>
-                        <Label htmlFor="anthropic-key" className="text-xs text-muted-foreground">Anthropic API Key</Label>
-                        <Input
-                          id="anthropic-key"
-                          type="password"
-                          placeholder="Enter your Anthropic API key"
-                          value={settings.aiKeys.anthropic}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
-                            ...prev,
-                            aiKeys: { ...prev.aiKeys, anthropic: e.target.value }
-                          }))}
-                        />
+                        <div className="flex items-center justify-between mb-1">
+                          <Label htmlFor="anthropic-key" className="text-xs text-muted-foreground">
+                            Anthropic API Key
+                          </Label>
+                          {settings.systemConfig?.hasAnthropicKey && (
+                            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              System configured
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <Input
+                            id="anthropic-key"
+                            type={showApiKeys.anthropic ? "text" : "password"}
+                            placeholder="Enter your Anthropic API key"
+                            value={settings.aiKeys.anthropic}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
+                              ...prev,
+                              aiKeys: { ...prev.aiKeys, anthropic: e.target.value }
+                            }))}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => toggleApiKeyVisibility('anthropic')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showApiKeys.anthropic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
                       <div>
-                        <Label htmlFor="azure-key" className="text-xs text-muted-foreground">Azure OpenAI API Key</Label>
-                        <Input
-                          id="azure-key"
-                          type="password"
-                          placeholder="Enter your Azure OpenAI API key"
-                          value={settings.aiKeys.azureOpenAI}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
-                            ...prev,
-                            aiKeys: { ...prev.aiKeys, azureOpenAI: e.target.value }
-                          }))}
-                        />
+                        <div className="flex items-center justify-between mb-1">
+                          <Label htmlFor="azure-key" className="text-xs text-muted-foreground">
+                            Azure OpenAI API Key
+                          </Label>
+                          {settings.systemConfig?.hasAzureOpenAIKey && (
+                            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              System configured
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <Input
+                            id="azure-key"
+                            type={showApiKeys.azureOpenAI ? "text" : "password"}
+                            placeholder="Enter your Azure OpenAI API key"
+                            value={settings.aiKeys.azureOpenAI}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({
+                              ...prev,
+                              aiKeys: { ...prev.aiKeys, azureOpenAI: e.target.value }
+                            }))}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => toggleApiKeyVisibility('azureOpenAI')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showApiKeys.azureOpenAI ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -343,12 +477,23 @@ export default function Settings() {
                     <Key className="h-5 w-5" />
                     Marketplace Connections
                   </CardTitle>
+                  <CardDescription>
+                    Connect your marketplace accounts. System-level configurations are shown when available.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Etsy */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Etsy Integration</Label>
+                      <div className="flex items-center gap-2">
+                        <Label>Etsy Integration</Label>
+                        {settings.systemConfig?.hasEtsyConfig && (
+                          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                            <Shield className="h-3 w-3" />
+                            System
+                          </span>
+                        )}
+                      </div>
                       <Switch
                         checked={settings.etsy.connected}
                         onCheckedChange={(checked: boolean) => 
@@ -362,16 +507,26 @@ export default function Settings() {
                     {settings.etsy.connected && (
                       <div className="space-y-2">
                         <Label htmlFor="etsy-api-key">API Key</Label>
-                        <Input
-                          id="etsy-api-key"
-                          type="password"
-                          placeholder="Enter your Etsy API key"
-                          value={settings.etsy.apiKey}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({ 
-                            ...prev, 
-                            etsy: { ...prev.etsy, apiKey: e.target.value } 
-                          }))}
-                        />
+                        <div className="relative">
+                          <Input
+                            id="etsy-api-key"
+                            type={showApiKeys.etsy ? "text" : "password"}
+                            placeholder="Enter your Etsy API key"
+                            value={settings.etsy.apiKey}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({ 
+                              ...prev, 
+                              etsy: { ...prev.etsy, apiKey: e.target.value } 
+                            }))}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => toggleApiKeyVisibility('etsy')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showApiKeys.etsy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -381,7 +536,15 @@ export default function Settings() {
                   {/* Amazon */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Amazon Integration</Label>
+                      <div className="flex items-center gap-2">
+                        <Label>Amazon Integration</Label>
+                        {settings.systemConfig?.hasAmazonConfig && (
+                          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                            <Shield className="h-3 w-3" />
+                            System
+                          </span>
+                        )}
+                      </div>
                       <Switch
                         checked={settings.amazon.connected}
                         onCheckedChange={(checked: boolean) => 
@@ -396,29 +559,49 @@ export default function Settings() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="amazon-access-key">Access Key</Label>
-                          <Input
-                            id="amazon-access-key"
-                            type="password"
-                            placeholder="Enter access key"
-                            value={settings.amazon.accessKey}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({ 
-                              ...prev, 
-                              amazon: { ...prev.amazon, accessKey: e.target.value } 
-                            }))}
-                          />
+                          <div className="relative">
+                            <Input
+                              id="amazon-access-key"
+                              type={showApiKeys.amazonAccess ? "text" : "password"}
+                              placeholder="Enter access key"
+                              value={settings.amazon.accessKey}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({ 
+                                ...prev, 
+                                amazon: { ...prev.amazon, accessKey: e.target.value } 
+                              }))}
+                              className="pr-10"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => toggleApiKeyVisibility('amazonAccess')}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                              {showApiKeys.amazonAccess ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </div>
                         <div>
                           <Label htmlFor="amazon-secret-key">Secret Key</Label>
-                          <Input
-                            id="amazon-secret-key"
-                            type="password"
-                            placeholder="Enter secret key"
-                            value={settings.amazon.secretKey}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({ 
-                              ...prev, 
-                              amazon: { ...prev.amazon, secretKey: e.target.value } 
-                            }))}
-                          />
+                          <div className="relative">
+                            <Input
+                              id="amazon-secret-key"
+                              type={showApiKeys.amazonSecret ? "text" : "password"}
+                              placeholder="Enter secret key"
+                              value={settings.amazon.secretKey}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({ 
+                                ...prev, 
+                                amazon: { ...prev.amazon, secretKey: e.target.value } 
+                              }))}
+                              className="pr-10"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => toggleApiKeyVisibility('amazonSecret')}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                              {showApiKeys.amazonSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -429,7 +612,15 @@ export default function Settings() {
                   {/* Shopify */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Shopify Integration</Label>
+                      <div className="flex items-center gap-2">
+                        <Label>Shopify Integration</Label>
+                        {settings.systemConfig?.hasShopifyConfig && (
+                          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                            <Shield className="h-3 w-3" />
+                            System
+                          </span>
+                        )}
+                      </div>
                       <Switch
                         checked={settings.shopify.connected}
                         onCheckedChange={(checked: boolean) => 
@@ -444,16 +635,26 @@ export default function Settings() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="shopify-token">Access Token</Label>
-                          <Input
-                            id="shopify-token"
-                            type="password"
-                            placeholder="Enter access token"
-                            value={settings.shopify.accessToken}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({ 
-                              ...prev, 
-                              shopify: { ...prev.shopify, accessToken: e.target.value } 
-                            }))}
-                          />
+                          <div className="relative">
+                            <Input
+                              id="shopify-token"
+                              type={showApiKeys.shopify ? "text" : "password"}
+                              placeholder="Enter access token"
+                              value={settings.shopify.accessToken}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings(prev => ({ 
+                                ...prev, 
+                                shopify: { ...prev.shopify, accessToken: e.target.value } 
+                              }))}
+                              className="pr-10"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => toggleApiKeyVisibility('shopify')}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                              {showApiKeys.shopify ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </div>
                         <div>
                           <Label htmlFor="shopify-domain">Shop Domain</Label>
@@ -482,15 +683,18 @@ export default function Settings() {
             >
               <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <SettingsIcon className="h-5 w-5" />
-                      Notification Preferences
-                    </CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Notification Preferences
+                  </CardTitle>
+                  <CardDescription>
+                    Choose which notifications you want to receive
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {Object.entries(settings.notifications).map(([key, value]) => (
                     <div key={key} className="flex items-center justify-between">
-                      <Label htmlFor={key} className="capitalize">
+                      <Label htmlFor={key} className="capitalize flex-1 cursor-pointer">
                         {key.replace(/([A-Z])/g, ' $1').trim()}
                       </Label>
                       <Switch
@@ -524,50 +728,169 @@ export default function Settings() {
                     <BarChart3 className="h-5 w-5" />
                     Feature Status
                   </CardTitle>
+                  <CardDescription>
+                    System-wide feature flags from Vercel
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-medium">Zig 3: Studio</p>
-                        <p className="text-xs text-muted-foreground">AI Design Studio</p>
+                    <div className="flex items-start justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          Zig 3: Studio
+                          {settings.features.zig3Studio && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                              Active
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">AI Design Studio</p>
                       </div>
-                      <div className={`w-2 h-2 rounded-full mt-1 ${
-                        settings.features.zig3Studio ? 'bg-green-500' : 'bg-gray-400'
+                      <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                        settings.features.zig3Studio ? 'bg-green-500 shadow-lg shadow-green-500/50' : 'bg-gray-400'
                       }`} />
                     </div>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-medium">Zig 4: Stripe</p>
-                        <p className="text-xs text-muted-foreground">Payment Processing</p>
+                    <div className="flex items-start justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          Zig 4: Stripe
+                          {settings.features.zig4Stripe && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                              Active
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Payment Processing</p>
                       </div>
-                      <div className={`w-2 h-2 rounded-full mt-1 ${
-                        settings.features.zig4Stripe ? 'bg-green-500' : 'bg-gray-400'
+                      <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                        settings.features.zig4Stripe ? 'bg-green-500 shadow-lg shadow-green-500/50' : 'bg-gray-400'
                       }`} />
                     </div>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-medium">Zig 5: Social</p>
-                        <p className="text-xs text-muted-foreground">Social Media Signals</p>
+                    <div className="flex items-start justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          Zig 5: Social
+                          {settings.features.zig5Social && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                              Active
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Social Media Signals</p>
                       </div>
-                      <div className={`w-2 h-2 rounded-full mt-1 ${
-                        settings.features.zig5Social ? 'bg-green-500' : 'bg-gray-400'
+                      <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                        settings.features.zig5Social ? 'bg-green-500 shadow-lg shadow-green-500/50' : 'bg-gray-400'
                       }`} />
                     </div>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-medium">Zig 6: Branding</p>
-                        <p className="text-xs text-muted-foreground">Auto-Branding Engine</p>
+                    <div className="flex items-start justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          Zig 6: Branding
+                          {settings.features.zig6Branding && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                              Active
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Auto-Branding Engine</p>
                       </div>
-                      <div className={`w-2 h-2 rounded-full mt-1 ${
-                        settings.features.zig6Branding ? 'bg-green-500' : 'bg-gray-400'
+                      <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                        settings.features.zig6Branding ? 'bg-green-500 shadow-lg shadow-green-500/50' : 'bg-gray-400'
                       }`} />
                     </div>
                   </div>
                   <div className="pt-3 border-t">
+                    <p className="text-xs text-muted-foreground flex items-start gap-2">
+                      <Server className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                      <span>
+                        Feature flags are controlled by environment variables in your Vercel deployment. 
+                        Set <code className="px-1 py-0.5 rounded bg-muted">NEXT_PUBLIC_ENABLE_ZIG*_*</code> to enable features.
+                      </span>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* System Configuration Status */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.45 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Server className="h-5 w-5" />
+                    System Configuration
+                  </CardTitle>
+                  <CardDescription>
+                    Environment variable status from Vercel
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Database</span>
+                      <span className={`flex items-center gap-1 ${
+                        settings.systemConfig?.hasSupabaseConfig ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {settings.systemConfig?.hasSupabaseConfig ? (
+                          <>
+                            <CheckCircle className="h-3 w-3" />
+                            Connected
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-3 w-3" />
+                            Not configured
+                          </>
+                        )}
+                      </span>
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">AI Providers</span>
+                      <span className="text-xs">
+                        {[
+                          settings.systemConfig?.hasGeminiKey,
+                          settings.systemConfig?.hasOpenAIKey,
+                          settings.systemConfig?.hasAnthropicKey,
+                          settings.systemConfig?.hasAzureOpenAIKey,
+                        ].filter(Boolean).length} / 4
+                      </span>
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Marketplaces</span>
+                      <span className="text-xs">
+                        {[
+                          settings.systemConfig?.hasEtsyConfig,
+                          settings.systemConfig?.hasShopifyConfig,
+                          settings.systemConfig?.hasAmazonConfig,
+                        ].filter(Boolean).length} / 3
+                      </span>
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Payment (Stripe)</span>
+                      <span className={`flex items-center gap-1 ${
+                        settings.systemConfig?.hasStripeConfig ? 'text-green-600 dark:text-green-400' : 'text-gray-500'
+                      }`}>
+                        {settings.systemConfig?.hasStripeConfig ? (
+                          <>
+                            <CheckCircle className="h-3 w-3" />
+                            Configured
+                          </>
+                        ) : (
+                          'Not configured'
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t">
                     <p className="text-xs text-muted-foreground">
-                      Feature flags are controlled by environment variables in your Vercel deployment. 
-                      Set NEXT_PUBLIC_ENABLE_ZIG*_* variables to enable features.
+                      System configuration is managed through Vercel environment variables and cannot be changed here.
                     </p>
                   </div>
                 </CardContent>

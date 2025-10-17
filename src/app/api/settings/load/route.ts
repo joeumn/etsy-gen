@@ -45,6 +45,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to load settings' }, { status: 500 });
     }
 
+    // Get feature flags from environment (server-side)
+    const featureFlags = {
+      zig3Studio: process.env.NEXT_PUBLIC_ENABLE_ZIG3_STUDIO === 'true',
+      zig4Stripe: process.env.NEXT_PUBLIC_ENABLE_ZIG4_STRIPE === 'true',
+      zig5Social: process.env.NEXT_PUBLIC_ENABLE_ZIG5_SOCIAL === 'true',
+      zig6Branding: process.env.NEXT_PUBLIC_ENABLE_ZIG6_BRANDING === 'true',
+    };
+
+    // Get system configuration status (without exposing actual keys)
+    const systemConfig = {
+      hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+      hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
+      hasAzureOpenAIKey: !!process.env.AZURE_OPENAI_API_KEY,
+      hasEtsyConfig: !!(process.env.ETSY_API_KEY && process.env.ETSY_API_SECRET),
+      hasShopifyConfig: !!(process.env.SHOPIFY_ACCESS_TOKEN && process.env.SHOPIFY_SHOP_DOMAIN),
+      hasAmazonConfig: !!(process.env.AMAZON_ACCESS_KEY && process.env.AMAZON_SECRET_KEY),
+    };
+
     // Return default settings if none found
     const defaultSettings = {
       aiProvider: "gemini",
@@ -75,18 +94,8 @@ export async function GET(request: NextRequest) {
         weeklyReport: true,
         newTrends: true,
       },
-      features: {
-        zig3Studio: process.env.NEXT_PUBLIC_ENABLE_ZIG3_STUDIO === 'true' || false,
-        zig4Stripe: process.env.NEXT_PUBLIC_ENABLE_ZIG4_STRIPE === 'true' || false,
-        zig5Social: process.env.NEXT_PUBLIC_ENABLE_ZIG5_SOCIAL === 'true' || false,
-        zig6Branding: process.env.NEXT_PUBLIC_ENABLE_ZIG6_BRANDING === 'true' || false,
-      },
-      featureDescriptions: {
-        zig3Studio: 'AI Design Studio - Generate product mockups and designs',
-        zig4Stripe: 'Payment Processing - Stripe integration for payments',
-        zig5Social: 'Social Media Signals - Analyze social media trends',
-        zig6Branding: 'Auto-Branding Engine - Generate brand assets automatically',
-      },
+      features: featureFlags,
+      systemConfig: systemConfig,
     };
 
     // Merge saved settings with defaults
@@ -97,7 +106,8 @@ export async function GET(request: NextRequest) {
       amazon: settings.marketplace_connections?.amazon || defaultSettings.amazon,
       shopify: settings.marketplace_connections?.shopify || defaultSettings.shopify,
       notifications: settings.notifications || defaultSettings.notifications,
-      features: settings.feature_flags || defaultSettings.features,
+      features: featureFlags, // Always use server-side feature flags
+      systemConfig: systemConfig, // Always include system config status
     } : defaultSettings;
 
     return NextResponse.json(mergedSettings);
