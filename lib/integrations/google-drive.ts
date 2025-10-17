@@ -58,9 +58,9 @@ export async function uploadProductToDrive(
     // In production, use Google Drive API
     const fileName = `${productTitle.replace(/[^a-z0-9]/gi, '_')}_${productId}.pdf`;
     
-    logger.info('Uploaded product to Google Drive', {
-      fileName,
-      productId
+    logger.info('Uploaded product to Google Drive', { 
+      fileName, 
+      productId 
     });
 
     return {

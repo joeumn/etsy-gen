@@ -45,9 +45,9 @@ export async function createNotification(notification: Omit<Notification, 'id' |
 async function sendEmailNotification(notification: Omit<Notification, 'id' | 'createdAt'>): Promise<void> {
   try {
     // In production, use SendGrid, AWS SES, or other email service
-    logger.info('Email notification sent', {
-      to: notification.userId,
-      subject: notification.title
+    logger.info('Email notification sent', { 
+      to: notification.userId, 
+      subject: notification.title 
     });
   } catch (error) {
     logError(error, 'SendEmailNotification');

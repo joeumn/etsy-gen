@@ -222,6 +222,12 @@ export default function Settings() {
           </motion.div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/users">
+                <Shield className="h-4 w-4 mr-2" />
+                Users
+              </Link>
+            </Button>
             <Button 
               onClick={handleRefresh} 
               disabled={isRefreshing} 

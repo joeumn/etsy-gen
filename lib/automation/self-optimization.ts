@@ -203,7 +203,7 @@ export async function selfLearnFromPerformance(): Promise<OptimizationMetrics> {
       improvementSuggestions,
     };
 
-    logger.info('Self-learning metrics calculated', { metrics });
+    logger.info('Self-learning metrics calculated', metrics);
     return metrics;
   } catch (error) {
     logError(error, 'SelfLearn');
