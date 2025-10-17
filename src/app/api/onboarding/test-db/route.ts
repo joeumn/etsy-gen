@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/db/client';
 import { logError } from '@/lib/logger';
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
+  // Delegate GET to POST so onboarding GET call works
+  return POST(request);
+}
+
+export async function POST(_request: NextRequest) {
   try {
-    // For development, skip actual database check and return success
-    // This allows onboarding to proceed with mock data
+    // In development, skip real DB calls for a smooth local onboarding
     if (process.env.NODE_ENV !== 'production') {
       return NextResponse.json({
         success: true,

@@ -1,5 +1,33 @@
 import { createClient } from '@supabase/supabase-js';
 
+const supabaseUrl =
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey =
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// Warn if Supabase credentials are missing (but don't break the build)
+if (!supabaseUrl || !supabaseAnonKey) {
+  const msg =
+    process.env.NODE_ENV === 'production'
+      ? '[prod] Missing Supabase configuration (SUPABASE_URL and/or SUPABASE_ANON_KEY). Database operations will fail.'
+      : '[dev] Supabase env not set. Using placeholder client; DB calls will fail.';
+  // eslint-disable-next-line no-console
+  console.warn(msg);
+}
+
+// Public (anon) client for client-side and non-privileged server routes
+export const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : createClient('https://placeholder.supabase.co', 'placeholder-key');
+
+// Admin client for privileged server-side operations (only if service role provided)
+export const adminSupabase =
+  supabaseUrl && supabaseServiceRoleKey
+    ? createClient(supabaseUrl, supabaseServiceRoleKey)
+    : undefined;
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
