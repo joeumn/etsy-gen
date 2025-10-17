@@ -62,6 +62,8 @@ export async function GET(request: NextRequest) {
       hasEtsyConfig: !!(process.env.ETSY_API_KEY && process.env.ETSY_API_SECRET),
       hasShopifyConfig: !!(process.env.SHOPIFY_ACCESS_TOKEN && process.env.SHOPIFY_SHOP_DOMAIN),
       hasAmazonConfig: !!(process.env.AMAZON_ACCESS_KEY && process.env.AMAZON_SECRET_KEY),
+      hasSupabaseConfig: !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY),
+      hasStripeConfig: !!process.env.STRIPE_SECRET_KEY,
     };
 
     // Return default settings if none found

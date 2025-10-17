@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
     // Run the operations cycle
     const result = await runOperationsCycle();
 
-    logger.info({
+    logger.info('Operations Cycle completed', {
       ...result,
       duration: Date.now() - startTime,
-    }, 'Operations Cycle completed');
+    });
 
     return NextResponse.json({
       cycle: 'operations',

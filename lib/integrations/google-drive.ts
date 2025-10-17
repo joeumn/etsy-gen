@@ -58,10 +58,10 @@ export async function uploadProductToDrive(
     // In production, use Google Drive API
     const fileName = `${productTitle.replace(/[^a-z0-9]/gi, '_')}_${productId}.pdf`;
     
-    logger.info({ 
+    logger.info('Uploaded product to Google Drive', { 
       fileName, 
       productId 
-    }, 'Uploaded product to Google Drive');
+    });
 
     return {
       id: `drive-${Date.now()}`,
@@ -111,7 +111,7 @@ export async function syncAllProductsToDrive(): Promise<{
       }
     }
 
-    logger.info({ synced, failed }, 'Google Drive sync completed');
+    logger.info('Google Drive sync completed', { synced, failed });
     return { synced, failed };
   } catch (error) {
     logError(error, 'SyncAllProductsToDrive');

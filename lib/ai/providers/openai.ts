@@ -15,7 +15,7 @@ export class OpenAIProvider implements AIProvider {
         apiKey: config.apiKey,
       });
       this.isAvailable = !!config.apiKey;
-      logger.info({ provider: 'OpenAI' }, 'OpenAI provider initialized');
+      logger.info('OpenAI provider initialized', { provider: 'OpenAI' });
     } catch (error) {
       logError(error, 'OpenAIProvider', { action: 'initialize' });
       this.isAvailable = false;
@@ -155,7 +155,7 @@ Return only valid JSON with this structure:
     const startTime = Date.now();
     
     if (!this.isAvailable) {
-      logger.warn({ provider: 'OpenAI' }, 'OpenAI unavailable for image generation');
+      logger.warn('OpenAI unavailable for image generation', { provider: 'OpenAI' });
       return `https://via.placeholder.com/1024x1024/FF6B22/FFFFFF?text=${encodeURIComponent(prompt.substring(0, 50))}`;
     }
 
@@ -193,7 +193,7 @@ Return only valid JSON with this structure:
     const startTime = Date.now();
     
     if (!this.isAvailable) {
-      logger.warn({ provider: 'OpenAI' }, 'OpenAI unavailable, using product description');
+      logger.warn('OpenAI unavailable, using product description', { provider: 'OpenAI' });
       return product.description;
     }
 
