@@ -7,23 +7,14 @@ const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// In production, fail fast if required env vars are missing
-if (
-  process.env.NODE_ENV === 'production' && (!supabaseUrl || !supabaseAnonKey)
-) {
-  throw new Error(
-    'Missing Supabase configuration (SUPABASE_URL and/or SUPABASE_ANON_KEY).'
-  );
-}
-
-// In development, warn if missing (placeholder will be used)
-if (
-  process.env.NODE_ENV !== 'production' && (!supabaseUrl || !supabaseAnonKey)
-) {
+// Warn if Supabase credentials are missing (but don't break the build)
+if (!supabaseUrl || !supabaseAnonKey) {
+  const msg =
+    process.env.NODE_ENV === 'production'
+      ? '[prod] Missing Supabase configuration (SUPABASE_URL and/or SUPABASE_ANON_KEY). Database operations will fail.'
+      : '[dev] Supabase env not set. Using placeholder client; DB calls will fail.';
   // eslint-disable-next-line no-console
-  console.warn(
-    '[dev] Supabase env not set. Using placeholder client; DB calls will fail.'
-  );
+  console.warn(msg);
 }
 
 // Public (anon) client for client-side and non-privileged server routes
