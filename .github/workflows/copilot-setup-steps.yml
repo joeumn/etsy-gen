@@ -1,0 +1,31 @@
+# This file tells Copilot what environment it needs to run your project.
+# It ensures Copilot uses pnpm and the correct Node.js version.
+name: Copilot Setup Steps
+
+on:
+  # This workflow is triggered by Copilot
+  workflow_dispatch:
+
+jobs:
+  # The job ID MUST be 'copilot-setup-steps'
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9 # Or your specific pnpm version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # Or your specific Node.js version
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Removed the 'prisma generate' step as it's not needed for Supabase
