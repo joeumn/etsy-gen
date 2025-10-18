@@ -43,7 +43,8 @@ export async function middleware(request: NextRequest) {
       if ((isDevelopment && !hasNextAuthSecret) || forceMockAuth) {
         console.log('⚠️ Using mock authentication for development');
         const requestHeaders = new Headers(request.headers);
-        requestHeaders.set('x-user-id', 'mock-user-1');
+        // Use fixed UUID that matches the mock user in the database schema
+        requestHeaders.set('x-user-id', '00000000-0000-0000-0000-000000000001');
         requestHeaders.set('x-user-email', 'joeinduluth@gmail.com');
         
         return NextResponse.next({

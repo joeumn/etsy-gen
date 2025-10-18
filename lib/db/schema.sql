@@ -363,3 +363,16 @@ ON CONFLICT (email) DO UPDATE SET
   is_active = EXCLUDED.is_active,
   email_verified = EXCLUDED.email_verified;
 
+-- Insert mock user for development with fixed UUID (password: Two1Eight)
+-- This user has a fixed UUID for development/testing purposes
+-- Password hash generated with bcrypt, rounds=12
+INSERT INTO users (id, email, password_hash, name, role, is_active, email_verified) VALUES
+('00000000-0000-0000-0000-000000000001'::UUID, 'joeinduluth@gmail.com', '$2a$12$oQZlXqZJX8PQ0yLm3Jt7.OJ3Z3sK6ZJ3Z3sK6ZJ3Z3sK6ZJ3Z3sK6O', 'Joe Induluth', 'super_admin', true, true)
+ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  password_hash = EXCLUDED.password_hash,
+  name = EXCLUDED.name,
+  role = EXCLUDED.role,
+  is_active = EXCLUDED.is_active,
+  email_verified = EXCLUDED.email_verified;
+
