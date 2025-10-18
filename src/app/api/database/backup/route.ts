@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
 import { requireAuth } from '@/lib/auth-session';
 import { createDatabaseBackup, listAvailableBackups } from '@/lib/db/backup-restore';
+import { updateDatabaseOperationStatus } from '@/lib/realtime';
 
 // POST - Create database backup
 export async function POST(request: NextRequest) {
@@ -31,19 +32,22 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      // Update status to running with real-time notification
+      await updateDatabaseOperationStatus(operation.id, 'running', {
+        progress: 10,
+        message: 'Starting database backup...',
+      });
+
       // Create real database backup using pg_dump and upload to S3
       const { fileName, s3Key, size } = await createDatabaseBackup(user.id);
 
-      // Update operation log as completed
-      await supabase
-        .from('database_operations')
-        .update({
-          status: 'completed',
-          file_url: s3Key,
-          file_size: size,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', operation.id);
+      // Update operation log as completed with real-time notification
+      await updateDatabaseOperationStatus(operation.id, 'completed', {
+        progress: 100,
+        message: 'Backup completed successfully',
+        fileUrl: s3Key,
+        fileSize: size,
+      });
 
       return NextResponse.json({
         success: true,
@@ -56,15 +60,12 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (backupError: any) {
-      // Update operation log as failed
-      await supabase
-        .from('database_operations')
-        .update({
-          status: 'failed',
-          error_message: backupError.message,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', operation.id);
+      // Update operation log as failed with real-time notification
+      await updateDatabaseOperationStatus(operation.id, 'failed', {
+        progress: 0,
+        message: 'Backup failed',
+        error: backupError.message,
+      });
 
       return NextResponse.json(
         { error: backupError.message },

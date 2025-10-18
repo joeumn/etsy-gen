@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
 import { requireAuth } from '@/lib/auth-session';
 import { restoreDatabaseBackup } from '@/lib/db/backup-restore';
+import { updateDatabaseOperationStatus } from '@/lib/realtime';
 
 // POST - Restore database from backup
 export async function POST(request: NextRequest) {
@@ -60,17 +61,20 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      // Update status to running with real-time notification
+      await updateDatabaseOperationStatus(operation.id, 'running', {
+        progress: 10,
+        message: 'Starting database restore...',
+      });
+
       // Restore database from backup file in S3
       await restoreDatabaseBackup(backupOperation.file_url);
 
-      // Update operation log as completed
-      await supabase
-        .from('database_operations')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', operation.id);
+      // Update operation log as completed with real-time notification
+      await updateDatabaseOperationStatus(operation.id, 'completed', {
+        progress: 100,
+        message: 'Restore completed successfully',
+      });
 
       return NextResponse.json({
         success: true,
@@ -81,15 +85,12 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (restoreError: any) {
-      // Update operation log as failed
-      await supabase
-        .from('database_operations')
-        .update({
-          status: 'failed',
-          error_message: restoreError.message,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', operation.id);
+      // Update operation log as failed with real-time notification
+      await updateDatabaseOperationStatus(operation.id, 'failed', {
+        progress: 0,
+        message: 'Restore failed',
+        error: restoreError.message,
+      });
 
       return NextResponse.json(
         { error: restoreError.message },

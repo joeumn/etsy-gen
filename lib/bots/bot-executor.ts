@@ -6,6 +6,7 @@
 
 import { supabase } from '../db/client';
 import { logger, logError, PerformanceLogger } from '../logger';
+import { updateBotStatus } from '../realtime';
 import { AIProviderFactory } from '../ai/aiFactory';
 import { EtsyMarketplace } from '../marketplaces/etsy';
 import { ShopifyMarketplace } from '../marketplaces/shopify';
@@ -35,28 +36,20 @@ export async function executeBot(botId: string): Promise<BotExecutionResult> {
       throw new Error('Bot not found');
     }
 
-    // Update bot status to running
-    await supabase
-      .from('ai_bots')
-      .update({ 
-        status: 'running',
-        last_run_at: new Date().toISOString(),
-      })
-      .eq('id', botId);
+    // Update bot status to running with real-time notification
+    await updateBotStatus(botId, 'running', {
+      lastRunAt: new Date().toISOString(),
+    });
 
     logger.info(`Executing bot: ${bot.name} (${bot.type})`);
 
     // Simulate bot execution (replace with real logic)
     const tasksCompleted = Math.floor(Math.random() * 10) + 1;
     
-    // Update bot status and stats
-    await supabase
-      .from('ai_bots')
-      .update({ 
-        status: 'active',
-        tasks_completed: bot.tasks_completed + tasksCompleted,
-      })
-      .eq('id', botId);
+    // Update bot status and stats with real-time notification
+    await updateBotStatus(botId, 'active', {
+      tasksCompleted: bot.tasks_completed + tasksCompleted,
+    });
 
     return {
       success: true,
@@ -66,14 +59,10 @@ export async function executeBot(botId: string): Promise<BotExecutionResult> {
   } catch (error) {
     logError(error, 'ExecuteBot', { botId });
     
-    // Update bot status to paused on error
-    await supabase
-      .from('ai_bots')
-      .update({ 
-        status: 'paused',
-        last_error: (error as Error).message,
-      })
-      .eq('id', botId);
+    // Update bot status to error with real-time notification
+    await updateBotStatus(botId, 'error', {
+      lastError: (error as Error).message,
+    });
 
     return {
       success: false,
