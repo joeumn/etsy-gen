@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
     const colorPalette = extractColorPalette(brandContent);
     const typography = extractTypography(brandContent);
 
-    // Generate logo URL (placeholder for demo)
+    // Generate logo URL as placeholder
+    // TODO: Integrate with image generation AI (DALL-E, Midjourney, etc.) for real logo creation
     const logoUrl = `https://via.placeholder.com/200x100/2D9CDB/FFFFFF?text=${encodeURIComponent(brandName.slice(0, 10))}`;
 
     // Create brand kit data

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import getServerSession from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { logError } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
     // For development, skip database update and return success
-    // This allows onboarding to proceed with mock data
+    // This allows developers to test onboarding flow without database configuration
     if (process.env.NODE_ENV !== 'production') {
       return NextResponse.json({
         success: true,
@@ -15,7 +14,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const session = await getServerSession(authOptions) as any;
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(

@@ -63,6 +63,10 @@ npm install
 SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_ANON_KEY=your_supabase_anon_key
    
+# Server-side admin routes (REQUIRED for admin operations)
+# Never expose to client - server-side only
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   
 # Authentication (REQUIRED)
 NEXTAUTH_SECRET=your_nextauth_secret_32_chars_min
 NEXTAUTH_URL=http://localhost:3000
@@ -96,13 +100,31 @@ lib/db/stage4-migrations.sql  # Stage 4 automation
 npm run dev
 ```
 
+4. **Verify authentication setup** (recommended):
+
+```bash
+node scripts/verify-auth-setup.js
+```
+
+This will check that all required environment variables and files are properly configured for authentication.
+
+> 📖 **Troubleshooting Authentication Issues?** See [AUTH_FIX_README.md](AUTH_FIX_README.md) for a quick reference or [AUTHENTICATION_TROUBLESHOOTING.md](AUTHENTICATION_TROUBLESHOOTING.md) for comprehensive troubleshooting.
+
+```
+
 4. **Access the app**:
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### First Access
+### Authentication
 
-The application is now configured for direct access without authentication. Simply navigate to the dashboard to begin using The Forge.
+The application uses NextAuth with Supabase for secure authentication:
+
+1. **Sign Up**: Create an account at `/signup`
+2. **Sign In**: Access at `/login`
+3. **Protected Routes**: Dashboard and features require authentication
+
+📖 **See [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md)** for detailed authentication documentation.
 
 ---
 

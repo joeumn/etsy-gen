@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdvancedStatCard } from "@/components/ui/advanced-stat-card";
 import { RevenueChart } from "@/components/ui/revenue-chart";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import {
   DollarSign,
   Package,
@@ -19,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   // Define stat card type
@@ -31,79 +33,115 @@ export default function Dashboard() {
     gradient: "flame" | "ocean" | "gold" | "forge";
   };
 
+  type RevenueDataPoint = {
+    name: string;
+    revenue: number;
+    profit: number;
+  };
+
+  type MarketplaceDataPoint = {
+    subject: string;
+    value: number;
+  };
+
+  type Activity = {
+    id: string | number;
+    action: string;
+    product: string;
+    marketplace: string;
+    time: string;
+    status: string;
+  };
+
   // Fetch real stats from API
   const [stats, setStats] = useState<StatCard[]>([]);
+  const [revenueData, setRevenueData] = useState<RevenueDataPoint[]>([]);
+  const [marketplaceData, setMarketplaceData] = useState<MarketplaceDataPoint[]>([]);
+  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const response = await fetch('/api/dashboard/stats');
-        if (response.ok) {
-          const data = await response.json();
+        // Fetch all dashboard data in parallel
+        const [statsRes, revenueRes, marketplaceRes, activityRes] = await Promise.all([
+          fetch('/api/dashboard/stats'),
+          fetch('/api/dashboard/revenue'),
+          fetch('/api/dashboard/marketplace-stats'),
+          fetch('/api/dashboard/activity'),
+        ]);
+
+        if (statsRes.ok) {
+          const data = await statsRes.json();
           setStats(data.stats);
         } else {
-          console.error('Failed to fetch stats:', await response.text());
-          // Show error state instead of mock data
+          console.error('Failed to fetch stats:', await statsRes.text());
           setStats([]);
         }
+
+        if (revenueRes.ok) {
+          const data = await revenueRes.json();
+          setRevenueData(data.revenueData || []);
+        } else {
+          console.error('Failed to fetch revenue data:', await revenueRes.text());
+          setRevenueData([]);
+        }
+
+        if (marketplaceRes.ok) {
+          const data = await marketplaceRes.json();
+          setMarketplaceData(data.marketplaceData || []);
+        } else {
+          console.error('Failed to fetch marketplace data:', await marketplaceRes.text());
+          setMarketplaceData([]);
+        }
+
+        if (activityRes.ok) {
+          const data = await activityRes.json();
+          setRecentActivity(data.recentActivity || []);
+        } else {
+          console.error('Failed to fetch activity data:', await activityRes.text());
+          setRecentActivity([]);
+        }
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
-        // Show error state instead of mock data
+        console.error('Failed to fetch dashboard data:', error);
         setStats([]);
+        setRevenueData([]);
+        setMarketplaceData([]);
+        setRecentActivity([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchDashboardData();
   }, []);
 
-  const revenueData = [
-    { name: "Week 1", revenue: 4200, profit: 2100 },
-    { name: "Week 2", revenue: 3800, profit: 1900 },
-    { name: "Week 3", revenue: 5400, profit: 2700 },
-    { name: "Week 4", revenue: 6300, profit: 3150 },
-    { name: "Week 5", revenue: 5200, profit: 2600 },
-  ];
-
-  const marketplaceData = [
-    { subject: "Etsy", value: 85 },
-    { subject: "Shopify", value: 72 },
-    { subject: "Amazon", value: 68 },
-    { subject: "Gumroad", value: 45 },
-  ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      action: "Product Listed",
-      product: "Minimalist Planner Template",
-      marketplace: "Etsy",
-      time: "2 min ago",
-      status: "success",
-    },
-    {
-      id: 2,
-      action: "Trend Scan Completed",
-      product: "Digital Downloads",
-      marketplace: "All",
-      time: "15 min ago",
-      status: "success",
-    },
-    {
-      id: 3,
-      action: "AI Generation",
-      product: "Watercolor Wedding Suite",
-      marketplace: "Shopify",
-      time: "1 hour ago",
-      status: "success",
-    },
-  ];
+  const handleTrendScan = async () => {
+    setScanning(true);
+    toast.info("Starting trend scan...");
+    
+    try {
+      const response = await fetch('/api/scan?marketplace=etsy&limit=50');
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(`Trend scan complete! Found ${data.data.trends?.length || 0} trending products.`);
+      } else {
+        toast.error("Trend scan failed. Please check your marketplace configuration.");
+      }
+    } catch (error) {
+      console.error('Trend scan error:', error);
+      toast.error("Failed to run trend scan. Please try again.");
+    } finally {
+      setScanning(false);
+    }
+  };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-4 md:space-y-6">
+    <ProtectedRoute>
+      <DashboardLayout>
+        <div className="space-y-4 md:space-y-6">
         {/* Welcome Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -170,9 +208,11 @@ export default function Dashboard() {
                 </Button>
                 <Button 
                   className="h-16 md:h-20 flex flex-col gap-2 bg-flame-gradient text-white hover:opacity-90"
+                  onClick={handleTrendScan}
+                  disabled={scanning}
                 >
                   <Play className="h-5 w-5 md:h-6 md:w-6" />
-                  <span className="text-sm md:text-base">Run Trend Scan</span>
+                  <span className="text-sm md:text-base">{scanning ? "Scanning..." : "Run Trend Scan"}</span>
                 </Button>
                 <Button 
                   className="h-16 md:h-20 flex flex-col gap-2 bg-gold-gradient text-white hover:opacity-90 sm:col-span-2 md:col-span-1"
@@ -264,5 +304,6 @@ export default function Dashboard() {
         </motion.div>
       </div>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }

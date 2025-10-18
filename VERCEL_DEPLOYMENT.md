@@ -28,15 +28,27 @@ Vercel will automatically:
 
 ### 3. Verify Environment Variables
 
+⚠️ **CRITICAL:** All environment variables must be properly configured in Vercel for the application to function. The application will fail at runtime if required variables are missing.
+
 Make sure these are set in your Vercel dashboard (Project Settings > Environment Variables):
 
 #### **Required** (Must Have)
 ```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your_anon_key_here
+# Supabase Database (REQUIRED - app will fail without these)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+
+# Authentication (REQUIRED)
 NEXTAUTH_SECRET=your_production_secret_32_chars
 NEXTAUTH_URL=https://your-domain.vercel.app
 ```
+
+**Important Notes:**
+- The `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are exposed to the browser
+- The `SUPABASE_SERVICE_ROLE_KEY` is server-side only and bypasses Row Level Security (RLS)
+- Without proper Supabase configuration, the app will throw errors at runtime
+- Mock data has been removed - all data now comes from your Supabase database
 
 #### **Optional** (Based on Features You Want)
 ```

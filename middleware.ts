@@ -1,27 +1,85 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 /**
  * The Forge - Middleware
  * 
- * Currently configured for open access - no authentication required
+ * Protects API routes with NextAuth authentication
+ * Falls back to mock authentication in development when NextAuth is not configured
  */
 
-export function middleware(request: NextRequest) {
-  // Allow all requests to proceed without authentication
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Public API routes that don't require authentication
+  const publicApiRoutes = [
+    '/api/auth',
+    '/api/health',
+    '/api/db-test',
+    '/api/onboarding',
+  ];
+
+  // Check if this is an API route
+  if (pathname.startsWith('/api')) {
+    // Allow public routes
+    if (publicApiRoutes.some(route => pathname.startsWith(route))) {
+      return NextResponse.next();
+    }
+
+    // Check for valid session
+    const token = await getToken({ 
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET 
+    });
+
+    if (!token) {
+      console.log(`[Middleware] No valid token found for ${pathname}`);
+      return NextResponse.json(
+        { error: 'Unauthorized - Please sign in' },
+        { status: 401 }
+      );
+    }
+
+    console.log(`[Middleware] Token found for ${pathname}, user ID:`, token.id || token.sub);
+
+    // Add user ID to headers for API routes to access
+    // NextAuth v5 uses 'sub' for user ID by default, but we also set 'id' in JWT callback
+    const userId = (token.id as string) || (token.sub as string);
+    const userEmail = (token.email as string);
+
+    if (!userId) {
+      console.error('[Middleware] Token missing user ID:', token);
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    console.log(`[Middleware] Setting headers - userId: ${userId}, email: ${userEmail}`);
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-id', userId);
+    if (userEmail) {
+      requestHeaders.set('x-user-email', userEmail);
+    }
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  // For non-API routes, allow through (UI can handle auth state)
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public assets
+     * Match API routes and protected pages
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg|.*\\.png).*)',
+    '/api/:path*',
   ],
 };

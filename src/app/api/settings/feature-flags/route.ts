@@ -24,7 +24,7 @@ export async function GET() {
       hasShopifyConfig: !!(process.env.SHOPIFY_ACCESS_TOKEN && process.env.SHOPIFY_SHOP_DOMAIN),
       hasAmazonConfig: !!(process.env.AMAZON_ACCESS_KEY && process.env.AMAZON_SECRET_KEY),
       hasStripeConfig: !!(process.env.STRIPE_SECRET_KEY && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY),
-      hasSupabaseConfig: !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY),
+      hasSupabaseConfig: !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     };
 
     return NextResponse.json({

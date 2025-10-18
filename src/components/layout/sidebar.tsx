@@ -15,7 +15,9 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  Palette,
+  Bot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -25,6 +27,8 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Products", href: "/products", icon: PackagePlus },
+  { name: "Studio", href: "/studio", icon: Palette },
+  { name: "AI Bots", href: "/bots", icon: Bot },
   { name: "Marketplaces", href: "/marketplaces", icon: Store },
   { name: "Integrations", href: "/integrations", icon: Plug },
   { name: "Settings", href: "/settings", icon: Settings },

@@ -27,6 +27,10 @@ SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your-anon-key-here
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+
+# Server-side admin routes (REQUIRED for admin operations)
+# Never expose this to the client - server-side only
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 ```
 
 **How to get these values:**
@@ -34,6 +38,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 2. Create a new project (or use existing)
 3. Go to Settings > API
 4. Copy the Project URL and anon/public key
+5. Copy the service_role key (for SUPABASE_SERVICE_ROLE_KEY)
 
 ### Authentication
 
