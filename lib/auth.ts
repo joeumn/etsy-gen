@@ -3,6 +3,13 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { supabaseAdmin } from "./db/client";
 import bcrypt from "bcryptjs";
 
+// Check if NEXTAUTH_SECRET is set
+if (!process.env.NEXTAUTH_SECRET) {
+  console.warn('⚠️ NEXTAUTH_SECRET is not set! Authentication will not work properly.');
+  console.warn('  → Generate a secret with: openssl rand -base64 32');
+  console.warn('  → Add it to your .env.local file');
+}
+
 export const authConfig: NextAuthConfig = {
   providers: [
     CredentialsProvider({
@@ -140,9 +147,10 @@ export const authConfig: NextAuthConfig = {
     },
   },
   pages: {
-    signIn: "/auth/signin",
+    signIn: "/login",
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development', // Enable debug mode in development
 };
 
 // Create the NextAuth instance
