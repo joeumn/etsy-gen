@@ -3,8 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Log missing configuration during build/development for better debugging
-if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
+// Check if we're in build phase (allow placeholders during build)
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
+// Log missing configuration during runtime for better debugging
+if (typeof window === 'undefined' && !isBuildPhase) {
   if (!supabaseUrl || !supabaseKey) {
     console.warn('⚠️ Database Configuration Warning:');
     if (!supabaseUrl) {
@@ -18,7 +21,9 @@ if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-productio
   }
 }
 
-// Initialize the Supabase client, using a placeholder if variables are missing to avoid crashing the app.
+// Initialize the Supabase client
+// During build: allow placeholder to prevent build failures
+// During runtime: use real credentials or placeholder (will fail on actual DB operations)
 const supabase =
   supabaseUrl && supabaseKey
     ? createClient(supabaseUrl, supabaseKey)

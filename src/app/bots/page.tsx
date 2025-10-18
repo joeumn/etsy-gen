@@ -37,15 +37,39 @@ interface AIBot {
 export default function BotManagementPage() {
   const [bots, setBots] = useState<AIBot[]>([]);
   const [loading, setLoading] = useState(true);
-  // For demo, we'll use a hardcoded admin user ID
-  // In production, this would come from authentication context/session
-  const userId = "admin@foundersforge.com"; // Placeholder - will be replaced by actual UUID from auth
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBots();
+    // Get user ID from authentication
+    const getUserId = async () => {
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          setUserId(user.id);
+        } else {
+          toast.error('Please log in to manage bots');
+        }
+      } catch (error) {
+        console.error('Error getting user ID:', error);
+        toast.error('Failed to authenticate');
+      }
+    };
+
+    getUserId();
   }, []);
 
+  useEffect(() => {
+    if (userId) {
+      fetchBots();
+    }
+  }, [userId]);
+
   const fetchBots = async () => {
+    if (!userId) return;
+
     try {
       setLoading(true);
       const response = await fetch(`/api/bots?userId=${userId}`);
@@ -63,6 +87,8 @@ export default function BotManagementPage() {
   };
 
   const handleToggleBotStatus = async (botId: string) => {
+    if (!userId) return;
+
     const bot = bots.find(b => b.id === botId);
     if (!bot) return;
 

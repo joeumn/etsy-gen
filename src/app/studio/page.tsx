@@ -31,7 +31,7 @@ export default function Studio() {
   useEffect(() => {
     const fetchAssets = async () => {
       try {
-        const response = await fetch('/api/studio/generate?userId=mock-user-1');
+        const response = await fetch('/api/studio/generate');
         if (response.ok) {
           const data = await response.json();
           setAssets(data.data || []);
@@ -59,7 +59,6 @@ export default function Studio() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt,
-          userId: 'mock-user-1',
         }),
       });
 
