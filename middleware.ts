@@ -15,6 +15,8 @@ export async function middleware(request: NextRequest) {
   const publicApiRoutes = [
     '/api/auth',
     '/api/health',
+    '/api/db-test',
+    '/api/onboarding',
   ];
 
   // Check if this is an API route

@@ -79,7 +79,7 @@ export const loginSchema = z.object({
  */
 export const generateProductSchema = z.object({
   trendData: z.object({
-    category: z.string(),
+    category: z.string().optional(),
     keywords: z.array(z.string()).optional(),
     marketplace: schemas.marketplace.optional(),
   }),

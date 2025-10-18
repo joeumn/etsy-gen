@@ -1,40 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { getUserById } from '@/lib/auth-helper';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user ID from authorization header or query params
-    const authHeader = request.headers.get('authorization');
-    let userId: string | null = null;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      try {
-        const decoded = Buffer.from(token, 'base64').toString('utf-8');
-        userId = decoded.split(':')[0];
-      } catch {
-        // Continue without userId
-      }
-    }
+    // Get user ID from header set by middleware
+    const userId = request.headers.get('x-user-id');
 
     if (!userId) {
-      const { searchParams } = new URL(request.url);
-      userId = searchParams.get('userId');
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || '30d';
-
-    // Verify user exists
-    const user = await getUserById(userId);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Get real analytics data from database
     const [
