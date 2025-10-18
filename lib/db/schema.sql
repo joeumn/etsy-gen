@@ -1,7 +1,7 @@
 -- AI Product Dashboard Database Schema
 
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE users (
 );
 
 -- AI Providers table
-CREATE TABLE ai_providers (
+CREATE TABLE IF NOT EXISTS ai_providers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(100) UNIQUE NOT NULL,
   is_active BOOLEAN DEFAULT true,
@@ -26,7 +26,7 @@ CREATE TABLE ai_providers (
 );
 
 -- Marketplaces table
-CREATE TABLE marketplaces (
+CREATE TABLE IF NOT EXISTS marketplaces (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(100) UNIQUE NOT NULL,
   is_active BOOLEAN DEFAULT true,
@@ -36,7 +36,7 @@ CREATE TABLE marketplaces (
 );
 
 -- Trend data table
-CREATE TABLE trend_data (
+CREATE TABLE IF NOT EXISTS trend_data (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   marketplace VARCHAR(100) NOT NULL,
   category VARCHAR(255),
@@ -52,7 +52,7 @@ CREATE TABLE trend_data (
 );
 
 -- Generated products table
-CREATE TABLE generated_products (
+CREATE TABLE IF NOT EXISTS generated_products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   ai_provider VARCHAR(100) NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE generated_products (
 );
 
 -- Product listings table
-CREATE TABLE product_listings (
+CREATE TABLE IF NOT EXISTS product_listings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   generated_product_id UUID REFERENCES generated_products(id) ON DELETE CASCADE,
@@ -90,7 +90,7 @@ CREATE TABLE product_listings (
 );
 
 -- Earnings table
-CREATE TABLE earnings (
+CREATE TABLE IF NOT EXISTS earnings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   listing_id UUID REFERENCES product_listings(id) ON DELETE CASCADE,
@@ -104,7 +104,7 @@ CREATE TABLE earnings (
 );
 
 -- Top products table (for earnings analysis)
-CREATE TABLE top_products (
+CREATE TABLE IF NOT EXISTS top_products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   earnings_id UUID REFERENCES earnings(id) ON DELETE CASCADE,
   product_title VARCHAR(500),
@@ -114,7 +114,7 @@ CREATE TABLE top_products (
 );
 
 -- AI generation logs table
-CREATE TABLE ai_generation_logs (
+CREATE TABLE IF NOT EXISTS ai_generation_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   ai_provider VARCHAR(100) NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE ai_generation_logs (
 );
 
 -- Marketplace API logs table
-CREATE TABLE marketplace_api_logs (
+CREATE TABLE IF NOT EXISTS marketplace_api_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   marketplace VARCHAR(100) NOT NULL,
@@ -141,7 +141,7 @@ CREATE TABLE marketplace_api_logs (
 );
 
 -- Feature flags table (for Zig modules)
-CREATE TABLE feature_flags (
+CREATE TABLE IF NOT EXISTS feature_flags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(100) UNIQUE NOT NULL,
   is_enabled BOOLEAN DEFAULT false,
@@ -151,7 +151,7 @@ CREATE TABLE feature_flags (
 );
 
 -- User settings table
-CREATE TABLE user_settings (
+CREATE TABLE IF NOT EXISTS user_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
   default_ai_provider VARCHAR(100),
@@ -161,41 +161,8 @@ CREATE TABLE user_settings (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Indexes for better performance
-CREATE INDEX idx_trend_data_marketplace ON trend_data(marketplace);
-CREATE INDEX idx_trend_data_category ON trend_data(category);
-CREATE INDEX idx_trend_data_created_at ON trend_data(created_at);
-CREATE INDEX idx_generated_products_user_id ON generated_products(user_id);
-CREATE INDEX idx_generated_products_created_at ON generated_products(created_at);
-CREATE INDEX idx_product_listings_user_id ON product_listings(user_id);
-CREATE INDEX idx_product_listings_marketplace ON product_listings(marketplace);
-CREATE INDEX idx_product_listings_status ON product_listings(status);
-CREATE INDEX idx_earnings_user_id ON earnings(user_id);
-CREATE INDEX idx_earnings_period ON earnings(period);
-CREATE INDEX idx_earnings_created_at ON earnings(created_at);
-CREATE INDEX idx_ai_generation_logs_user_id ON ai_generation_logs(user_id);
-CREATE INDEX idx_ai_generation_logs_created_at ON ai_generation_logs(created_at);
-CREATE INDEX idx_marketplace_api_logs_user_id ON marketplace_api_logs(user_id);
-CREATE INDEX idx_marketplace_api_logs_created_at ON marketplace_api_logs(created_at);
-
--- These indexes will be created after the tables are defined below
-
--- Insert default AI providers
-INSERT INTO ai_providers (name, is_active, config) VALUES
-('gemini', true, '{"model": "gemini-pro", "temperature": 0.7}'),
-('openai', true, '{"model": "gpt-4", "temperature": 0.7}'),
-('azure', true, '{"model": "gpt-4", "temperature": 0.7}'),
-('anthropic', true, '{"model": "claude-3-sonnet-20240229", "temperature": 0.7}'),
-('saunet', true, '{"model": "saunet-pro", "temperature": 0.7}');
-
--- Insert default marketplaces
-INSERT INTO marketplaces (name, is_active, config) VALUES
-('etsy', true, '{"api_version": "v3", "rate_limit": 100}'),
-('amazon', true, '{"api_version": "2022-04-01", "rate_limit": 200}'),
-('shopify', true, '{"api_version": "2023-10", "rate_limit": 40}');
-
 -- Design assets table (Zig 3 - AI Design Studio)
-CREATE TABLE design_assets (
+CREATE TABLE IF NOT EXISTS design_assets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   product_id UUID REFERENCES generated_products(id) ON DELETE CASCADE,
@@ -208,7 +175,7 @@ CREATE TABLE design_assets (
 );
 
 -- User usage table (Zig 4 - Monetization)
-CREATE TABLE user_usage (
+CREATE TABLE IF NOT EXISTS user_usage (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
   plan VARCHAR(20) DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'enterprise')),
@@ -224,7 +191,7 @@ CREATE TABLE user_usage (
 );
 
 -- Brands table (Zig 6 - Auto-Branding)
-CREATE TABLE brands (
+CREATE TABLE IF NOT EXISTS brands (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
@@ -239,7 +206,7 @@ CREATE TABLE brands (
 );
 
 -- Social trends table (Zig 5 - Social Signals)
-CREATE TABLE social_trends (
+CREATE TABLE IF NOT EXISTS social_trends (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   trend_id UUID REFERENCES trend_data(id) ON DELETE CASCADE,
   platform VARCHAR(50) NOT NULL CHECK (platform IN ('tiktok', 'pinterest', 'instagram', 'twitter')),
@@ -252,14 +219,58 @@ CREATE TABLE social_trends (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Insert default feature flags
+-- Indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_trend_data_marketplace ON trend_data(marketplace);
+CREATE INDEX IF NOT EXISTS idx_trend_data_category ON trend_data(category);
+CREATE INDEX IF NOT EXISTS idx_trend_data_created_at ON trend_data(created_at);
+CREATE INDEX IF NOT EXISTS idx_generated_products_user_id ON generated_products(user_id);
+CREATE INDEX IF NOT EXISTS idx_generated_products_created_at ON generated_products(created_at);
+CREATE INDEX IF NOT EXISTS idx_product_listings_user_id ON product_listings(user_id);
+CREATE INDEX IF NOT EXISTS idx_product_listings_marketplace ON product_listings(marketplace);
+CREATE INDEX IF NOT EXISTS idx_product_listings_status ON product_listings(status);
+CREATE INDEX IF NOT EXISTS idx_earnings_user_id ON earnings(user_id);
+CREATE INDEX IF NOT EXISTS idx_earnings_period ON earnings(period);
+CREATE INDEX IF NOT EXISTS idx_earnings_created_at ON earnings(created_at);
+CREATE INDEX IF NOT EXISTS idx_ai_generation_logs_user_id ON ai_generation_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_generation_logs_created_at ON ai_generation_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_marketplace_api_logs_user_id ON marketplace_api_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_api_logs_created_at ON marketplace_api_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_design_assets_user_id ON design_assets(user_id);
+CREATE INDEX IF NOT EXISTS idx_design_assets_product_id ON design_assets(product_id);
+CREATE INDEX IF NOT EXISTS idx_design_assets_created_at ON design_assets(created_at);
+CREATE INDEX IF NOT EXISTS idx_user_usage_user_id ON user_usage(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_usage_plan ON user_usage(plan);
+CREATE INDEX IF NOT EXISTS idx_brands_user_id ON brands(user_id);
+CREATE INDEX IF NOT EXISTS idx_brands_created_at ON brands(created_at);
+CREATE INDEX IF NOT EXISTS idx_social_trends_trend_id ON social_trends(trend_id);
+CREATE INDEX IF NOT EXISTS idx_social_trends_platform ON social_trends(platform);
+CREATE INDEX IF NOT EXISTS idx_social_trends_created_at ON social_trends(created_at);
+
+-- Insert default AI providers (only if they don't exist)
+INSERT INTO ai_providers (name, is_active, config) VALUES
+('gemini', true, '{"model": "gemini-pro", "temperature": 0.7}'),
+('openai', true, '{"model": "gpt-4", "temperature": 0.7}'),
+('azure', true, '{"model": "gpt-4", "temperature": 0.7}'),
+('anthropic', true, '{"model": "claude-3-sonnet-20240229", "temperature": 0.7}'),
+('saunet', true, '{"model": "saunet-pro", "temperature": 0.7}')
+ON CONFLICT (name) DO NOTHING;
+
+-- Insert default marketplaces (only if they don't exist)
+INSERT INTO marketplaces (name, is_active, config) VALUES
+('etsy', true, '{"api_version": "v3", "rate_limit": 100}'),
+('amazon', true, '{"api_version": "2022-04-01", "rate_limit": 200}'),
+('shopify', true, '{"api_version": "2023-10", "rate_limit": 40}')
+ON CONFLICT (name) DO NOTHING;
+
+-- Insert default feature flags (only if they don't exist)
 INSERT INTO feature_flags (name, is_enabled, config) VALUES
 ('zig_1_edge_scaling', false, '{"description": "Run scanning via Cloudflare Workers or Vercel Edge Functions"}'),
 ('zig_2_vector_search', false, '{"description": "Add pgvector / Qdrant index to cluster trends & prevent duplicate listings"}'),
 ('zig_3_ai_design_studio', true, '{"description": "Integrate image generation for instant product mockups"}'),
 ('zig_4_monetization', true, '{"description": "Add Stripe billing + usage-based limits + affiliate tracking"}'),
 ('zig_5_social_signals', true, '{"description": "Scan TikTok, Pinterest, Instagram hashtags for trend ranking"}'),
-('zig_6_auto_branding', true, '{"description": "Create store branding (logo, banner, colors, font kit) for each product line"}');
+('zig_6_auto_branding', true, '{"description": "Create store branding (logo, banner, colors, font kit) for each product line"}')
+ON CONFLICT (name) DO NOTHING;
 
 -- Functions for updating timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -270,29 +281,77 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create indexes for Zig module tables
-CREATE INDEX idx_design_assets_user_id ON design_assets(user_id);
-CREATE INDEX idx_design_assets_product_id ON design_assets(product_id);
-CREATE INDEX idx_design_assets_created_at ON design_assets(created_at);
-CREATE INDEX idx_user_usage_user_id ON user_usage(user_id);
-CREATE INDEX idx_user_usage_plan ON user_usage(plan);
-CREATE INDEX idx_brands_user_id ON brands(user_id);
-CREATE INDEX idx_brands_created_at ON brands(created_at);
-CREATE INDEX idx_social_trends_trend_id ON social_trends(trend_id);
-CREATE INDEX idx_social_trends_platform ON social_trends(platform);
-CREATE INDEX idx_social_trends_created_at ON social_trends(created_at);
+-- Triggers for updating timestamps (Using DO blocks to prevent errors if triggers already exist)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_users_updated_at') THEN
+    CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
--- Triggers for updating timestamps
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_ai_providers_updated_at BEFORE UPDATE ON ai_providers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_marketplaces_updated_at BEFORE UPDATE ON marketplaces FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_generated_products_updated_at BEFORE UPDATE ON generated_products FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_product_listings_updated_at BEFORE UPDATE ON product_listings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_feature_flags_updated_at BEFORE UPDATE ON feature_flags FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_design_assets_updated_at BEFORE UPDATE ON design_assets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_user_usage_updated_at BEFORE UPDATE ON user_usage FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_brands_updated_at BEFORE UPDATE ON brands FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_ai_providers_updated_at') THEN
+    CREATE TRIGGER update_ai_providers_updated_at BEFORE UPDATE ON ai_providers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_marketplaces_updated_at') THEN
+    CREATE TRIGGER update_marketplaces_updated_at BEFORE UPDATE ON marketplaces FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_generated_products_updated_at') THEN
+    CREATE TRIGGER update_generated_products_updated_at BEFORE UPDATE ON generated_products FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_product_listings_updated_at') THEN
+    CREATE TRIGGER update_product_listings_updated_at BEFORE UPDATE ON product_listings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_feature_flags_updated_at') THEN
+    CREATE TRIGGER update_feature_flags_updated_at BEFORE UPDATE ON feature_flags FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_user_settings_updated_at') THEN
+    CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_design_assets_updated_at') THEN
+    CREATE TRIGGER update_design_assets_updated_at BEFORE UPDATE ON design_assets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_user_usage_updated_at') THEN
+    CREATE TRIGGER update_user_usage_updated_at BEFORE UPDATE ON user_usage FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_brands_updated_at') THEN
+    CREATE TRIGGER update_brands_updated_at BEFORE UPDATE ON brands FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
+
 
 -- Insert default admin user (password: ForgeAdmin2024!)
 -- Password hash generated with bcrypt, rounds=12
@@ -303,3 +362,4 @@ ON CONFLICT (email) DO UPDATE SET
   role = EXCLUDED.role,
   is_active = EXCLUDED.is_active,
   email_verified = EXCLUDED.email_verified;
+
