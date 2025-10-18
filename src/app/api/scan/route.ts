@@ -13,9 +13,12 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Get user ID from auth header
-    const authHeader = request.headers.get('authorization');
-    const userId = authHeader ? Buffer.from(authHeader.replace('Bearer ', ''), 'base64').toString().split(':')[0] : 'anonymous';
+    // Get user ID from header set by middleware
+    const userId = request.headers.get('x-user-id');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Apply rate limiting
     rateLimit(userId, 'free');
@@ -129,9 +132,12 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Get user ID from auth header
-    const authHeader = request.headers.get('authorization');
-    const userId = authHeader ? Buffer.from(authHeader.replace('Bearer ', ''), 'base64').toString().split(':')[0] : 'anonymous';
+    // Get user ID from header set by middleware
+    const userId = request.headers.get('x-user-id');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Apply rate limiting (higher cost for bulk operations)
     rateLimit(userId, 'free');
