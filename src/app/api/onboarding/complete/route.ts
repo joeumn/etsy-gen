@@ -6,7 +6,7 @@ import { logError } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     // For development, skip database update and return success
-    // This allows onboarding to proceed with mock data
+    // This allows developers to test onboarding flow without database configuration
     if (process.env.NODE_ENV !== 'production') {
       return NextResponse.json({
         success: true,

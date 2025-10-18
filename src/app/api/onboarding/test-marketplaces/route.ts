@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const { etsy, amazon, shopify } = await request.json();
 
     // For development, skip actual API tests and return success
-    // This allows onboarding to proceed with mock data
+    // This allows developers to test onboarding flow without configuring all API keys
     if (process.env.NODE_ENV !== 'production') {
       return NextResponse.json({
         success: true,

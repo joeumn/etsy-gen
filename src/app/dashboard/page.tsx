@@ -32,33 +32,88 @@ export default function Dashboard() {
     gradient: "flame" | "ocean" | "gold" | "forge";
   };
 
+  type RevenueDataPoint = {
+    name: string;
+    revenue: number;
+    profit: number;
+  };
+
+  type MarketplaceDataPoint = {
+    subject: string;
+    value: number;
+  };
+
+  type Activity = {
+    id: string | number;
+    action: string;
+    product: string;
+    marketplace: string;
+    time: string;
+    status: string;
+  };
+
   // Fetch real stats from API
   const [stats, setStats] = useState<StatCard[]>([]);
+  const [revenueData, setRevenueData] = useState<RevenueDataPoint[]>([]);
+  const [marketplaceData, setMarketplaceData] = useState<MarketplaceDataPoint[]>([]);
+  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const response = await fetch('/api/dashboard/stats');
-        if (response.ok) {
-          const data = await response.json();
+        // Fetch all dashboard data in parallel
+        const [statsRes, revenueRes, marketplaceRes, activityRes] = await Promise.all([
+          fetch('/api/dashboard/stats'),
+          fetch('/api/dashboard/revenue'),
+          fetch('/api/dashboard/marketplace-stats'),
+          fetch('/api/dashboard/activity'),
+        ]);
+
+        if (statsRes.ok) {
+          const data = await statsRes.json();
           setStats(data.stats);
         } else {
-          console.error('Failed to fetch stats:', await response.text());
-          // Show error state instead of mock data
+          console.error('Failed to fetch stats:', await statsRes.text());
           setStats([]);
         }
+
+        if (revenueRes.ok) {
+          const data = await revenueRes.json();
+          setRevenueData(data.revenueData || []);
+        } else {
+          console.error('Failed to fetch revenue data:', await revenueRes.text());
+          setRevenueData([]);
+        }
+
+        if (marketplaceRes.ok) {
+          const data = await marketplaceRes.json();
+          setMarketplaceData(data.marketplaceData || []);
+        } else {
+          console.error('Failed to fetch marketplace data:', await marketplaceRes.text());
+          setMarketplaceData([]);
+        }
+
+        if (activityRes.ok) {
+          const data = await activityRes.json();
+          setRecentActivity(data.recentActivity || []);
+        } else {
+          console.error('Failed to fetch activity data:', await activityRes.text());
+          setRecentActivity([]);
+        }
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
-        // Show error state instead of mock data
+        console.error('Failed to fetch dashboard data:', error);
         setStats([]);
+        setRevenueData([]);
+        setMarketplaceData([]);
+        setRecentActivity([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchDashboardData();
   }, []);
 
   const handleTrendScan = async () => {
@@ -81,48 +136,6 @@ export default function Dashboard() {
       setScanning(false);
     }
   };
-
-  const revenueData = [
-    { name: "Week 1", revenue: 4200, profit: 2100 },
-    { name: "Week 2", revenue: 3800, profit: 1900 },
-    { name: "Week 3", revenue: 5400, profit: 2700 },
-    { name: "Week 4", revenue: 6300, profit: 3150 },
-    { name: "Week 5", revenue: 5200, profit: 2600 },
-  ];
-
-  const marketplaceData = [
-    { subject: "Etsy", value: 85 },
-    { subject: "Shopify", value: 72 },
-    { subject: "Amazon", value: 68 },
-    { subject: "Gumroad", value: 45 },
-  ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      action: "Product Listed",
-      product: "Minimalist Planner Template",
-      marketplace: "Etsy",
-      time: "2 min ago",
-      status: "success",
-    },
-    {
-      id: 2,
-      action: "Trend Scan Completed",
-      product: "Digital Downloads",
-      marketplace: "All",
-      time: "15 min ago",
-      status: "success",
-    },
-    {
-      id: 3,
-      action: "AI Generation",
-      product: "Watercolor Wedding Suite",
-      marketplace: "Shopify",
-      time: "1 hour ago",
-      status: "success",
-    },
-  ];
 
   return (
     <DashboardLayout>
