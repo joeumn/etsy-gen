@@ -69,13 +69,15 @@ const SecuritySettings = forwardRef((props: SecuritySettingsProps, ref) => {
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Enter your new password"
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setShowNewPassword(!showNewPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
             >
               {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -89,13 +91,15 @@ const SecuritySettings = forwardRef((props: SecuritySettingsProps, ref) => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm your new password"
             />
-             <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
             >
               {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+            </Button>
           </div>
         </div>
 

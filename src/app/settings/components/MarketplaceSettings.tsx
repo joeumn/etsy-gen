@@ -4,6 +4,7 @@ import { useState, forwardRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Shield } from 'lucide-react';
@@ -67,9 +68,9 @@ const MarketplaceSettings = forwardRef(({ settings, setSettings, isLoading }: Ma
                                     onChange={(e) => setSettings({ ...settings, etsy: { ...settings.etsy, apiKey: e.target.value }})}
                                     className="pr-10"
                                 />
-                                <button type="button" onClick={() => toggleApiKeyVisibility('etsy')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                                <Button type="button" variant="ghost" size="sm" onClick={() => toggleApiKeyVisibility('etsy')} className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
                                     {showApiKeys.etsy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -106,9 +107,9 @@ const MarketplaceSettings = forwardRef(({ settings, setSettings, isLoading }: Ma
                                             onChange={(e) => setSettings({ ...settings, amazon: { ...settings.amazon, accessKey: e.target.value }})}
                                             className="pr-10"
                                         />
-                                        <button type="button" onClick={() => toggleApiKeyVisibility('amazonAccess')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => toggleApiKeyVisibility('amazonAccess')} className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
                                             {showApiKeys.amazonAccess ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                                 <div>
@@ -122,9 +123,9 @@ const MarketplaceSettings = forwardRef(({ settings, setSettings, isLoading }: Ma
                                             onChange={(e) => setSettings({ ...settings, amazon: { ...settings.amazon, secretKey: e.target.value }})}
                                             className="pr-10"
                                         />
-                                        <button type="button" onClick={() => toggleApiKeyVisibility('amazonSecret')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => toggleApiKeyVisibility('amazonSecret')} className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
                                             {showApiKeys.amazonSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
@@ -163,9 +164,9 @@ const MarketplaceSettings = forwardRef(({ settings, setSettings, isLoading }: Ma
                                             onChange={(e) => setSettings({ ...settings, shopify: { ...settings.shopify, accessToken: e.target.value }})}
                                             className="pr-10"
                                         />
-                                        <button type="button" onClick={() => toggleApiKeyVisibility('shopify')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => toggleApiKeyVisibility('shopify')} className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
                                             {showApiKeys.shopify ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                                 <div>
