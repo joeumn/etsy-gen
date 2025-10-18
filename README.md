@@ -104,9 +104,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### First Access
+### Authentication
 
-The application is now configured for direct access without authentication. Simply navigate to the dashboard to begin using The Forge.
+The application uses NextAuth with Supabase for secure authentication:
+
+1. **Sign Up**: Create an account at `/signup`
+2. **Sign In**: Access at `/login`
+3. **Protected Routes**: Dashboard and features require authentication
+
+📖 **See [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md)** for detailed authentication documentation.
 
 ---
 

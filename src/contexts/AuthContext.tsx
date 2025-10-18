@@ -1,7 +1,20 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, AuthService } from '../lib/auth';
+/**
+ * Legacy AuthContext - Now uses NextAuth under the hood
+ * 
+ * This context is maintained for backward compatibility with existing code.
+ * For new code, use the useAuth hook from @/lib/auth directly.
+ */
+
+import React, { createContext, useContext } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
+
+interface User {
+  id: string;
+  email: string;
+  name: string | null;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -14,41 +27,38 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Check for existing session on mount
-    const currentUser = AuthService.getCurrentUser();
-    setUser(currentUser);
-    setIsLoading(false);
-  }, []);
+  const { data: session, status } = useSession();
+  
+  const user = session?.user ? {
+    id: (session.user as any).id || '',
+    email: session.user.email || '',
+    name: session.user.name || null,
+  } : null;
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
     try {
-      const loggedInUser = await AuthService.login(email, password);
-      if (loggedInUser) {
-        setUser(loggedInUser);
-        return true;
-      }
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+      return result?.ok || false;
+    } catch (error) {
+      console.error('Login error:', error);
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const logout = () => {
-    AuthService.logout();
-    setUser(null);
+    signOut({ callbackUrl: '/' });
   };
 
   const value: AuthContextType = {
     user,
-    isLoading,
+    isLoading: status === 'loading',
     login,
     logout,
-    isAuthenticated: AuthService.isAuthenticated(),
+    isAuthenticated: status === 'authenticated',
   };
 
   return (

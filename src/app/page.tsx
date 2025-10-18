@@ -73,9 +73,9 @@ export default function Home() {
             <div className="flex items-center gap-2 md:gap-4">
               <ThemeToggle />
               <Button asChild variant="outline" size="sm" className="hidden md:flex">
-                <Link href="/dashboard">
+                <Link href="/login">
                   <Rocket className="h-4 w-4 mr-2" />
-                  Open Dashboard
+                  Sign In
                 </Link>
               </Button>
             </div>
@@ -113,10 +113,20 @@ export default function Home() {
                 className="bg-flame-gradient hover:shadow-glow text-white text-lg px-8 py-6 h-auto"
                 asChild
               >
-                <Link href="/dashboard">
+                <Link href="/signup">
                   <Rocket className="mr-2 h-5 w-5" />
-                  Launch Dashboard
+                  Get Started Free
                   <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="text-lg px-8 py-6 h-auto"
+                asChild
+              >
+                <Link href="/login">
+                  Sign In
                 </Link>
               </Button>
             </div>
@@ -214,8 +224,8 @@ export default function Home() {
                   className="w-full sm:w-auto bg-white text-flame-600 hover:bg-white/90 text-base md:text-lg px-8 md:px-10 py-5 md:py-6 h-auto font-semibold"
                   asChild
                 >
-                  <Link href="/dashboard">
-                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  <Link href="/signup">
+                    Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
               </motion.div>

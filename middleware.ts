@@ -27,11 +27,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // Check if running in development/test mode without proper NextAuth setup
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const hasNextAuthSecret = !!process.env.NEXTAUTH_SECRET;
-    const forceMockAuth = process.env.FORCE_MOCK_AUTH === 'true';
-
     // Check for valid session
     const token = await getToken({ 
       req: request,
@@ -39,21 +34,6 @@ export async function middleware(request: NextRequest) {
     });
 
     if (!token) {
-      // In development mode without NextAuth configured, use mock user
-      if ((isDevelopment && !hasNextAuthSecret) || forceMockAuth) {
-        console.log('⚠️ Using mock authentication for development');
-        const requestHeaders = new Headers(request.headers);
-        // Use fixed UUID that matches the mock user in the database schema
-        requestHeaders.set('x-user-id', '00000000-0000-0000-0000-000000000001');
-        requestHeaders.set('x-user-email', 'joeinduluth@gmail.com');
-        
-        return NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
-      }
-
       return NextResponse.json(
         { error: 'Unauthorized - Please sign in' },
         { status: 401 }
