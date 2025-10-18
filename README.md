@@ -100,6 +100,18 @@ lib/db/stage4-migrations.sql  # Stage 4 automation
 npm run dev
 ```
 
+4. **Verify authentication setup** (recommended):
+
+```bash
+node scripts/verify-auth-setup.js
+```
+
+This will check that all required environment variables and files are properly configured for authentication.
+
+> 📖 **Troubleshooting Authentication Issues?** See [AUTH_FIX_README.md](AUTH_FIX_README.md) for a quick reference or [AUTHENTICATION_TROUBLESHOOTING.md](AUTHENTICATION_TROUBLESHOOTING.md) for comprehensive troubleshooting.
+
+```
+
 4. **Access the app**:
 
 Open [http://localhost:3000](http://localhost:3000)
