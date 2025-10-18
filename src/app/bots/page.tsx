@@ -37,7 +37,9 @@ interface AIBot {
 export default function BotManagementPage() {
   const [bots, setBots] = useState<AIBot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string>("admin@foundersforge.com");
+  // For demo, we'll use a hardcoded admin user ID
+  // In production, this would come from authentication context/session
+  const userId = "admin@foundersforge.com"; // Placeholder - will be replaced by actual UUID from auth
 
   useEffect(() => {
     fetchBots();

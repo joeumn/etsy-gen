@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/db/client';
-import { getUserById } from '@/lib/auth-helper';
+import { getUserById, getUserByEmail } from '@/lib/auth-helper';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -14,8 +14,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
-    // Verify user exists
-    const user = await getUserById(userId);
+    // Try to get user by ID first, then by email if that fails
+    let user = await getUserById(userId);
+    if (!user && userId.includes('@')) {
+      user = await getUserByEmail(userId);
+    }
+    
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -24,7 +28,7 @@ export async function POST(request: NextRequest) {
     const { data: operation, error: logError } = await supabase
       .from('database_operations')
       .insert({
-        user_id: userId,
+        user_id: user.id,
         operation_type: 'migration',
         status: 'running',
         details: { migration_file: migrationFile || 'latest' },
@@ -113,8 +117,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
-    // Verify user exists
-    const user = await getUserById(userId);
+    // Try to get user by ID first, then by email if that fails
+    let user = await getUserById(userId);
+    if (!user && userId.includes('@')) {
+      user = await getUserByEmail(userId);
+    }
+    
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -123,7 +131,7 @@ export async function GET(request: NextRequest) {
     const { data: operations, error } = await supabase
       .from('database_operations')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .eq('operation_type', 'migration')
       .order('created_at', { ascending: false });
 
