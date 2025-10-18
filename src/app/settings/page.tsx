@@ -20,7 +20,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { supabase } from '@/lib/db/client';
+import { createClient } from '@/lib/supabase/client';
 
 // Import the new components
 import ProfileSettings from './components/ProfileSettings';
@@ -48,8 +48,6 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<any>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  const supabase = createClient();
-
   // Refs for Profile and Security save handlers
   const profileRef = useRef<{ handleSave: () => Promise<boolean> }>(null);
   const securityRef = useRef<{ handleSave: () => Promise<boolean> }>(null);
@@ -57,6 +55,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadSettings = async () => {
       setIsLoading(true);
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setIsLoading(false);
@@ -78,7 +77,7 @@ export default function SettingsPage() {
       }
     };
     loadSettings();
-  }, [supabase]);
+  }, []);
 
   const handleSave = async () => {
     setSaveStatus('saving');
@@ -89,6 +88,7 @@ export default function SettingsPage() {
     } else if (activeTab === 'security' && securityRef.current) {
       success = await securityRef.current.handleSave();
     } else {
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setSaveStatus('error');
@@ -141,7 +141,7 @@ export default function SettingsPage() {
           </motion.div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button onClick={handleSave} disabled={saveStatus === 'saving' || activeTab === 'systemStatus'} variant="primary" size="sm">
+            <Button onClick={handleSave} disabled={saveStatus === 'saving' || activeTab === 'systemStatus'} variant="default" size="sm">
               {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               <span className="hidden sm:inline ml-2">Save Changes</span>
             </Button>
@@ -187,7 +187,7 @@ export default function SettingsPage() {
               <div className="overflow-x-auto -mx-4 px-4">
                 <div className="flex space-x-2">
                 {TABS.map((tab) => (
-                  <Button key={tab.id} variant={activeTab === tab.id ? 'soft' : 'ghost'} size="sm" className="shrink-0" onClick={() => setActiveTab(tab.id)}>
+                  <Button key={tab.id} variant={activeTab === tab.id ? 'secondary' : 'ghost'} size="sm" className="shrink-0" onClick={() => setActiveTab(tab.id)}>
                     <tab.icon className="mr-2 h-4 w-4" />
                     {tab.label}
                   </Button>
