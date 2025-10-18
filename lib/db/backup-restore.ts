@@ -15,7 +15,7 @@ import { uploadBackupToS3, downloadBackupFromS3, listBackupsFromS3 } from '../cl
 const execAsync = promisify(exec);
 
 // Database connection info from Supabase URL
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Parse database connection from Supabase URL
@@ -181,7 +181,7 @@ export function isBackupRestoreAvailable(): boolean {
   try {
     // Check if required environment variables are set
     return !!(
-      process.env.SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
       process.env.SUPABASE_DB_PASSWORD &&
       process.env.AWS_ACCESS_KEY_ID &&
       process.env.AWS_SECRET_ACCESS_KEY

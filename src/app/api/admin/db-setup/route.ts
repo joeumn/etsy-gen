@@ -145,15 +145,15 @@ export async function GET(request: NextRequest) {
     }
 
     const hasSupabaseConfig = !!(
-      process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
+      process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
 
     return NextResponse.json({
       connected: dbConnected,
       hasConfig: hasSupabaseConfig,
       error: dbError,
-      supabaseUrl: process.env.SUPABASE_URL
-        ? process.env.SUPABASE_URL.replace(/^https?:\/\/([^.]+)\..*$/, '***$1***')
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL
+        ? process.env.NEXT_PUBLIC_SUPABASE_URL.replace(/^https?:\/\/([^.]+)\..*$/, '***$1***')
         : null,
     });
 
