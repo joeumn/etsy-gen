@@ -1,26 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { getUserById, getUserByEmail } from '@/lib/auth-helper';
+import { requireAuth } from '@/lib/auth-session';
 
 // GET - List all bots for a user
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-    }
-
-    // Try to get user by ID first, then by email if that fails
-    let user = await getUserById(userId);
-    if (!user && userId.includes('@')) {
-      user = await getUserByEmail(userId);
-    }
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user from session
+    const user = await requireAuth();
 
     // Get all bots for the user
     const { data: bots, error } = await supabase
@@ -45,24 +31,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, name, type, description, config } = body;
+    const { name, type, description, config } = body;
 
-    if (!userId || !name || !type) {
+    if (!name || !type) {
       return NextResponse.json(
-        { error: 'User ID, name, and type are required' },
+        { error: 'Name and type are required' },
         { status: 400 }
       );
     }
 
-    // Try to get user by ID first, then by email if that fails
-    let user = await getUserById(userId);
-    if (!user && userId.includes('@')) {
-      user = await getUserByEmail(userId);
-    }
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user from session
+    const user = await requireAuth();
 
     // Validate bot type
     const validTypes = ['scanner', 'generator', 'analytics', 'optimizer', 'custom'];
@@ -101,24 +80,17 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { botId, userId, name, type, status, description, config } = body;
+    const { botId, name, type, status, description, config } = body;
 
-    if (!botId || !userId) {
+    if (!botId) {
       return NextResponse.json(
-        { error: 'Bot ID and User ID are required' },
+        { error: 'Bot ID is required' },
         { status: 400 }
       );
     }
 
-    // Try to get user by ID first, then by email if that fails
-    let user = await getUserById(userId);
-    if (!user && userId.includes('@')) {
-      user = await getUserByEmail(userId);
-    }
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user from session
+    const user = await requireAuth();
 
     // Verify bot belongs to user
     const { data: existingBot, error: checkError } = await supabase
@@ -171,24 +143,16 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const botId = searchParams.get('botId');
-    const userId = searchParams.get('userId');
 
-    if (!botId || !userId) {
+    if (!botId) {
       return NextResponse.json(
-        { error: 'Bot ID and User ID are required' },
+        { error: 'Bot ID is required' },
         { status: 400 }
       );
     }
 
-    // Try to get user by ID first, then by email if that fails
-    let user = await getUserById(userId);
-    if (!user && userId.includes('@')) {
-      user = await getUserByEmail(userId);
-    }
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user from session
+    const user = await requireAuth();
 
     // Verify bot belongs to user and delete
     const { error } = await supabase

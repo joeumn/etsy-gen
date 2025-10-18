@@ -1,30 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { getUserById, getUserByEmail } from '@/lib/auth-helper';
+import { requireAuth } from '@/lib/auth-session';
+import { restoreDatabaseBackup } from '@/lib/db/backup-restore';
+import { updateDatabaseOperationStatus } from '@/lib/realtime';
 
 // POST - Restore database from backup
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, backupId } = body;
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-    }
+    const { backupId } = body;
 
     if (!backupId) {
       return NextResponse.json({ error: 'Backup ID required' }, { status: 400 });
     }
 
-    // Try to get user by ID first, then by email if that fails
-    let user = await getUserById(userId);
-    if (!user && userId.includes('@')) {
-      user = await getUserByEmail(userId);
-    }
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user from session
+    const user = await requireAuth();
 
     // Verify backup exists and belongs to user
     const { data: backupOperation, error: backupError } = await supabase
@@ -70,23 +61,20 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // In a real implementation, you would:
-      // 1. Download the backup file from cloud storage
-      // 2. Use psql or Supabase's restore functionality
-      // 3. Execute the SQL to restore the database
-      // 4. Handle transactions and rollback on failure
-      
-      // For now, we'll simulate the restore process
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Update status to running with real-time notification
+      await updateDatabaseOperationStatus(operation.id, 'running', {
+        progress: 10,
+        message: 'Starting database restore...',
+      });
 
-      // Update operation log as completed
-      await supabase
-        .from('database_operations')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', operation.id);
+      // Restore database from backup file in S3
+      await restoreDatabaseBackup(backupOperation.file_url);
+
+      // Update operation log as completed with real-time notification
+      await updateDatabaseOperationStatus(operation.id, 'completed', {
+        progress: 100,
+        message: 'Restore completed successfully',
+      });
 
       return NextResponse.json({
         success: true,
@@ -97,15 +85,12 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (restoreError: any) {
-      // Update operation log as failed
-      await supabase
-        .from('database_operations')
-        .update({
-          status: 'failed',
-          error_message: restoreError.message,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', operation.id);
+      // Update operation log as failed with real-time notification
+      await updateDatabaseOperationStatus(operation.id, 'failed', {
+        progress: 0,
+        message: 'Restore failed',
+        error: restoreError.message,
+      });
 
       return NextResponse.json(
         { error: restoreError.message },
@@ -124,22 +109,8 @@ export async function POST(request: NextRequest) {
 // GET - List restore history
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-    }
-
-    // Try to get user by ID first, then by email if that fails
-    let user = await getUserById(userId);
-    if (!user && userId.includes('@')) {
-      user = await getUserByEmail(userId);
-    }
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user from session
+    const user = await requireAuth();
 
     // Get restore operations
     const { data: operations, error } = await supabase
