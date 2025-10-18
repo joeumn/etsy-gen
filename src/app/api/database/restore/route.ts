@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
 import { requireAuth } from '@/lib/auth-session';
+import { restoreDatabaseBackup } from '@/lib/db/backup-restore';
 
 // POST - Restore database from backup
 export async function POST(request: NextRequest) {
@@ -59,14 +60,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // In a real implementation, you would:
-      // 1. Download the backup file from cloud storage
-      // 2. Use psql or Supabase's restore functionality
-      // 3. Execute the SQL to restore the database
-      // 4. Handle transactions and rollback on failure
-      
-      // For now, we'll simulate the restore process
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Restore database from backup file in S3
+      await restoreDatabaseBackup(backupOperation.file_url);
 
       // Update operation log as completed
       await supabase
