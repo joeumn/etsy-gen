@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   // Define stat card type
@@ -34,6 +35,7 @@ export default function Dashboard() {
   // Fetch real stats from API
   const [stats, setStats] = useState<StatCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -58,6 +60,27 @@ export default function Dashboard() {
 
     fetchStats();
   }, []);
+
+  const handleTrendScan = async () => {
+    setScanning(true);
+    toast.info("Starting trend scan...");
+    
+    try {
+      const response = await fetch('/api/scan?marketplace=etsy&limit=50');
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(`Trend scan complete! Found ${data.data.trends?.length || 0} trending products.`);
+      } else {
+        toast.error("Trend scan failed. Please check your marketplace configuration.");
+      }
+    } catch (error) {
+      console.error('Trend scan error:', error);
+      toast.error("Failed to run trend scan. Please try again.");
+    } finally {
+      setScanning(false);
+    }
+  };
 
   const revenueData = [
     { name: "Week 1", revenue: 4200, profit: 2100 },
@@ -170,9 +193,11 @@ export default function Dashboard() {
                 </Button>
                 <Button 
                   className="h-16 md:h-20 flex flex-col gap-2 bg-flame-gradient text-white hover:opacity-90"
+                  onClick={handleTrendScan}
+                  disabled={scanning}
                 >
                   <Play className="h-5 w-5 md:h-6 md:w-6" />
-                  <span className="text-sm md:text-base">Run Trend Scan</span>
+                  <span className="text-sm md:text-base">{scanning ? "Scanning..." : "Run Trend Scan"}</span>
                 </Button>
                 <Button 
                   className="h-16 md:h-20 flex flex-col gap-2 bg-gold-gradient text-white hover:opacity-90 sm:col-span-2 md:col-span-1"

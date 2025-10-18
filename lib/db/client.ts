@@ -3,18 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Only show detailed connection errors in a non-build, production-like environment
-if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build' && (!supabaseUrl || !supabaseKey)) {
-  console.error('--- DATABASE CONNECTION FAILED ---');
-  console.error('REASON: Supabase client-side environment variables not found.');
-  if (!supabaseUrl) {
-    console.error('MISSING: NEXT_PUBLIC_SUPABASE_URL was not found.');
+// Log missing configuration during build/development for better debugging
+if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('⚠️ Database Configuration Warning:');
+    if (!supabaseUrl) {
+      console.warn('  - NEXT_PUBLIC_SUPABASE_URL is not set');
+    }
+    if (!supabaseKey) {
+      console.warn('  - NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
+    }
+    console.warn('  → Database operations will fail until these are configured.');
+    console.warn('  → See .env.example for required configuration.');
   }
-  if (!supabaseKey) {
-    console.error('MISSING: NEXT_PUBLIC_SUPABASE_ANON_KEY was not found.');
-  }
-  console.error('SOLUTION: Please ensure these variables are set in your Vercel project environment variables.');
-  console.error('------------------------------------');
 }
 
 // Initialize the Supabase client, using a placeholder if variables are missing to avoid crashing the app.
@@ -26,13 +27,11 @@ const supabase =
 // Also check for the admin key, which is used for server-side operations.
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Only show detailed connection errors in a non-build, production-like environment
-if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build' && !supabaseServiceRoleKey) {
-    console.warn('--- ADMIN-LEVEL DB CONNECTION WARNING ---');
-    console.warn('REASON: Supabase server-side environment variable not found.');
-    console.warn('MISSING: SUPABASE_SERVICE_ROLE_KEY was not found.');
-    console.warn('IMPACT: Admin-level operations will fail. Please set this variable for full functionality.');
-    console.warn('------------------------------------');
+// Log admin key warning
+if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build' && !supabaseServiceRoleKey) {
+    console.warn('⚠️ Admin Database Access Warning:');
+    console.warn('  - SUPABASE_SERVICE_ROLE_KEY is not set');
+    console.warn('  → Admin-level operations will be limited.');
 }
 
 // Initialize the admin client, falling back to the regular client if the service key is missing.
