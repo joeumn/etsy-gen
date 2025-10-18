@@ -1,52 +1,42 @@
-// Simple authentication for private app
-// Hardcoded credentials for single user access
+/**
+ * Client-side authentication helpers
+ * 
+ * This file provides utilities for accessing the authenticated user's session
+ * on the client side using NextAuth.
+ */
+
+"use client";
+
+import { useSession } from "next-auth/react";
 
 export interface User {
   id: string;
   email: string;
-  name: string;
+  name: string | null;
+  avatar?: string | null;
 }
 
-// Hardcoded credentials (in production, use environment variables)
-const VALID_CREDENTIALS = {
-  email: 'admin@foundersforge.com',
-  password: 'forge2024!'
-};
+/**
+ * Hook to get the current user session on the client side
+ * 
+ * @returns {object} Session data and loading state
+ */
+export function useAuth() {
+  const { data: session, status } = useSession();
+  
+  return {
+    user: session?.user as User | undefined,
+    isLoading: status === "loading",
+    isAuthenticated: status === "authenticated",
+  };
+}
 
-export class AuthService {
-  private static readonly AUTH_KEY = 'foundersforge_auth';
-
-  static async login(email: string, password: string): Promise<User | null> {
-    // Simple credential validation
-    if (email === VALID_CREDENTIALS.email && password === VALID_CREDENTIALS.password) {
-      const user: User = {
-        id: 'admin-user',
-        email: VALID_CREDENTIALS.email,
-        name: 'FoundersForge Admin'
-      };
-
-      // Store in localStorage
-      localStorage.setItem(this.AUTH_KEY, JSON.stringify(user));
-      return user;
-    }
-
-    return null;
-  }
-
-  static logout(): void {
-    localStorage.removeItem(this.AUTH_KEY);
-  }
-
-  static getCurrentUser(): User | null {
-    try {
-      const stored = localStorage.getItem(this.AUTH_KEY);
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  static isAuthenticated(): boolean {
-    return this.getCurrentUser() !== null;
-  }
+/**
+ * Check if user is authenticated (client-side only)
+ * Note: This should only be used in client components.
+ * For server components, use the auth() function from @/lib/auth (the NextAuth one in /lib/auth.ts)
+ */
+export function useIsAuthenticated(): boolean {
+  const { status } = useSession();
+  return status === "authenticated";
 }

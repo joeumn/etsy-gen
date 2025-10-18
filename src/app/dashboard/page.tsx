@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdvancedStatCard } from "@/components/ui/advanced-stat-card";
 import { RevenueChart } from "@/components/ui/revenue-chart";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import {
   DollarSign,
   Package,
@@ -138,8 +139,9 @@ export default function Dashboard() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-4 md:space-y-6">
+    <ProtectedRoute>
+      <DashboardLayout>
+        <div className="space-y-4 md:space-y-6">
         {/* Welcome Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -302,5 +304,6 @@ export default function Dashboard() {
         </motion.div>
       </div>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }
