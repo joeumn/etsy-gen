@@ -6,6 +6,7 @@ import { getToken } from 'next-auth/jwt';
  * The Forge - Middleware
  * 
  * Protects API routes with NextAuth authentication
+ * Falls back to mock authentication in development when NextAuth is not configured
  */
 
 export async function middleware(request: NextRequest) {
@@ -26,6 +27,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
+    // Check if running in development/test mode without proper NextAuth setup
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const hasNextAuthSecret = !!process.env.NEXTAUTH_SECRET;
+    const forceMockAuth = process.env.FORCE_MOCK_AUTH === 'true';
+
     // Check for valid session
     const token = await getToken({ 
       req: request,
@@ -33,6 +39,20 @@ export async function middleware(request: NextRequest) {
     });
 
     if (!token) {
+      // In development mode without NextAuth configured, use mock user
+      if ((isDevelopment && !hasNextAuthSecret) || forceMockAuth) {
+        console.log('⚠️ Using mock authentication for development');
+        const requestHeaders = new Headers(request.headers);
+        requestHeaders.set('x-user-id', 'mock-user-1');
+        requestHeaders.set('x-user-email', 'joeinduluth@gmail.com');
+        
+        return NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
+      }
+
       return NextResponse.json(
         { error: 'Unauthorized - Please sign in' },
         { status: 401 }
