@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import getServerSession from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { logError } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -15,7 +14,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const session = await getServerSession(authOptions) as any;
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(

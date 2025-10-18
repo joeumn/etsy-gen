@@ -1,9 +1,9 @@
-import type { NextAuthConfig } from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { supabase } from "./db/client";
 import bcrypt from "bcryptjs";
 
-export const authOptions: NextAuthConfig = {
+export const authConfig: NextAuthConfig = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -89,6 +89,9 @@ export const authOptions: NextAuthConfig = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
+
+// Create the NextAuth instance
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
 
 // Helper functions for authentication
 // Re-export auth helpers
