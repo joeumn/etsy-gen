@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
     // Get AI provider
     const aiProvider = await AIProviderFactory.getProvider();
     if (!aiProvider.isAvailable) {
+      console.error('Scan API - AI provider not available');
       return NextResponse.json(
         { error: 'AI provider not available' },
         { status: 500 }
@@ -95,9 +96,11 @@ export async function GET(request: NextRequest) {
 
     // Scan trends from marketplace
     const rawTrends = await marketplaceService.scanTrends(category, limit);
+    console.log(`Scan API - Scanned ${rawTrends.length} trends from ${marketplace}`);
     
     // Analyze trends with AI
     const analyzedTrends = await aiProvider.analyzeTrends(rawTrends);
+    console.log(`Scan API - Analyzed ${analyzedTrends.length} trends with AI`);
     
     // Get categories for the marketplace
     const categories = await marketplaceService.getCategories();
@@ -121,6 +124,11 @@ export async function GET(request: NextRequest) {
       data: result,
     });
   } catch (error) {
+    console.error('Scan API - Detailed error:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     logError(error, 'ScanAPI', { path: '/api/scan' });
     const { response, statusCode } = handleAPIError(error, '/api/scan');
     logRequest('GET', '/api/scan', statusCode, Date.now() - startTime);
@@ -221,6 +229,11 @@ export async function POST(request: NextRequest) {
       data: finalResults,
     });
   } catch (error) {
+    console.error('Bulk Scan API - Detailed error:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     logError(error, 'BulkScanAPI', { path: '/api/scan' });
     const { response, statusCode } = handleAPIError(error, '/api/scan');
     logRequest('POST', '/api/scan', statusCode, Date.now() - startTime);

@@ -13,7 +13,7 @@ const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'pro
 // Mock users for development
 const MOCK_USERS = [
   {
-    id: 'mock-user-1',
+    id: '00000000-0000-0000-0000-000000000001',
     email: 'joeinduluth@gmail.com',
     password: 'Two1Eight',
     name: 'Joe Induluth',
@@ -23,7 +23,7 @@ const MOCK_USERS = [
     email_verified: true,
   },
   {
-    id: 'mock-user-2',
+    id: '00000000-0000-0000-0000-000000000002',
     email: 'demo@foundersforge.com',
     password: 'demo123',
     name: 'Demo User',

@@ -71,14 +71,20 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     async jwt({ token, user }: { token: any; user: any }) {
       if (user) {
+        // Set both 'id' and 'sub' for compatibility
         token.id = user.id;
+        token.sub = user.id;
+        token.email = user.email;
+        token.name = user.name;
         token.avatar = user.avatar;
       }
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
       if (token) {
-        session.user.id = token.id as string;
+        session.user.id = token.id as string || token.sub as string;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
         session.user.avatar = token.avatar as string;
       }
       return session;
