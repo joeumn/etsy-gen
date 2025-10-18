@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const { apiKey } = await request.json();
 
     // For development, skip actual API test and return success
-    // This allows onboarding to proceed with mock data
+    // This allows developers to test onboarding flow without a Gemini API key
     if (process.env.NODE_ENV !== 'production') {
       return NextResponse.json({
         success: true,
