@@ -29,9 +29,10 @@ export async function GET(request: NextRequest) {
   console.log("Starting auto-price job...");
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    // Fetch products with user_id for multi-tenant tracking
     const { data: products, error: productsError } = await supabase
       .from('product_listings')
-      .select('*')
+      .select('*, user_id')
       .eq('status', 'active')
       .lt('created_at', thirtyDaysAgo);
 
@@ -73,7 +74,9 @@ export async function GET(request: NextRequest) {
             product: { price: recommendation.newPrice }
           })
         });
+        // Insert with user_id for multi-tenant tracking
         await supabase.from('pricing_history').insert({
+          user_id: product.user_id,
           product_id: product.id,
           old_price: product.price,
           new_price: recommendation.newPrice,

@@ -83,11 +83,17 @@ export async function GET(request: NextRequest) {
       competitorPrices: [9.99, 12.99, 14.99]
     });
     product.price = priceRecommendation.newPrice;
-    await supabase.from('pricing_history').insert({
-        old_price: 0,
-        new_price: product.price,
-        expected_delta: priceRecommendation.expectedRevenueDelta,
-    });
+    // Note: This endpoint needs product.user_id from the generated product
+    // Ensure user_id is available from the product data returned by /api/generate
+    if (product.user_id) {
+      await supabase.from('pricing_history').insert({
+          user_id: product.user_id,
+          product_id: product.id,
+          old_price: 0,
+          new_price: product.price,
+          expected_delta: priceRecommendation.expectedRevenueDelta,
+      });
+    }
     console.log(`Optimal price set to: $${product.price}`);
     const listingResponse = await fetchApi('/api/list', {
       method: 'POST',

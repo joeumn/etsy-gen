@@ -12,9 +12,10 @@ export async function GET(request: NextRequest) {
   }
   console.log("Starting auto-market job...");
   try {
+    // Fetch product with user_id for multi-tenant tracking
     const { data: products, error } = await supabase
       .from('product_listings')
-      .select('*')
+      .select('*, user_id')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(1);
@@ -40,7 +41,10 @@ export async function GET(request: NextRequest) {
     }, 'twitter');
 
     console.log(`Generated Post for ${product.title}:\n${postContent}`);
+    // Insert with user_id for multi-tenant tracking
     await supabase.from('traffic_sources').insert({
+      user_id: product.user_id,
+      product_id: product.id,
       platform: 'twitter',
       post_url: `https://twitter.com/your-account/status/${Date.now()}`,
       impressions: 0, clicks: 0, conversions: 0,

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scrapeTikTokTrends } from '@/lib/scrapers/social-scraper';
 import { supabase } from '@/lib/db/client';
+import { requireAuth } from '@/lib/auth-session';
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication for user-scoped operations
+    const user = await requireAuth();
+
     const body = await request.json();
     const { keywords, platforms = ['tiktok', 'pinterest', 'instagram'] } = body;
 
@@ -40,9 +44,10 @@ export async function POST(request: NextRequest) {
       
       socialTrends.push(...transformedTrends);
       
-      // Store in database for future reference
+      // Store in database for future reference with user_id
       await supabase.from('social_trends').insert(
         transformedTrends.map(trend => ({
+          user_id: user.id,
           platform: trend.platform,
           hashtag: trend.hashtag,
           engagement_score: trend.engagementScore,
@@ -86,14 +91,18 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication for user-scoped operations
+    const user = await requireAuth();
+
     const { searchParams } = new URL(request.url);
     const platform = searchParams.get('platform') || 'tiktok';
     const hashtag = searchParams.get('hashtag') || 'trending';
 
-    // Fetch from database first (cached data)
+    // Fetch from database first (cached data) - scoped to user
     const { data: cachedData } = await supabase
       .from('social_trends')
       .select('*')
+      .eq('user_id', user.id)
       .eq('platform', platform)
       .contains('keywords', [hashtag])
       .order('created_at', { ascending: false })
@@ -137,8 +146,9 @@ export async function GET(request: NextRequest) {
           createdAt: trend.timestamp.toISOString(),
         };
 
-        // Store in database
+        // Store in database with user_id
         await supabase.from('social_trends').insert({
+          user_id: user.id,
           platform: trendData.platform,
           hashtag: trendData.hashtag,
           engagement_score: trendData.engagementScore,

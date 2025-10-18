@@ -82,13 +82,15 @@ const ConnectionManagement = forwardRef(({ settings, setSettings, isLoading }: C
                                     connections: { ...settings.connections, supabaseUrl: e.target.value }
                                 })}
                             />
-                            <button
+                            <Button
                                 type="button"
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => toggleKeyVisibility('supabaseUrl')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                             >
                                 {showKeys.supabaseUrl ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
@@ -105,13 +107,15 @@ const ConnectionManagement = forwardRef(({ settings, setSettings, isLoading }: C
                                     connections: { ...settings.connections, supabaseKey: e.target.value }
                                 })}
                             />
-                            <button
+                            <Button
                                 type="button"
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => toggleKeyVisibility('supabaseKey')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                             >
                                 {showKeys.supabaseKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
@@ -157,13 +161,15 @@ const ConnectionManagement = forwardRef(({ settings, setSettings, isLoading }: C
                                         connections: { ...settings.connections, etsyApiKey: e.target.value }
                                     })}
                                 />
-                                <button
+                                <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => toggleKeyVisibility('etsyKey')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                                 >
                                     {showKeys.etsyKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                         <Button 
@@ -199,13 +205,15 @@ const ConnectionManagement = forwardRef(({ settings, setSettings, isLoading }: C
                                         connections: { ...settings.connections, shopifyToken: e.target.value }
                                     })}
                                 />
-                                <button
+                                <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => toggleKeyVisibility('shopifyToken')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                                 >
                                     {showKeys.shopifyToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -233,13 +241,15 @@ const ConnectionManagement = forwardRef(({ settings, setSettings, isLoading }: C
                                         connections: { ...settings.connections, amazonKey: e.target.value }
                                     })}
                                 />
-                                <button
+                                <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => toggleKeyVisibility('amazonKey')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                                 >
                                     {showKeys.amazonKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
