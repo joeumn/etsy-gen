@@ -15,7 +15,9 @@ import {
   Save,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Cable,
+  Database
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -29,8 +31,10 @@ import ApiKeysSettings from './components/ApiKeysSettings';
 import MarketplaceSettings from './components/MarketplaceSettings';
 import NotificationSettings from './components/NotificationSettings';
 import SystemStatus from './components/SystemStatus';
+import ConnectionManagement from './components/ConnectionManagement';
+import DatabaseManagement from './components/DatabaseManagement';
 
-export type SettingsTab = 'profile' | 'security' | 'apiKeys' | 'marketplaces' | 'notifications' | 'systemStatus';
+export type SettingsTab = 'profile' | 'security' | 'apiKeys' | 'marketplaces' | 'notifications' | 'systemStatus' | 'connections' | 'database';
 export type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
 const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
@@ -38,6 +42,8 @@ const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'apiKeys', label: 'API Keys', icon: KeyRound },
   { id: 'marketplaces', label: 'Marketplaces', icon: Building },
+  { id: 'connections', label: 'Connections', icon: Cable },
+  { id: 'database', label: 'Database', icon: Database },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'systemStatus', label: 'System Status', icon: Server },
 ];
@@ -117,6 +123,10 @@ export default function SettingsPage() {
         return <ApiKeysSettings settings={settings} setSettings={setSettings} isLoading={isLoading} />;
       case 'marketplaces':
         return <MarketplaceSettings settings={settings} setSettings={setSettings} isLoading={isLoading} />;
+      case 'connections':
+        return <ConnectionManagement settings={settings} setSettings={setSettings} isLoading={isLoading} />;
+      case 'database':
+        return <DatabaseManagement settings={settings} isLoading={isLoading} />;
       case 'notifications':
         return <NotificationSettings settings={settings} setSettings={setSettings} isLoading={isLoading} />;
       case 'systemStatus':
@@ -141,7 +151,7 @@ export default function SettingsPage() {
           </motion.div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button onClick={handleSave} disabled={saveStatus === 'saving' || activeTab === 'systemStatus'} variant="default" size="sm">
+            <Button onClick={handleSave} disabled={saveStatus === 'saving' || activeTab === 'systemStatus' || activeTab === 'database'} variant="default" size="sm">
               {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               <span className="hidden sm:inline ml-2">Save Changes</span>
             </Button>
