@@ -34,11 +34,14 @@ export async function middleware(request: NextRequest) {
     });
 
     if (!token) {
+      console.log(`[Middleware] No valid token found for ${pathname}`);
       return NextResponse.json(
         { error: 'Unauthorized - Please sign in' },
         { status: 401 }
       );
     }
+
+    console.log(`[Middleware] Token found for ${pathname}, user ID:`, token.id || token.sub);
 
     // Add user ID to headers for API routes to access
     // NextAuth v5 uses 'sub' for user ID by default, but we also set 'id' in JWT callback
@@ -46,12 +49,14 @@ export async function middleware(request: NextRequest) {
     const userEmail = (token.email as string);
 
     if (!userId) {
-      console.error('Token missing user ID:', token);
+      console.error('[Middleware] Token missing user ID:', token);
       return NextResponse.json(
         { error: 'Unauthorized - Invalid token' },
         { status: 401 }
       );
     }
+
+    console.log(`[Middleware] Setting headers - userId: ${userId}, email: ${userEmail}`);
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-user-id', userId);
