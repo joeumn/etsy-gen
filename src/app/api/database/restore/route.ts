@@ -1,30 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db/client';
-import { getUserById, getUserByEmail } from '@/lib/auth-helper';
+import { requireAuth } from '@/lib/auth-session';
 
 // POST - Restore database from backup
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, backupId } = body;
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-    }
+    const { backupId } = body;
 
     if (!backupId) {
       return NextResponse.json({ error: 'Backup ID required' }, { status: 400 });
     }
 
-    // Try to get user by ID first, then by email if that fails
-    let user = await getUserById(userId);
-    if (!user && userId.includes('@')) {
-      user = await getUserByEmail(userId);
-    }
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user from session
+    const user = await requireAuth();
 
     // Verify backup exists and belongs to user
     const { data: backupOperation, error: backupError } = await supabase
@@ -124,22 +113,8 @@ export async function POST(request: NextRequest) {
 // GET - List restore history
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-    }
-
-    // Try to get user by ID first, then by email if that fails
-    let user = await getUserById(userId);
-    if (!user && userId.includes('@')) {
-      user = await getUserByEmail(userId);
-    }
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user from session
+    const user = await requireAuth();
 
     // Get restore operations
     const { data: operations, error } = await supabase
