@@ -23,6 +23,10 @@ export async function POST(request: NextRequest) {
 
     // Validate request body
     const body = await request.json();
+    
+    // Log incoming request body for debugging validation issues
+    console.log('Generate API - Request body:', JSON.stringify(body, null, 2));
+    
     const validatedData = validate(generateProductSchema, body);
 
     const {
@@ -119,6 +123,11 @@ export async function POST(request: NextRequest) {
       data: result,
     });
   } catch (error) {
+    console.error('Generate API - Detailed error:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     logError(error, 'GenerateAPI', { path: '/api/generate' });
     const { response, statusCode } = handleAPIError(error, '/api/generate');
     logRequest('POST', '/api/generate', statusCode, Date.now() - startTime);

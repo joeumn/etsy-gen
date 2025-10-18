@@ -40,9 +40,23 @@ export async function middleware(request: NextRequest) {
     }
 
     // Add user ID to headers for API routes to access
+    // NextAuth v5 uses 'sub' for user ID by default, but we also set 'id' in JWT callback
+    const userId = (token.id as string) || (token.sub as string);
+    const userEmail = (token.email as string);
+
+    if (!userId) {
+      console.error('Token missing user ID:', token);
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
+
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-user-id', token.id as string);
-    requestHeaders.set('x-user-email', token.email as string);
+    requestHeaders.set('x-user-id', userId);
+    if (userEmail) {
+      requestHeaders.set('x-user-email', userEmail);
+    }
 
     return NextResponse.next({
       request: {
