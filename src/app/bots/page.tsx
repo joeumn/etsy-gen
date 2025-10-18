@@ -6,6 +6,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   Bot,
   Play,
@@ -24,60 +25,118 @@ interface AIBot {
   name: string;
   type: string;
   status: "active" | "paused" | "error";
-  lastRun?: string;
-  nextRun?: string;
-  tasksCompleted: number;
+  last_run_at?: string;
+  next_run_at?: string;
+  tasks_completed: number;
   description: string;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export default function BotManagementPage() {
-  const [bots, setBots] = useState<AIBot[]>([
-    {
-      id: "1",
-      name: "Trend Scanner Bot",
-      type: "scanner",
-      status: "active",
-      lastRun: "5 minutes ago",
-      nextRun: "in 55 minutes",
-      tasksCompleted: 128,
-      description: "Scans marketplaces for trending products every hour"
-    },
-    {
-      id: "2",
-      name: "Product Generator Bot",
-      type: "generator",
-      status: "active",
-      lastRun: "1 hour ago",
-      nextRun: "in 23 hours",
-      tasksCompleted: 45,
-      description: "Creates product listings based on trending data"
-    },
-    {
-      id: "3",
-      name: "Analytics Bot",
-      type: "analytics",
-      status: "paused",
-      lastRun: "2 days ago",
-      nextRun: "N/A",
-      tasksCompleted: 312,
-      description: "Analyzes performance metrics and generates reports"
-    }
-  ]);
+  const [bots, setBots] = useState<AIBot[]>([]);
+  const [loading, setLoading] = useState(true);
+  // For demo, we'll use a hardcoded admin user ID
+  // In production, this would come from authentication context/session
+  const userId = "admin@foundersforge.com"; // Placeholder - will be replaced by actual UUID from auth
 
-  const handleToggleBotStatus = (botId: string) => {
-    setBots(bots.map(bot => {
-      if (bot.id === botId) {
-        return {
-          ...bot,
-          status: bot.status === "active" ? "paused" : "active"
-        };
+  useEffect(() => {
+    fetchBots();
+  }, []);
+
+  const fetchBots = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/bots?userId=${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch bots');
       }
-      return bot;
-    }));
+      const data = await response.json();
+      setBots(data.bots || []);
+    } catch (error) {
+      console.error('Error fetching bots:', error);
+      toast.error('Failed to load bots');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteBot = (botId: string) => {
-    setBots(bots.filter(bot => bot.id !== botId));
+  const handleToggleBotStatus = async (botId: string) => {
+    const bot = bots.find(b => b.id === botId);
+    if (!bot) return;
+
+    const newStatus = bot.status === "active" ? "paused" : "active";
+    
+    try {
+      const response = await fetch('/api/bots', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          botId,
+          userId,
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update bot');
+      }
+
+      const data = await response.json();
+      setBots(bots.map(b => b.id === botId ? data.bot : b));
+      toast.success(`Bot ${newStatus === 'active' ? 'activated' : 'paused'} successfully`);
+    } catch (error) {
+      console.error('Error updating bot:', error);
+      toast.error('Failed to update bot status');
+    }
+  };
+
+  const handleDeleteBot = async (botId: string) => {
+    try {
+      const response = await fetch(`/api/bots?botId=${botId}&userId=${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete bot');
+      }
+
+      setBots(bots.filter(bot => bot.id !== botId));
+      toast.success('Bot deleted successfully');
+    } catch (error) {
+      console.error('Error deleting bot:', error);
+      toast.error('Failed to delete bot');
+    }
+  };
+
+  const formatRelativeTime = (timestamp: string | undefined) => {
+    if (!timestamp) return "Never";
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 60) return `${diffMins} minutes ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} days ago`;
+  };
+
+  const formatNextRun = (timestamp: string | undefined) => {
+    if (!timestamp) return "N/A";
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 0) return "Scheduled";
+    if (diffMins < 60) return `in ${diffMins} minutes`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `in ${diffHours} hours`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `in ${diffDays} days`;
   };
 
   const getStatusIcon = (status: string) => {
@@ -105,6 +164,19 @@ export default function BotManagementPage() {
         return "bg-muted text-muted-foreground";
     }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Activity className="h-8 w-8 animate-spin mx-auto mb-4 text-flame-500" />
+            <p className="text-muted-foreground">Loading bots...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -176,7 +248,7 @@ export default function BotManagementPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Tasks Today</p>
                     <p className="text-2xl font-bold">
-                      {bots.reduce((sum, bot) => sum + bot.tasksCompleted, 0)}
+                      {bots.reduce((sum, bot) => sum + bot.tasks_completed, 0)}
                     </p>
                   </div>
                   <CheckCircle className="h-8 w-8 text-ocean-500" />
@@ -246,15 +318,15 @@ export default function BotManagementPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Last Run</p>
-                      <p className="font-medium">{bot.lastRun || "Never"}</p>
+                      <p className="font-medium">{formatRelativeTime(bot.last_run_at)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Next Run</p>
-                      <p className="font-medium">{bot.nextRun || "N/A"}</p>
+                      <p className="font-medium">{formatNextRun(bot.next_run_at)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Tasks Completed</p>
-                      <p className="font-medium">{bot.tasksCompleted}</p>
+                      <p className="font-medium">{bot.tasks_completed}</p>
                     </div>
                   </div>
                 </CardContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, forwardRef } from 'react';
+import { useState, forwardRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Database, Download, Upload, RefreshCw, AlertCircle } from 'lucide-react';
@@ -15,18 +15,48 @@ interface DatabaseManagementProps {
 const DatabaseManagement = forwardRef(({ settings, isLoading }: DatabaseManagementProps, ref) => {
     const [migrating, setMigrating] = useState(false);
     const [downloading, setDownloading] = useState(false);
+    const [restoring, setRestoring] = useState(false);
+    const [backups, setBackups] = useState<any[]>([]);
+    const [userId] = useState<string>("admin@foundersforge.com");
+
+    useEffect(() => {
+        if (!isLoading && settings.systemConfig?.hasSupabaseConfig) {
+            fetchBackups();
+        }
+    }, [isLoading, settings]);
+
+    const fetchBackups = async () => {
+        try {
+            const response = await fetch(`/api/database/backup?userId=${userId}`);
+            if (response.ok) {
+                const data = await response.json();
+                setBackups(data.operations || []);
+            }
+        } catch (error) {
+            console.error('Error fetching backups:', error);
+        }
+    };
 
     const handleMigrateDatabase = async () => {
         setMigrating(true);
         toast.info("Starting database migration...");
         
         try {
-            // This would call your migration API endpoint
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated delay
+            const response = await fetch('/api/database/migrate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Migration failed');
+            }
+
+            const data = await response.json();
             toast.success("Database migration completed successfully!");
-        } catch (error) {
+        } catch (error: any) {
             console.error('Migration error:', error);
-            toast.error("Failed to migrate database. Please check logs.");
+            toast.error(error.message || "Failed to migrate database. Please check logs.");
         } finally {
             setMigrating(false);
         }
@@ -37,27 +67,54 @@ const DatabaseManagement = forwardRef(({ settings, isLoading }: DatabaseManageme
         toast.info("Preparing database backup...");
         
         try {
-            // This would call your backup API endpoint
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated delay
-            toast.success("Database backup ready! Download starting...");
-            
-            // In a real implementation, this would trigger a file download
-            // const blob = new Blob([backupData], { type: 'application/sql' });
-            // const url = window.URL.createObjectURL(blob);
-            // const a = document.createElement('a');
-            // a.href = url;
-            // a.download = `database-backup-${new Date().toISOString()}.sql`;
-            // a.click();
-        } catch (error) {
+            const response = await fetch('/api/database/backup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Backup failed');
+            }
+
+            const data = await response.json();
+            toast.success("Database backup created successfully!");
+            fetchBackups(); // Refresh backup list
+        } catch (error: any) {
             console.error('Backup error:', error);
-            toast.error("Failed to create database backup.");
+            toast.error(error.message || "Failed to create database backup.");
         } finally {
             setDownloading(false);
         }
     };
 
-    const handleRestoreDatabase = () => {
-        toast.info("Database restore functionality coming soon!");
+    const handleRestoreDatabase = async (backupId: string) => {
+        if (!confirm('Are you sure you want to restore from this backup? This will overwrite current data.')) {
+            return;
+        }
+
+        setRestoring(true);
+        toast.info("Starting database restore...");
+        
+        try {
+            const response = await fetch('/api/database/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, backupId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Restore failed');
+            }
+
+            const data = await response.json();
+            toast.success("Database restored successfully!");
+        } catch (error: any) {
+            console.error('Restore error:', error);
+            toast.error(error.message || "Failed to restore database.");
+        } finally {
+            setRestoring(false);
+        }
     };
 
     if (isLoading) {
@@ -164,14 +221,37 @@ const DatabaseManagement = forwardRef(({ settings, isLoading }: DatabaseManageme
                                 <p className="text-sm text-muted-foreground">
                                     Restore database from a backup file
                                 </p>
+                                {backups.length > 0 && backups.filter(b => b.status === 'completed').length > 0 && (
+                                    <div className="mt-2">
+                                        <select 
+                                            className="text-sm border rounded px-2 py-1"
+                                            onChange={(e) => e.target.value && handleRestoreDatabase(e.target.value)}
+                                            disabled={restoring || !settings.systemConfig?.hasSupabaseConfig}
+                                        >
+                                            <option value="">Select a backup...</option>
+                                            {backups
+                                                .filter(b => b.status === 'completed')
+                                                .map(backup => (
+                                                    <option key={backup.id} value={backup.id}>
+                                                        {backup.file_name} - {new Date(backup.created_at).toLocaleString()}
+                                                    </option>
+                                                ))
+                                            }
+                                        </select>
+                                    </div>
+                                )}
                             </div>
                             <Button
                                 variant="outline"
-                                onClick={handleRestoreDatabase}
-                                disabled={!settings.systemConfig?.hasSupabaseConfig}
+                                onClick={() => {
+                                    if (backups.length === 0 || backups.filter(b => b.status === 'completed').length === 0) {
+                                        toast.info("No backups available. Create a backup first.");
+                                    }
+                                }}
+                                disabled={restoring || !settings.systemConfig?.hasSupabaseConfig || backups.filter(b => b.status === 'completed').length === 0}
                             >
-                                <Upload className="h-4 w-4 mr-2" />
-                                Restore
+                                <Upload className={`h-4 w-4 mr-2 ${restoring ? 'animate-pulse' : ''}`} />
+                                {restoring ? 'Restoring...' : 'Restore'}
                             </Button>
                         </div>
                     </div>
@@ -196,6 +276,43 @@ const DatabaseManagement = forwardRef(({ settings, isLoading }: DatabaseManageme
             {/* Database Information */}
             <Card>
                 <CardHeader>
+                    <CardTitle>Backup History</CardTitle>
+                    <CardDescription>
+                        Recent database backups
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {backups.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No backups available</p>
+                    ) : (
+                        <div className="space-y-2 text-sm">
+                            {backups.slice(0, 5).map(backup => (
+                                <div key={backup.id} className="flex items-center justify-between py-2 border-b">
+                                    <div>
+                                        <span className="font-mono">{backup.file_name}</span>
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(backup.created_at).toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <span className={`text-xs px-2 py-1 rounded ${
+                                        backup.status === 'completed' 
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
+                                            : backup.status === 'failed'
+                                            ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                    }`}>
+                                        {backup.status}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Migration Files Information */}
+            <Card>
+                <CardHeader>
                     <CardTitle>Configuration Files</CardTitle>
                     <CardDescription>
                         SQL migration files available in your project
@@ -206,6 +323,10 @@ const DatabaseManagement = forwardRef(({ settings, isLoading }: DatabaseManageme
                         <div className="flex items-center justify-between py-2 border-b">
                             <span className="font-mono">schema.sql</span>
                             <span className="text-muted-foreground">Core schema</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-b">
+                            <span className="font-mono">ai-bots-schema.sql</span>
+                            <span className="text-muted-foreground">AI Bots feature</span>
                         </div>
                         <div className="flex items-center justify-between py-2 border-b">
                             <span className="font-mono">stage3-migrations.sql</span>
