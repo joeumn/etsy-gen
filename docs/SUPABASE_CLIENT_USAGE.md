@@ -30,17 +30,27 @@ import { createBrowserClient } from '@/lib/supabase';
 'use client'
 
 import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState } from 'react';
 
-export default function MyComponent() {
+export default function MyComponent({ userId }: { userId: string }) {
+  const [products, setProducts] = useState([]);
   const supabase = createClient();
   
   // Use the client
-  const fetchData = async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('user_id', userId);
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (!error && data) {
+        setProducts(data);
+      }
+    };
+    
+    fetchData();
+  }, [userId]);
   
   return <div>...</div>;
 }
@@ -226,8 +236,10 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
    
    const { data, error } = await supabase
      .from('products')
-     .select('*')
-     .returns<Product[]>();
+     .select('*');
+     
+   // Type the result
+   const products = data as Product[];
    ```
 
 ---
@@ -241,8 +253,14 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export default function ProductList() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const supabase = createClient();
   
   useEffect(() => {
@@ -250,7 +268,7 @@ export default function ProductList() {
       const { data } = await supabase
         .from('products')
         .select('*');
-      setProducts(data || []);
+      setProducts((data as Product[]) || []);
     };
     
     fetchProducts();
