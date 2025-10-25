@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 import { logError } from '@/lib/logger';
 import { handleAPIError } from '@/lib/errors';
 

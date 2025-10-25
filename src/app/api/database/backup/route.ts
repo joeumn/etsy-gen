@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 import { requireAuth } from '@/lib/auth-session';
 import { createDatabaseBackup, listAvailableBackups } from '@/lib/db/backup-restore';
 import { updateDatabaseOperationStatus } from '@/lib/realtime';

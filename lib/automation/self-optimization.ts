@@ -5,7 +5,7 @@
  */
 
 import { logger, logError, logAIGeneration } from '../logger';
-import { supabase } from '../db/client';
+import { supabase } from '../supabase/admin-client';
 import { AIProviderFactory } from '../ai/aiFactory';
 import { retry } from '../performance';
 import { notifyAPIIssue } from '../notifications/notification-service';

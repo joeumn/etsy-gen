@@ -4,7 +4,7 @@
  * Provides utilities for authentication and session management
  */
 
-import { supabase } from './db/client';
+import { supabase } from './supabase/admin-client';
 import bcrypt from 'bcryptjs';
 import { AuthenticationError, ConflictError } from './errors';
 import { logError, logSecurityEvent } from './logger';

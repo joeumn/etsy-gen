@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pricingOptimizer } from '@/lib/ai/pricing';
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${endpoint}`;

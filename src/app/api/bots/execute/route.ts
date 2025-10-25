@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-session';
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 import { executeBot } from '@/lib/bots/bot-executor';
 
 /**

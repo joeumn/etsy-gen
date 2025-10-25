@@ -18,7 +18,7 @@ import { AIProviderFactory } from '../ai/aiFactory';
 import { EtsyMarketplace } from '../marketplaces/etsy';
 import { AmazonMarketplace } from '../marketplaces/amazon';
 import { ShopifyMarketplace } from '../marketplaces/shopify';
-import { supabase } from '../db/client';
+import { supabase } from '../supabase/admin-client';
 import { setCache, CACHE_TTL } from '../cache';
 
 export interface ScrapeSource {

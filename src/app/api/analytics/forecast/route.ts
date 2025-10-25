@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { forecastEngine } from '@/lib/analytics/forecast';
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 
 export async function GET(request: NextRequest) {
   try {

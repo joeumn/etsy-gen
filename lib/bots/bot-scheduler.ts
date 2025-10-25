@@ -5,7 +5,7 @@
  */
 
 import cron from 'node-cron';
-import { supabase } from '../db/client';
+import { supabase } from '../supabase/admin-client';
 import { logger, logError } from '../logger';
 import { executeBot } from './bot-executor';
 

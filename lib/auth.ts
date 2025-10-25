@@ -1,6 +1,6 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { supabaseAdmin } from "./db/client";
+import { supabaseAdmin } from "./supabase/admin-client";
 import bcrypt from "bcryptjs";
 
 // Check if NEXTAUTH_SECRET is set

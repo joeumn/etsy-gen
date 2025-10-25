@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scrapeTikTokTrends } from '@/lib/scrapers/social-scraper';
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 import { requireAuth } from '@/lib/auth-session';
 
 export async function POST(request: NextRequest) {

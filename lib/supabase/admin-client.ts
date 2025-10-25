@@ -1,19 +1,21 @@
+// lib/supabase/admin-client.ts
+// Admin Supabase client for server-side operations that bypass RLS
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // Check if we're in build phase (allow placeholders during build)
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
 
 // Log missing configuration during runtime for better debugging
 if (typeof window === 'undefined' && !isBuildPhase) {
-  if (!supabaseUrl || !supabaseKey) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('⚠️ Database Configuration Warning:');
     if (!supabaseUrl) {
       console.warn('  - NEXT_PUBLIC_SUPABASE_URL is not set');
     }
-    if (!supabaseKey) {
+    if (!supabaseAnonKey) {
       console.warn('  - NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
     }
     console.warn('  → Database operations will fail until these are configured.');
@@ -21,12 +23,12 @@ if (typeof window === 'undefined' && !isBuildPhase) {
   }
 }
 
-// Initialize the Supabase client
+// Initialize the standard Supabase client (with RLS)
 // During build: allow placeholder to prevent build failures
 // During runtime: use real credentials or placeholder (will fail on actual DB operations)
 const supabase =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey)
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
     : createClient('https://placeholder.supabase.co', 'placeholder-key');
 
 // Also check for the admin key, which is used for server-side operations.
@@ -39,7 +41,7 @@ if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-productio
     console.warn('  → Admin-level operations will be limited.');
 }
 
-// Initialize the admin client, falling back to the regular client if the service key is missing.
+// Initialize the admin client (bypasses RLS), falling back to the regular client if the service key is missing.
 const supabaseAdmin =
   supabaseUrl && supabaseServiceRoleKey
     ? createClient(supabaseUrl, supabaseServiceRoleKey, {

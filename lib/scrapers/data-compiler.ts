@@ -4,7 +4,7 @@
  * Aggregates scraped data, analyzes trends, and stores in database
  */
 
-import { supabase } from '../db/client';
+import { supabase } from '../supabase/admin-client';
 import { logger, logError } from '../logger';
 import { WebTrend } from './web-scraper';
 import { SocialTrend } from './social-scraper';

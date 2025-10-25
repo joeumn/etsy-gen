@@ -1,7 +1,7 @@
 // Natural Language to SQL Router for Analytics
 // Safely converts NL queries to SQL with allowlist protection
 
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 
 export interface QueryResult {
   type: 'table' | 'timeseries' | 'bar' | 'radar' | 'pie';
