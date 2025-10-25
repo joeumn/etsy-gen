@@ -4,7 +4,7 @@
  * Provides real-time status updates using Supabase Realtime
  */
 
-import { supabase } from './db/client';
+import { supabase } from './supabase/admin-client';
 import { logger, logError } from './logger';
 
 export type OperationStatus = 'pending' | 'running' | 'completed' | 'failed';

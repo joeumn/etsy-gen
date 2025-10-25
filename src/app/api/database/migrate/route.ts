@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, supabaseAdmin } from '@/lib/db/client';
+import { supabase, supabaseAdmin } from '@/lib/supabase/admin-client';
 import { getUserById, getUserByEmail } from '@/lib/auth-helper';
 import fs from 'fs/promises';
 import path from 'path';

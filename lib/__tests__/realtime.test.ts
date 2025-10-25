@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { updateDatabaseOperationStatus, updateBotStatus } from '../realtime';
-import { supabase } from '../db/client';
+import { supabase } from '../supabase/admin-client';
 
 // Mock the supabase client
 vi.mock('../db/client', () => ({

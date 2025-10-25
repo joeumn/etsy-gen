@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AIProviderFactory } from '@/lib/ai/aiFactory';
 import { pricingOptimizer } from '@/lib/ai/pricing';
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 
 // Helper function to call internal APIs
 async function fetchApi(endpoint: string, options: RequestInit = {}) {

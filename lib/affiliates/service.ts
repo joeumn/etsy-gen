@@ -1,6 +1,6 @@
 // Affiliate service for managing referral codes, tracking, and payouts
 
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 
 export interface Affiliate {
   id: string;

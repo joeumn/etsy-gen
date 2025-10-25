@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AIProviderFactory } from '@/lib/ai/aiFactory';
-import { supabase } from '@/lib/db/client';
+import { supabase } from '@/lib/supabase/admin-client';
 
 export async function GET(request: NextRequest) {
   const authToken = (request.headers.get('authorization') || '').split('Bearer ')[1];

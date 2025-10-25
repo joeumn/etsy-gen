@@ -4,7 +4,7 @@
  * Handles execution of different bot types with real business logic
  */
 
-import { supabase } from '../db/client';
+import { supabase } from '../supabase/admin-client';
 import { logger, logError, PerformanceLogger } from '../logger';
 import { updateBotStatus } from '../realtime';
 import { AIProviderFactory } from '../ai/aiFactory';

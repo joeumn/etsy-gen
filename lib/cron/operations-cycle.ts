@@ -16,7 +16,7 @@
 
 import { logger, logError, PerformanceLogger, logUserActivity } from '../logger';
 import { AIProviderFactory } from '../ai/aiFactory';
-import { supabase } from '../db/client';
+import { supabase } from '../supabase/admin-client';
 import { getCache, setCache, CACHE_TTL } from '../cache';
 import { EtsyMarketplace } from '../marketplaces/etsy';
 import { ShopifyMarketplace } from '../marketplaces/shopify';

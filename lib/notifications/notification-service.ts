@@ -5,7 +5,7 @@
  */
 
 import { logger, logError } from '../logger';
-import { supabase } from '../db/client';
+import { supabase } from '../supabase/admin-client';
 
 export type NotificationType = 'sale' | 'listing' | 'trend' | 'error' | 'system';
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';

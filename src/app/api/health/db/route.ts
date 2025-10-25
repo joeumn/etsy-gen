@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, supabaseAdmin } from '@/lib/db/client';
+import { supabase, supabaseAdmin } from '@/lib/supabase/admin-client';
 
 export async function GET(_req: NextRequest) {
   const db = supabaseAdmin ?? supabase;
