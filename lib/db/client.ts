@@ -1,45 +1,37 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const isServer = typeof window === 'undefined'
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
 
-// Check if we're in build phase (allow placeholders during build)
-const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+const logMissingConfig = (missing: string[]) => {
+  console.error('--- DATABASE CONNECTION FAILED ---')
+  missing.forEach((key) => console.error(`MISSING: ${key}`))
+  console.error('Refer to .env.example to configure Supabase credentials.')
+}
 
-// Log missing configuration during runtime for better debugging
-if (typeof window === 'undefined' && !isBuildPhase) {
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('⚠️ Database Configuration Warning:');
-    if (!supabaseUrl) {
-      console.warn('  - NEXT_PUBLIC_SUPABASE_URL is not set');
-    }
-    if (!supabaseKey) {
-      console.warn('  - NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
-    }
-    console.warn('  → Database operations will fail until these are configured.');
-    console.warn('  → See .env.example for required configuration.');
+if (isServer && !isBuildPhase) {
+  const missing: string[] = []
+  if (!supabaseUrl) missing.push('NEXT_PUBLIC_SUPABASE_URL')
+  if (!supabaseKey) missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+
+  if (missing.length > 0) {
+    logMissingConfig(missing)
+  }
+
+  if (!supabaseServiceRoleKey) {
+    console.warn('--- ADMIN DATABASE ACCESS WARNING ---')
+    console.warn('SUPABASE_SERVICE_ROLE_KEY is not set; admin operations will be limited.')
   }
 }
 
-// Initialize the Supabase client
-// During build: allow placeholder to prevent build failures
-// During runtime: use real credentials or placeholder (will fail on actual DB operations)
 const supabase =
   supabaseUrl && supabaseKey
     ? createClient(supabaseUrl, supabaseKey)
-    : createClient('https://placeholder.supabase.co', 'placeholder-key');
+    : createClient('https://placeholder.supabase.co', 'placeholder-key')
 
-// Also check for the admin key, which is used for server-side operations.
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-// Log admin key warning
-if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build' && !supabaseServiceRoleKey) {
-    console.warn('⚠️ Admin Database Access Warning:');
-    console.warn('  - SUPABASE_SERVICE_ROLE_KEY is not set');
-    console.warn('  → Admin-level operations will be limited.');
-}
-
-// Initialize the admin client, falling back to the regular client if the service key is missing.
 const supabaseAdmin =
   supabaseUrl && supabaseServiceRoleKey
     ? createClient(supabaseUrl, supabaseServiceRoleKey, {
@@ -48,7 +40,7 @@ const supabaseAdmin =
           persistSession: false,
         },
       })
-    : supabase;
+    : supabase
 
-export { supabase, supabaseAdmin };
-export default supabase;
+export { supabase, supabaseAdmin }
+export default supabase

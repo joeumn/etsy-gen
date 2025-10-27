@@ -1,4 +1,4 @@
-# The Forge by FoundersForge
+﻿# The Forge by FoundersForge
 
 <div align="center">
 
@@ -15,16 +15,16 @@ AI That Builds Wealth for You
 
 ---
 
-## 🔥 What is The Forge?
+## ðŸ”¥ What is The Forge?
 
 **The Forge** is an autonomous AI-powered platform that builds digital product empires while you sleep.
 
 Our AI:
-- 🔍 **Scrapes** Etsy, Shopify, Amazon, Gumroad for trending products
-- 🧠 **Analyzes** market data to identify high-profit opportunities
-- ✨ **Creates** complete products (titles, descriptions, mockups, pricing)
-- 📦 **Lists** products automatically across all your marketplaces
-- 📊 **Tracks** revenue, conversions, and performance in real-time
+- ðŸ” **Scrapes** Etsy, Shopify, Amazon, Gumroad for trending products
+- ðŸ§  **Analyzes** market data to identify high-profit opportunities
+- âœ¨ **Creates** complete products (titles, descriptions, mockups, pricing)
+- ðŸ“¦ **Lists** products automatically across all your marketplaces
+- ðŸ“Š **Tracks** revenue, conversions, and performance in real-time
 
 **Version**: 2.0.0  
 **Status**: Private Beta  
@@ -32,89 +32,70 @@ Our AI:
 
 ---
 
-## ⚡ Quick Start
+## Backend Quick Start
 
 ### Prerequisites
 
-- **Node.js** 18+ (20+ recommended)
-- **pnpm** or npm
-- **Supabase account** with PostgreSQL database
-- **AI API Key** (Gemini recommended, OpenAI works too)
+- **Node.js** 20+
+- **npm** (or `pnpm` if you prefer)
+- **PostgreSQL** 13+ reachable at the `DATABASE_URL`
+- **Redis** 6+ for BullMQ job queues
+- **AI provider keys** (`OPENAI_API_KEY` required, `STABILITY_API_KEY` optional)
 
-### Installation
+### Setup
 
 ```bash
-# Clone repository
-   git clone <repository-url>
-cd etsy-gen
-
 # Install dependencies
 npm install
-# or
-   pnpm install
+
+# Generate Prisma client & migrate schema (DATABASE_URL must be set)
+npm run db:generate
+npm run db:migrate
+
+# Seed baseline data
+npm run db:seed
 ```
 
-### Configuration
+Copy `.env.example` to `.env.local` (or export variables for production) and fill in:
 
-1. **Create `.env.local`** file:
+- `DATABASE_URL`, `REDIS_URL`, `APP_ENCRYPTION_KEY`
+- Marketplace + AI keys (`ETSY_API_KEY`, `ETSY_SHOP_ID`, `OPENAI_API_KEY`, ...)
+- `ADMIN_API_TOKEN` for securing `/api/admin/*`
 
-```env
-# Database (REQUIRED)
-SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_ANON_KEY=your_supabase_anon_key
-   
-# Server-side admin routes (REQUIRED for admin operations)
-# Never expose to client - server-side only
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-   
-# Authentication (REQUIRED)
-NEXTAUTH_SECRET=your_nextauth_secret_32_chars_min
-NEXTAUTH_URL=http://localhost:3000
-
-# AI Provider (Pick at least one)
-GEMINI_API_KEY=your_gemini_api_key
-OPENAI_API_KEY=your_openai_api_key
-
-# Marketplaces (Optional - enable as needed)
-ETSY_API_KEY=your_etsy_api_key
-SHOPIFY_ACCESS_TOKEN=your_shopify_token
-AMAZON_ACCESS_KEY=your_amazon_key
-
-# Stripe (Optional - for monetization)
-STRIPE_SECRET_KEY=sk_test_your_stripe_key
-STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
-```
-
-2. **Set up database**:
-
-Run the SQL migrations in your Supabase dashboard:
-```bash
-lib/db/schema.sql           # Core schema
-lib/db/stage3-migrations.sql  # Stage 3 features
-lib/db/stage4-migrations.sql  # Stage 4 automation
-```
-
-3. **Start development server**:
+### Running the platform
 
 ```bash
+# Start API (http://localhost:3001 by default)
 npm run dev
+
+# In separate shells start background workers & cron scheduler
+npm run queues
+npm run cron
 ```
 
-4. **Verify authentication setup** (recommended):
+Kick an end-to-end run manually:
 
 ```bash
-node scripts/verify-auth-setup.js
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" http://localhost:3001/api/admin/run/scrape
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" http://localhost:3001/api/admin/run/analyze
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" http://localhost:3001/api/admin/run/generate
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" http://localhost:3001/api/admin/run/list
 ```
 
-This will check that all required environment variables and files are properly configured for authentication.
+Health and readiness probes: `GET /healthz`, `GET /readyz`. Prometheus metrics at `GET /metrics`.
 
-> 📖 **Troubleshooting Authentication Issues?** See [AUTH_FIX_README.md](AUTH_FIX_README.md) for a quick reference or [AUTHENTICATION_TROUBLESHOOTING.md](AUTHENTICATION_TROUBLESHOOTING.md) for comprehensive troubleshooting.
+### Verification
 
+```bash
+# Smoke check DB connectivity
+npm run db:seed
+node ./scripts/db-smoke.ts
+
+# Run Vitest suite (backend + existing FE tests)
+npm test
 ```
 
-4. **Access the app**:
 
-Open [http://localhost:3000](http://localhost:3000)
 
 ### Authentication
 
@@ -124,13 +105,13 @@ The application uses NextAuth with Supabase for secure authentication:
 2. **Sign In**: Access at `/login`
 3. **Protected Routes**: Dashboard and features require authentication
 
-📖 **See [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md)** for detailed authentication documentation.
+ðŸ“– **See [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md)** for detailed authentication documentation.
 
 ---
 
-## 🎯 Core Features
+## ðŸŽ¯ Core Features
 
-### 1. 🤖 **AI Market Intelligence**
+### 1. ðŸ¤– **AI Market Intelligence**
 Automatically scans Etsy, Shopify, Amazon, and Gumroad to identify trending digital products before they saturate.
 
 **Features**:
@@ -141,7 +122,7 @@ Automatically scans Etsy, Shopify, Amazon, and Gumroad to identify trending digi
 - Seasonality tracking
 - Target audience inference
 
-### 2. ✨ **Autonomous Product Creation**
+### 2. âœ¨ **Autonomous Product Creation**
 AI generates complete products optimized for conversion.
 
 **Generates**:
@@ -152,7 +133,7 @@ AI generates complete products optimized for conversion.
 - Product mockups
 - Complete specifications
 
-### 3. 📦 **Automated Listing**
+### 3. ðŸ“¦ **Automated Listing**
 Products are automatically listed across your connected marketplaces.
 
 **Supports**:
@@ -161,7 +142,7 @@ Products are automatically listed across your connected marketplaces.
 - Amazon
 - Gumroad (coming soon)
 
-### 4. 📊 **Revenue Analytics**
+### 4. ðŸ“Š **Revenue Analytics**
 Real-time dashboards track every aspect of your business.
 
 **Analytics**:
@@ -172,7 +153,7 @@ Real-time dashboards track every aspect of your business.
 - Marketplace performance
 - AI-powered insights
 
-### 5. 🎯 **Smart Recommendations**
+### 5. ðŸŽ¯ **Smart Recommendations**
 AI analyzes your data and provides actionable recommendations.
 
 **Recommendations**:
@@ -184,7 +165,7 @@ AI analyzes your data and provides actionable recommendations.
 
 ---
 
-## 🏗️ Architecture
+## ðŸ—ï¸ Architecture
 
 ### Tech Stack
 
@@ -218,30 +199,30 @@ AI analyzes your data and provides actionable recommendations.
 
 ```
 /
-├── src/app/              # Pages & API routes
-│   ├── (auth)/           # Authentication
-│   ├── dashboard/        # Main dashboard
-│   ├── analytics/        # Analytics dashboard
-│   ├── products/         # Product management
-│   ├── marketplaces/     # Marketplace connections
-│   ├── integrations/     # Third-party integrations
-│   ├── settings/         # User settings
-│   └── api/              # 32 API endpoints
-├── src/components/       # React components
-│   ├── layout/           # Layout components
-│   └── ui/               # UI component library (25+)
-├── lib/                  # Server utilities
-│   ├── ai/               # AI integrations
-│   ├── marketplaces/     # Marketplace APIs
-│   ├── analytics/        # Analytics engine
-│   ├── db/               # Database
-│   └── *.ts              # Utilities
-└── docs/                 # Documentation
+â”œâ”€â”€ src/app/              # Pages & API routes
+â”‚   â”œâ”€â”€ (auth)/           # Authentication
+â”‚   â”œâ”€â”€ dashboard/        # Main dashboard
+â”‚   â”œâ”€â”€ analytics/        # Analytics dashboard
+â”‚   â”œâ”€â”€ products/         # Product management
+â”‚   â”œâ”€â”€ marketplaces/     # Marketplace connections
+â”‚   â”œâ”€â”€ integrations/     # Third-party integrations
+â”‚   â”œâ”€â”€ settings/         # User settings
+â”‚   â””â”€â”€ api/              # 32 API endpoints
+â”œâ”€â”€ src/components/       # React components
+â”‚   â”œâ”€â”€ layout/           # Layout components
+â”‚   â””â”€â”€ ui/               # UI component library (25+)
+â”œâ”€â”€ lib/                  # Server utilities
+â”‚   â”œâ”€â”€ ai/               # AI integrations
+â”‚   â”œâ”€â”€ marketplaces/     # Marketplace APIs
+â”‚   â”œâ”€â”€ analytics/        # Analytics engine
+â”‚   â”œâ”€â”€ db/               # Database
+â”‚   â””â”€â”€ *.ts              # Utilities
+â””â”€â”€ docs/                 # Documentation
 ```
 
 ---
 
-## 📱 User Interface
+## ðŸ“± User Interface
 
 ### Landing Page
 - **URL**: `/`
@@ -275,7 +256,7 @@ AI analyzes your data and provides actionable recommendations.
 
 ---
 
-## 🔌 API Documentation
+## ðŸ”Œ API Documentation
 
 ### Core Endpoints
 
@@ -312,7 +293,7 @@ Authorization: Bearer {token}
 
 ---
 
-## 🎨 Design System
+## ðŸŽ¨ Design System
 
 ### Brand Colors
 
@@ -339,7 +320,7 @@ All components use Framer Motion animations and support dark mode.
 
 ---
 
-## 🛡️ Security
+## ðŸ›¡ï¸ Security
 
 ### Security
 
@@ -359,13 +340,13 @@ The Forge implements comprehensive security measures to protect your data and op
 
 ---
 
-## 📊 Performance
+## ðŸ“Š Performance
 
 ### Build Metrics
-- ✅ **TypeScript**: 0 errors
-- ✅ **Build Time**: ~10 seconds
-- ✅ **Bundle Size**: Optimized
-- ⚠️ **ESLint**: ~50 warnings (non-critical)
+- âœ... **TypeScript**: 0 errors
+- âœ... **Build Time**: ~10 seconds
+- âœ... **Bundle Size**: Optimized
+- âš ï¸ **ESLint**: ~50 warnings (non-critical)
 
 ### Runtime Performance
 - In-memory caching (5-15min TTL)
@@ -382,7 +363,7 @@ The Forge implements comprehensive security measures to protect your data and op
 
 ---
 
-## 🚀 Deployment
+## ðŸš€ Deployment
 
 ### Vercel (Recommended)
 
@@ -412,7 +393,7 @@ See `.env.example` for complete configuration template.
 
 ---
 
-## 📚 Documentation
+## ðŸ“š Documentation
 
 ### Available Docs
 - **README.md** (this file) - Quick start & overview
@@ -430,7 +411,7 @@ All critical functions include JSDoc comments with:
 
 ---
 
-## 🧪 Testing
+## ðŸ§ª Testing
 
 ```bash
 # Run tests
@@ -445,7 +426,7 @@ npm run lint
 
 ---
 
-## 🤝 Support
+## ðŸ¤ Support
 
 This is a **private internal application** for FoundersForge.
 
@@ -457,17 +438,17 @@ For technical issues:
 
 ---
 
-## 📄 License
+## ðŸ“„ License
 
 **Private & Proprietary**
 
-© 2025 FoundersForge. All rights reserved.
+Â© 2025 FoundersForge. All rights reserved.
 
 This software is private and confidential. Unauthorized copying, distribution, or use is strictly prohibited.
 
 ---
 
-## 🏆 Credits
+## ðŸ† Credits
 
 **Built by**:
 - Senior Full-Stack Engineer
@@ -483,9 +464,9 @@ This software is private and confidential. Unauthorized copying, distribution, o
 
 ---
 
-## 🎯 Roadmap
+## ðŸŽ¯ Roadmap
 
-### ✅ Completed (v2.0)
+### âœ... Completed (v2.0)
 - Enterprise-grade authentication
 - Professional logging system
 - Advanced error handling
@@ -497,7 +478,7 @@ This software is private and confidential. Unauthorized copying, distribution, o
 - Smart recommendations
 - Beautiful dashboard with sidebar navigation
 
-### 🔮 Coming Soon (v2.0 - In Progress)
+### ðŸ”® Coming Soon (v2.0 - In Progress)
 - [x] Google Drive integration (configuration ready)
 - [x] Auto-scheduler for scrapes (cron jobs configured)
 - [x] Visual theme editor (settings page added)
@@ -509,4 +490,5 @@ This software is private and confidential. Unauthorized copying, distribution, o
 
 **The Forge** - Built with precision, powered by AI, designed for scale.
 
-🔥 **Never Build Alone** 🔥
+ðŸ”¥ **Never Build Alone** ðŸ”¥
+
