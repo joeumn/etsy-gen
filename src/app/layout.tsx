@@ -47,14 +47,14 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <AppInitializer>
-              <InitializationProvider>
+            <InitializationProvider>
+              <AppInitializer>
                 <ToastProvider>
                   {children}
                 </ToastProvider>
                 <Toaster richColors position="top-right" />
-              </InitializationProvider>
-            </AppInitializer>
+              </AppInitializer>
+            </InitializationProvider>
           </ThemeProvider>
         </Providers>
       </body>

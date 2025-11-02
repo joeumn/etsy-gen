@@ -7,6 +7,7 @@ import { Loader2, CheckCircle2, AlertCircle, Wifi, Database, Key, Package, Spark
 import { Progress } from "./ui/progress";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
+import { useInitialization } from "./initialization-context";
 
 interface InitStep {
   id: string;
@@ -23,6 +24,7 @@ interface AppInitializerProps {
 
 export function AppInitializer({ children, onComplete }: AppInitializerProps) {
   const { status } = useSession();
+  const { setStatus: setInitStatus, setDetails, setLastRunAt } = useInitialization();
   const [shouldInitialize, setShouldInitialize] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -49,14 +51,19 @@ export function AppInitializer({ children, onComplete }: AppInitializerProps) {
 
   useEffect(() => {
     if (status === "authenticated") {
-      const initDone = typeof window !== "undefined" ? sessionStorage.getItem("forge-init-done") : "true";
+      const initDone = typeof window !== "undefined" ? sessionStorage.getItem("forge-init-done") : null;
       if (!initDone) {
         resetSteps();
         setShouldInitialize(true);
         setIsInitializing(true);
+        setInitStatus("running");
+        setDetails({ step: "environment", message: "Starting system checks" });
       } else {
         setShouldInitialize(false);
         setIsInitializing(false);
+        setInitStatus("success");
+        setDetails({ step: "ready", message: "System ready" });
+        setLastRunAt(initDone);
       }
     } else if (status === "unauthenticated") {
       if (typeof window !== "undefined") {
@@ -64,8 +71,11 @@ export function AppInitializer({ children, onComplete }: AppInitializerProps) {
       }
       setShouldInitialize(false);
       setIsInitializing(false);
+      setInitStatus("idle");
+      setDetails(undefined);
+      setLastRunAt(undefined);
     }
-  }, [status, resetSteps]);
+  }, [status, resetSteps, setInitStatus, setDetails, setLastRunAt]);
 
   useEffect(() => {
     if (shouldInitialize) {
@@ -84,60 +94,76 @@ export function AppInitializer({ children, onComplete }: AppInitializerProps) {
     if (!shouldInitialize) return;
 
     try {
+      const nowIso = new Date().toISOString();
+
       // Step 1: Load environment variables
       setCurrentStep(0);
       updateStep(0, "loading");
+      setDetails({ step: "environment", message: "Loading environment variables" });
       await simulateStep(500);
       
       const envCheck = await fetch("/api/health/env").then(r => r.json()).catch(() => ({ ok: true }));
       updateStep(0, "success", "Environment loaded");
+      setDetails({ step: "environment", message: envCheck.message ?? "Environment loaded" });
       setProgress(20);
 
       // Step 2: Database connection
       setCurrentStep(1);
       updateStep(1, "loading");
+      setDetails({ step: "database", message: "Connecting to database" });
       await simulateStep(800);
       
       const dbCheck = await fetch("/api/health/db").then(r => r.json()).catch(() => ({ ok: false }));
       if (dbCheck.ok) {
         updateStep(1, "success", "Database connected");
+        setDetails({ step: "database", message: "Database connected" });
       } else {
         updateStep(1, "error", "Database offline - using mock data");
+        setDetails({ step: "database", message: "Database offline - using mock data" });
       }
       setProgress(40);
 
       // Step 3: API keys verification
       setCurrentStep(2);
       updateStep(2, "loading");
+      setDetails({ step: "apis", message: "Verifying API keys" });
       await simulateStep(600);
       
       const apiCheck = await fetch("/api/health/apis").then(r => r.json()).catch(() => ({ configured: 0 }));
       updateStep(2, "success", `${apiCheck.configured || 0} APIs configured`);
+      setDetails({ step: "apis", message: `${apiCheck.configured || 0} APIs configured` });
       setProgress(60);
 
       // Step 4: Initial scan (optional, quick check)
       setCurrentStep(3);
       updateStep(3, "loading");
+      setDetails({ step: "scanner", message: "Preparing marketplace scanner" });
       await simulateStep(1000);
       
       // Just check if scan is available, don't run full scan on startup
       updateStep(3, "success", "Scanner ready");
+      setDetails({ step: "scanner", message: "Scanner ready" });
       setProgress(80);
 
       // Step 5: Ready
       setCurrentStep(4);
       updateStep(4, "loading");
+      setDetails({ step: "ready", message: "Finalizing systems" });
       await simulateStep(500);
       updateStep(4, "success", "All systems operational");
+      setDetails({ step: "ready", message: "All systems operational" });
       setProgress(100);
 
       // Wait a moment before removing loading screen
       await simulateStep(800);
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("forge-init-done", "true");
+        sessionStorage.setItem("forge-init-done", nowIso);
       }
       setIsInitializing(false);
       setShouldInitialize(false);
+      setInitStatus("success");
+      setLastRunAt(nowIso);
+      setDetails({ step: "ready", message: "System ready" });
       onComplete?.();
 
     } catch (error) {
@@ -147,6 +173,8 @@ export function AppInitializer({ children, onComplete }: AppInitializerProps) {
       await simulateStep(1000);
       setIsInitializing(false);
       setShouldInitialize(false);
+      setInitStatus("error");
+      setDetails({ step: "error", message: "Initialization failed" });
       onComplete?.();
     }
   };
