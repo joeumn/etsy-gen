@@ -1,0 +1,362 @@
+"use client";
+
+import * as React from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Bot,
+  ChevronDown,
+  Clock,
+  LayoutDashboard,
+  Lightbulb,
+  Network,
+  Package,
+  PanelLeftOpen,
+  PanelRightOpen,
+  Search,
+  Settings,
+  Sparkles,
+  Store,
+  Target,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Separator } from "../ui/separator";
+import { ScrollArea } from "../ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { cn } from "../ui/utils";
+
+type NavSubItem = {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+};
+
+type NavItem = {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  subItems?: NavSubItem[];
+};
+
+const navItems: NavItem[] = [
+  {
+    title: "AI Command Center",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+    subItems: [
+      { title: "System Status", url: "#system-status", icon: Activity },
+      { title: "Quick Actions", url: "#quick-actions", icon: Zap },
+      { title: "AI Insights", url: "#ai-insights", icon: Lightbulb },
+      { title: "Analytics Charts", url: "#charts", icon: BarChart3 },
+      { title: "Trending Niches", url: "#trending-niches", icon: Target },
+      { title: "AI Agents", url: "#ai-agents", icon: Bot },
+      { title: "Recent Activity", url: "#recent-activity", icon: Clock },
+    ],
+  },
+  { title: "Trend Scanner", url: "/trends", icon: TrendingUp },
+  { title: "AI Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Digital Products", url: "/products", icon: Package },
+  { title: "Marketplaces", url: "/marketplaces", icon: Store },
+  { title: "Predict Studio", url: "/predict-studio", icon: Sparkles },
+  { title: "Network Status", url: "/network-status", icon: Network },
+  { title: "Settings", url: "/settings", icon: Settings },
+];
+
+interface AppSidebarProps {
+  collapsed?: boolean;
+  onToggle?: () => void;
+}
+
+export function AppSidebar({ collapsed: collapsedProp = false, onToggle }: AppSidebarProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = React.useState<string>("");
+  const [subMenuExpanded, setSubMenuExpanded] = React.useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = React.useState<string>("");
+  const collapsed = collapsedProp;
+  const handleToggle = onToggle ?? (() => {});
+
+  const filteredNavItems = React.useMemo<NavItem[]>(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) {
+      return navItems;
+    }
+
+    return navItems
+      .map((item) => {
+        const titleMatches = item.title.toLowerCase().includes(term);
+
+        if (item.subItems && item.subItems.length > 0) {
+          const matchingSubItems = item.subItems.filter((subItem) =>
+            subItem.title.toLowerCase().includes(term),
+          );
+
+          if (titleMatches) {
+            return {
+              ...item,
+              subItems:
+                matchingSubItems.length > 0 ? matchingSubItems : item.subItems,
+            };
+          }
+
+          if (matchingSubItems.length > 0) {
+            return {
+              ...item,
+              subItems: matchingSubItems,
+            };
+          }
+
+          return null;
+        }
+
+        return titleMatches ? item : null;
+      })
+      .filter((item): item is NavItem => item !== null);
+  }, [searchTerm]);
+
+  const updateActiveSection = React.useCallback(() => {
+    if (location.pathname !== "/dashboard") return;
+
+    const sections = [
+      "system-status",
+      "quick-actions",
+      "ai-insights",
+      "charts",
+      "trending-niches",
+      "ai-agents",
+      "recent-activity",
+    ];
+    let currentSection = "";
+
+    for (const section of sections) {
+      const element = document.getElementById(section);
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        if (rect.top <= windowHeight * 0.3 && rect.bottom >= windowHeight * 0.2) {
+          currentSection = section;
+          break;
+        }
+      }
+    }
+
+    if (!currentSection) {
+      const recentActivityElement = document.getElementById("recent-activity");
+      if (recentActivityElement) {
+        const rect = recentActivityElement.getBoundingClientRect();
+        if (rect.top <= window.innerHeight * 0.8 && rect.bottom >= 50) {
+          currentSection = "recent-activity";
+        }
+      }
+    }
+
+    if (currentSection !== activeSection) {
+      setActiveSection(currentSection);
+      if (currentSection) {
+        window.history.replaceState(null, "", `#${currentSection}`);
+      }
+    }
+  }, [location.pathname, activeSection]);
+
+  React.useEffect(() => {
+    if (location.pathname === "/dashboard") {
+      const handleScroll = () => updateActiveSection();
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      updateActiveSection();
+
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+
+    setActiveSection("");
+    return undefined;
+  }, [location.pathname, updateActiveSection]);
+
+  React.useEffect(() => {
+    if (location.pathname !== "/dashboard") {
+      setSubMenuExpanded(false);
+    } else {
+      setSubMenuExpanded(true);
+    }
+  }, [location.pathname]);
+
+  return (
+    <aside
+      data-state={collapsed ? "collapsed" : "expanded"}
+      className={cn(
+        "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-border bg-card backdrop-blur-lg transition-all duration-300",
+        collapsed ? "w-20" : "w-72",
+      )}
+    >
+      <div className="flex items-center gap-3 px-4 pb-4 pt-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold uppercase text-primary-foreground">
+          FG
+        </div>
+  {!collapsed && (
+          <div className="flex flex-1 flex-col">
+            <span className="text-base font-semibold leading-tight">FoundersForge</span>
+            <span className="text-xs text-muted-foreground">AI Command Center</span>
+          </div>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            handleToggle();
+          }}
+          className="rounded-lg border border-border bg-background/60 hover:bg-muted"
+        >
+          {collapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+        </Button>
+      </div>
+
+      {!collapsed && (
+        <div className="px-4 pb-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search navigation..."
+              className="pl-9 text-sm"
+            />
+          </div>
+        </div>
+      )}
+
+      <Separator className="mx-4" />
+
+      <ScrollArea className="flex-1 px-2 py-4">
+        <nav className="space-y-1">
+          {filteredNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.url;
+            const hasSubItems = Boolean(item.subItems && item.subItems.length > 0);
+            const showSubItems =
+              hasSubItems && !collapsed && ((isActive && subMenuExpanded) || (searchTerm.trim().length > 0 && item.subItems && item.subItems.length > 0));
+
+            const button = (
+              <button
+                type="button"
+                className={cn(
+                  "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors font-medium",
+                  collapsed ? "justify-center px-0" : "justify-start",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                )}
+                onClick={() => {
+                  if (hasSubItems) {
+                    if (isActive) {
+                      setSubMenuExpanded((prev) => !prev);
+                    } else {
+                      navigate(item.url);
+                      setSubMenuExpanded(true);
+                    }
+                  } else {
+                    navigate(item.url);
+                    setSubMenuExpanded(false);
+                  }
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                {!collapsed && <span className="flex-1 whitespace-nowrap text-left">{item.title}</span>}
+                {hasSubItems && !collapsed && (
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      showSubItems ? "rotate-180" : "-rotate-90",
+                    )}
+                  />
+                )}
+              </button>
+            );
+
+            return (
+              <div key={item.title} className="space-y-2">
+                {collapsed ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>{button}</TooltipTrigger>
+                    <TooltipContent side="right">{item.title}</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  button
+                )}
+
+                {item.subItems && showSubItems && (
+                  <div className="relative ml-6 space-y-1 border-l border-border/60 pl-4">
+                    {item.subItems.map((subItem) => {
+                      const SubIcon = subItem.icon;
+                      const isSubActive = activeSection === subItem.url.substring(1);
+
+                      return (
+                        <button
+                          key={subItem.title}
+                          type="button"
+                          onClick={() => {
+                            const targetId = subItem.url.substring(1);
+                            setActiveSection(targetId);
+
+                            if (location.pathname !== item.url) {
+                              navigate(`${item.url}${subItem.url}`);
+                            }
+
+                            const element = document.getElementById(targetId);
+                            if (element) {
+                              element.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }
+                          }}
+                          className={cn(
+                            "group/sub relative flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-colors",
+                            isSubActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                          )}
+                        >
+                          <span className="absolute -left-4 top-1/2 h-px w-3 -translate-y-1/2 bg-border/60" />
+                          <SubIcon className="h-3.5 w-3.5" />
+                          <span className="truncate">{subItem.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+      </ScrollArea>
+
+      <Separator className="mx-4" />
+
+      <div className="px-3 py-4">
+        <Button
+          type="button"
+          variant="ghost"
+          className={cn(
+            "flex w-full items-center gap-3 rounded-xl px-3 py-2",
+            collapsed ? "justify-center px-0" : "justify-start",
+          )}
+          onClick={() => navigate("/settings")}
+        >
+          <Avatar className="h-9 w-9">
+            <AvatarImage src="" alt="Jordan Doe" />
+            <AvatarFallback className="bg-primary/20 text-primary">JD</AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <div className="flex flex-col text-left text-sm">
+              <span className="font-medium leading-tight">Jordan Doe</span>
+              <span className="text-xs text-muted-foreground">AI Strategist</span>
+            </div>
+          )}
+        </Button>
+      </div>
+    </aside>
+  );
+}
