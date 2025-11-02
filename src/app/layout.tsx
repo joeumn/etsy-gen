@@ -5,6 +5,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
 import { AppInitializer } from "@/components/app-initializer";
+import { InitializationProvider } from "@/components/initialization-context";
 import "./globals.css";
 
 const inter = Inter({ 
@@ -47,10 +48,12 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <AppInitializer>
-              <ToastProvider>
-                {children}
-              </ToastProvider>
-              <Toaster richColors position="top-right" />
+              <InitializationProvider>
+                <ToastProvider>
+                  {children}
+                </ToastProvider>
+                <Toaster richColors position="top-right" />
+              </InitializationProvider>
             </AppInitializer>
           </ThemeProvider>
         </Providers>
