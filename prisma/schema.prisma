@@ -98,7 +98,7 @@ model ScrapeResult {
   marketplace    String
   productId      String
   title          String
-  price          Decimal? @db.Numeric(18, 2)
+  price          Decimal? @db.Decimal(18, 2)
   currency       String   @default("USD")
   tags           String[]
   category       String?
@@ -156,7 +156,7 @@ model Listing {
   marketplace String
   remoteId    String?
   status      ListingStatus  @default(PENDING)
-  price       Decimal?       @db.Numeric(18, 2)
+  price       Decimal?       @db.Decimal(18, 2)
   currency    String         @default("USD")
   quantity    Int?
   productId   String

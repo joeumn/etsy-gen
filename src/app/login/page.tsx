@@ -1,5 +1,7 @@
+"use client";
+
 import { Flame } from "lucide-react";
-import { Button } from "../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -7,17 +9,18 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Link, useNavigate } from "react-router-dom";
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-export function LoginPage() {
-  const navigate = useNavigate();
+export default function LoginPage() {
+  const router = useRouter();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    router.push("/dashboard");
   };
 
   return (
@@ -55,7 +58,7 @@ export function LoginPage() {
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Password</Label>
                     <Link
-                      to="/forgot-password"
+                      href="/forgot-password"
                       className="text-xs text-primary hover:underline"
                     >
                       Forgot password?
@@ -77,7 +80,7 @@ export function LoginPage() {
           <CardFooter className="flex justify-center pb-6">
             <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link to="/signup" className="text-primary hover:underline">
+              <Link href="/signup" className="text-primary hover:underline">
                 Sign up for free
               </Link>
             </p>

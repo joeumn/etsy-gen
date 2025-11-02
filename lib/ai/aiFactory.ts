@@ -66,8 +66,8 @@ export class AIProviderFactory {
       case 'gemini':
         return {
           ...baseConfig,
-          apiKey: process.env.GEMINI_API_KEY || '',
-          model: 'gemini-pro',
+          apiKey: process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || '',
+          model: 'gemini-1.5-pro',
         };
       case 'openai':
         return {

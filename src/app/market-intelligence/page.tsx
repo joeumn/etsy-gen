@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { AppLayout as DashboardLayout } from "@/components/layout/app-layout";
 import {
   Brain,
   Search,

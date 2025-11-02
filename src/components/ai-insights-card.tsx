@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Sparkles, TrendingUp, ArrowRight, Lightbulb } from "lucide-react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 
 interface Insight {
   id: string;

@@ -1,5 +1,8 @@
-import { Bell } from "lucide-react";
+"use client";
+
+import { Bell, Menu } from "lucide-react";
 import { Button } from "../ui/button";
+import { useSidebar } from "../ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   DropdownMenu,
@@ -15,20 +18,22 @@ import {
   PopoverTrigger,
 } from "../ui/popover";
 import { ThemeToggle } from "../theme-toggle";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-interface TopBarProps {
-  collapsed?: boolean;
-  onToggleSidebar?: () => void;
-}
-
-export function TopBar({ collapsed = false, onToggleSidebar }: TopBarProps) {
-  const navigate = useNavigate();
+export function TopBar() {
+  const router = useRouter();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { toggleSidebar } = useSidebar();
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-end gap-4 border-b border-border bg-background px-6 shadow-sm">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-border bg-background px-6 shadow-sm">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
+          <Menu className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent">THE FORGE</h1>
+      </div>
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
@@ -90,12 +95,12 @@ export function TopBar({ collapsed = false, onToggleSidebar }: TopBarProps) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/settings")}>
+            <DropdownMenuItem onClick={() => router.push("/settings")}>
               Settings
             </DropdownMenuItem>
             <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/")}>
+            <DropdownMenuItem onClick={() => router.push("/")}>
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

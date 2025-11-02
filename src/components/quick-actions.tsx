@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { TrendingUp, Package, Store, Sparkles, Zap, FileText } from "lucide-react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 
 interface QuickAction {
   icon: typeof TrendingUp;

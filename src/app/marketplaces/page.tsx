@@ -1,6 +1,6 @@
 "use client";
 
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { AppLayout as DashboardLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

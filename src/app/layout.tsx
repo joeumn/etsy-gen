@@ -1,8 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { ToastProvider } from "@/components/ui/toast";
+import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
+import { AppInitializer } from "@/components/app-initializer";
 import "./globals.css";
+
+const inter = Inter({ 
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "FoundersForge - AI-Powered Product Creation Platform",
@@ -29,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
+      <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
           <ThemeProvider
             attribute="class"
@@ -37,9 +46,12 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <ToastProvider>
-              {children}
-            </ToastProvider>
+            <AppInitializer>
+              <ToastProvider>
+                {children}
+              </ToastProvider>
+              <Toaster richColors position="top-right" />
+            </AppInitializer>
           </ThemeProvider>
         </Providers>
       </body>

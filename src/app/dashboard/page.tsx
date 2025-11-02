@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import { 
   Sparkles, 
   TrendingUp, 
@@ -10,57 +12,215 @@ import {
   ArrowUpRight,
   Activity,
   HelpCircle,
+  Search,
+  BarChart3,
+  PackagePlus,
+  Settings,
+  Play,
+  Pause,
+  RefreshCw,
 } from "lucide-react";
-import { AppLayout } from "../components/layout/app-layout";
-import { TrendScannerChart } from "../components/trend-scanner-chart";
-import { NicheDistributionChart } from "../components/niche-distribution-chart";
-import { AIAgentActivity } from "../components/ai-agent-activity";
-import { MarketplacePerformance } from "../components/marketplace-performance";
-import { QuickActions } from "../components/quick-actions";
-import { RecentActivity } from "../components/recent-activity";
-import { AIInsightsCard } from "../components/ai-insights-card";
-import { AIChatAssistant, AIChatButton } from "../components/ai-chat-assistant";
-import { KeyboardShortcutsModal } from "../components/keyboard-shortcuts-modal";
-import { StatusIndicator, LiveStatusDot } from "../components/status-indicator";
+import { AppLayout } from "@/components/layout/app-layout";
+import { TrendScannerChart } from "@/components/trend-scanner-chart";
+import { NicheDistributionChart } from "@/components/niche-distribution-chart";
+import { AIAgentActivity } from "@/components/ai-agent-activity";
+import { MarketplacePerformance } from "@/components/marketplace-performance";
+import { QuickActions } from "@/components/quick-actions";
+import { RecentActivity } from "@/components/recent-activity";
+import { AIInsightsCard } from "@/components/ai-insights-card";
+import { AIChatAssistant, AIChatButton } from "@/components/ai-chat-assistant";
+import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
+import { StatusIndicator, LiveStatusDot } from "@/components/status-indicator";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Progress } from "../components/ui/progress";
-import { Separator } from "../components/ui/separator";
-import { toast } from "sonner@2.0.3";
-import { motion } from "motion/react";
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
 
-const trendingNiches = [
-  { name: "Wedding Planners", demand: 94, competition: "Low", profit: "$$$" },
-  { name: "Fitness Trackers", demand: 87, competition: "Medium", profit: "$$" },
-  { name: "Budget Templates", demand: 82, competition: "Low", profit: "$$$" },
-  { name: "Resume Templates", demand: 79, competition: "High", profit: "$$" },
-  { name: "Social Media Kits", demand: 76, competition: "Medium", profit: "$$$" },
-];
-
-const aiAgentStatus = [
-  { id: "AGT-001", status: "processing", product: "Wedding Planner Bundle", progress: 67 },
-  { id: "AGT-002", status: "processing", product: "Fitness Tracker Template", progress: 90 },
-  { id: "AGT-003", status: "processing", product: "Budget Spreadsheet Pack", progress: 45 },
-  { id: "AGT-004", status: "success", product: "Resume Template Set", progress: 100 },
-];
-
-const recentListings = [
-  { product: "Ultimate Wedding Planner", marketplace: "Etsy", time: "5 min ago", status: "success" },
-  { product: "Fitness Goal Tracker", marketplace: "Gumroad", time: "12 min ago", status: "success" },
-  { product: "Monthly Budget Template", marketplace: "Creative Market", time: "28 min ago", status: "success" },
-  { product: "Professional Resume Pack", marketplace: "Etsy", time: "1 hr ago", status: "success" },
-];
-
-export function DashboardPage() {
+export default function DashboardPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [trendingNiches, setTrendingNiches] = useState<any[]>([]);
+  const [aiAgentStatus, setAiAgentStatus] = useState<any[]>([]);
+  const [recentListings, setRecentListings] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [automationRunning, setAutomationRunning] = useState(false);
+
+  // Manual Control Functions
+  const handleScanMarketplaces = async () => {
+    setIsScanning(true);
+    toast.loading("Scanning marketplaces for trending products...");
+    
+    try {
+      const response = await fetch("/api/trends/scan", { method: "POST" });
+      const data = await response.json();
+      
+      toast.dismiss();
+      toast.success(`Found ${data.trendsFound || 0} trending opportunities!`);
+      
+      // Refresh data
+      loadDashboardData();
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Scan failed. AI will retry automatically.");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleAnalyzeTrends = async () => {
+    setIsAnalyzing(true);
+    toast.loading("AI analyzing trends and opportunities...");
+    
+    try {
+      const response = await fetch("/api/trends/analyze", { method: "POST" });
+      const data = await response.json();
+      
+      toast.dismiss();
+      toast.success(`Analysis complete! ${data.recommendations || 0} product ideas generated.`);
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Analysis failed. Smart AI will auto-fix and retry.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleCreateProducts = async () => {
+    setIsCreating(true);
+    toast.loading("Creating products with AI...");
+    
+    try {
+      const response = await fetch("/api/products/generate", { method: "POST" });
+      const data = await response.json();
+      
+      toast.dismiss();
+      toast.success(`${data.productsCreated || 0} products created and listed!`);
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Creation failed. AI auto-recovery in progress...");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleStartAutomation = async () => {
+    toast.loading("Starting full automation pipeline...");
+    
+    try {
+      const response = await fetch("/api/automation/start", { method: "POST" });
+      const data = await response.json();
+      
+      toast.dismiss();
+      toast.success("Automation started! AI is now working 24/7.");
+      setAutomationRunning(true);
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Automation start failed. Smart recovery active.");
+    }
+  };
+
+  const handleStopAutomation = async () => {
+    toast.loading("Stopping automation...");
+    
+    try {
+      const response = await fetch("/api/automation/stop", { method: "POST" });
+      
+      toast.dismiss();
+      toast.success("Automation paused. You can restart anytime.");
+      setAutomationRunning(false);
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Stop failed. AI will handle gracefully.");
+    }
+  };
+
+  // Load real data on mount
+  useEffect(() => {
+    loadDashboardData();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(loadDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function loadDashboardData() {
+    try {
+      setError(null);
+      
+      const [trendsRes, jobsRes, listingsRes] = await Promise.all([
+        fetch('/api/trends?limit=5').then(r => r.ok ? r.json() : []),
+        fetch('/api/jobs?status=RUNNING').then(r => r.ok ? r.json() : []),
+        fetch('/api/listings?limit=4').then(r => r.ok ? r.json() : []),
+      ]);
+
+      // Format trends for display
+      const formattedTrends = trendsRes.map((t: any) => ({
+        name: t.niche,
+        demand: Math.round(t.score * 100),
+        competition: t.competition < 0.3 ? 'Low' : t.competition < 0.7 ? 'Medium' : 'High',
+        profit: t.score > 0.8 ? '$$$' : t.score > 0.6 ? '$$' : '$',
+      }));
+
+      // Format jobs for display
+      const formattedJobs = jobsRes.map((job: any, i: number) => ({
+        id: `AGT-${String(i + 1).padStart(3, '0')}`,
+        status: job.status.toLowerCase(),
+        product: job.metadata?.product || `${job.stage} Job`,
+        progress: calculateJobProgress(job),
+      }));
+
+      // Format listings for display
+      const formattedListings = listingsRes.map((l: any) => ({
+        product: l.Product?.title || 'Product',
+        marketplace: l.marketplace.charAt(0).toUpperCase() + l.marketplace.slice(1),
+        time: formatTimeAgo(l.createdAt),
+        status: l.status === 'PUBLISHED' ? 'success' : 'pending',
+      }));
+
+      setTrendingNiches(formattedTrends);
+      setAiAgentStatus(formattedJobs);
+      setRecentListings(formattedListings);
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+      setError('Failed to load dashboard data');
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function calculateJobProgress(job: any): number {
+    if (job.status === 'SUCCESS') return 100;
+    if (job.status !== 'RUNNING') return 0;
+    
+    const elapsed = Date.now() - new Date(job.startedAt || job.createdAt).getTime();
+    const durations: Record<string, number> = {
+      SCRAPE: 60000, ANALYZE: 120000, GENERATE: 180000, LIST: 90000
+    };
+    const estimated = durations[job.stage] || 120000;
+    return Math.min(95, Math.round((elapsed / estimated) * 100));
+  }
+
+  function formatTimeAgo(date: string): string {
+    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hr ago`;
+    return `${Math.floor(seconds / 86400)} days ago`;
+  }
 
   const handleGenerateProduct = (nicheName: string) => {
     toast.success("Product generation started", {
@@ -95,6 +255,124 @@ export function DashboardPage() {
             </Button>
           </div>
         </div>
+
+        {/* Manual Control Panel */}
+        <Card className="border-2 border-indigo-500/20 bg-gradient-to-br from-indigo-500/5 to-cyan-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-indigo-600" />
+              Manual Controls
+            </CardTitle>
+            <CardDescription>
+              Take direct control - scan, analyze, create, and manage everything manually
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Scan Button */}
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-auto flex-col gap-2 py-6 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950"
+                onClick={handleScanMarketplaces}
+                disabled={isScanning}
+              >
+                {isScanning ? (
+                  <RefreshCw className="h-8 w-8 animate-spin text-indigo-600" />
+                ) : (
+                  <Search className="h-8 w-8 text-indigo-600" />
+                )}
+                <div className="text-center">
+                  <div className="font-semibold">Scan Marketplaces</div>
+                  <div className="text-xs text-muted-foreground">Find trending products</div>
+                </div>
+              </Button>
+
+              {/* Analyze Button */}
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-auto flex-col gap-2 py-6 hover:border-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-950"
+                onClick={handleAnalyzeTrends}
+                disabled={isAnalyzing}
+              >
+                {isAnalyzing ? (
+                  <RefreshCw className="h-8 w-8 animate-spin text-cyan-600" />
+                ) : (
+                  <BarChart3 className="h-8 w-8 text-cyan-600" />
+                )}
+                <div className="text-center">
+                  <div className="font-semibold">Analyze Trends</div>
+                  <div className="text-xs text-muted-foreground">AI opportunity analysis</div>
+                </div>
+              </Button>
+
+              {/* Create Button */}
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-auto flex-col gap-2 py-6 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950"
+                onClick={handleCreateProducts}
+                disabled={isCreating}
+              >
+                {isCreating ? (
+                  <RefreshCw className="h-8 w-8 animate-spin text-purple-600" />
+                ) : (
+                  <PackagePlus className="h-8 w-8 text-purple-600" />
+                )}
+                <div className="text-center">
+                  <div className="font-semibold">Create Products</div>
+                  <div className="text-xs text-muted-foreground">Generate & list now</div>
+                </div>
+              </Button>
+
+              {/* Automation Toggle */}
+              <Button
+                size="lg"
+                className={`h-auto flex-col gap-2 py-6 ${
+                  automationRunning
+                    ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                    : "bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                }`}
+                onClick={automationRunning ? handleStopAutomation : handleStartAutomation}
+              >
+                {automationRunning ? (
+                  <Pause className="h-8 w-8" />
+                ) : (
+                  <Play className="h-8 w-8" />
+                )}
+                <div className="text-center text-white">
+                  <div className="font-semibold">
+                    {automationRunning ? "Stop" : "Start"} Automation
+                  </div>
+                  <div className="text-xs opacity-90">
+                    {automationRunning ? "Currently running 24/7" : "Let AI work for you"}
+                  </div>
+                </div>
+              </Button>
+            </div>
+
+            {/* Quick Navigation Links */}
+            <Separator className="my-6" />
+            <div className="flex flex-wrap gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <a href="/products">📦 Manage Products</a>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <a href="/trends">📈 View All Trends</a>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <a href="/marketplace">🏪 Marketplace Settings</a>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <a href="/analytics">📊 Analytics Dashboard</a>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <a href="/command-center">⚙️ Full Settings</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* System Status Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

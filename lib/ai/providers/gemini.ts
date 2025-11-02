@@ -32,7 +32,7 @@ export class GeminiProvider implements AIProvider {
     }
 
     const model = this.client.getGenerativeModel({ 
-      model: this.config.model || 'gemini-pro',
+      model: this.config.model || 'gemini-1.5-pro',
       generationConfig: {
         temperature: this.config.temperature || 0.7,
         maxOutputTokens: this.config.maxTokens || 2000,

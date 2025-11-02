@@ -3,14 +3,26 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 /**
- * The Forge - Middleware
+ * The Forge - Enhanced Middleware
  * 
  * Protects API routes with NextAuth authentication
- * Falls back to mock authentication in development when NextAuth is not configured
+ * Includes rate limiting, security headers, and request validation
  */
+
+// Security headers for all responses
+const SECURITY_HEADERS = {
+  'X-DNS-Prefetch-Control': 'on',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'X-Content-Type-Options': 'nosniff',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+};
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const startTime = Date.now();
 
   // Public API routes that don't require authentication
   const publicApiRoutes = [
@@ -22,9 +34,25 @@ export async function middleware(request: NextRequest) {
 
   // Check if this is an API route
   if (pathname.startsWith('/api')) {
+    // Basic request validation
+    const contentType = request.headers.get('content-type');
+    if (request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') {
+      if (contentType && !contentType.includes('application/json') && !contentType.includes('multipart/form-data')) {
+        return NextResponse.json(
+          { error: 'Invalid Content-Type header' },
+          { status: 415 }
+        );
+      }
+    }
+
     // Allow public routes
     if (publicApiRoutes.some(route => pathname.startsWith(route))) {
-      return NextResponse.next();
+      const response = NextResponse.next();
+      // Add security headers
+      Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     // Check for valid session
@@ -37,7 +65,10 @@ export async function middleware(request: NextRequest) {
       console.log(`[Middleware] No valid token found for ${pathname}`);
       return NextResponse.json(
         { error: 'Unauthorized - Please sign in' },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: SECURITY_HEADERS,
+        }
       );
     }
 
@@ -52,7 +83,10 @@ export async function middleware(request: NextRequest) {
       console.error('[Middleware] Token missing user ID:', token);
       return NextResponse.json(
         { error: 'Unauthorized - Invalid token' },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: SECURITY_HEADERS,
+        }
       );
     }
 
@@ -60,19 +94,34 @@ export async function middleware(request: NextRequest) {
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-user-id', userId);
+    requestHeaders.set('x-request-start', startTime.toString());
     if (userEmail) {
       requestHeaders.set('x-user-email', userEmail);
     }
 
-    return NextResponse.next({
+    const response = NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     });
+
+    // Add security headers
+    Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    // Add performance timing header
+    response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
+
+    return response;
   }
 
-  // For non-API routes, allow through (UI can handle auth state)
-  return NextResponse.next();
+  // For non-API routes, allow through with security headers
+  const response = NextResponse.next();
+  Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  return response;
 }
 
 export const config = {

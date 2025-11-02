@@ -1,3 +1,5 @@
+"use client";
+
 import { LayoutDashboard, TrendingUp, Package, Store, Settings, Flame, BarChart3 } from "lucide-react";
 import {
   Sidebar,
@@ -9,7 +11,8 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from "../ui/sidebar";
-import { Link, useLocation } from "react-router-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
   {
@@ -45,12 +48,12 @@ const navItems = [
 ];
 
 export function AppSidebar() {
-  const location = useLocation();
+  const pathname = usePathname();
 
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-6 py-4">
-        <Link to="/dashboard" className="flex items-center gap-3">
+        <Link href="/dashboard" className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-5 w-5 text-primary-foreground" />
           </div>
@@ -66,11 +69,11 @@ export function AppSidebar() {
             <SidebarMenu>
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.url;
+                const isActive = pathname === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <Link
-                      to={item.url}
+                      href={item.url}
                       className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
                         isActive
                           ? 'bg-primary text-primary-foreground'

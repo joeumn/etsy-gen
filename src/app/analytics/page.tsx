@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdvancedStatCard } from "@/components/ui/advanced-stat-card";
 import { RevenueChart } from "@/components/ui/revenue-chart";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { AppLayout as DashboardLayout } from "@/components/layout/app-layout";
 import {
   TrendingUp,
   DollarSign,

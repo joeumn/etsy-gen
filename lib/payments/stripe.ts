@@ -4,7 +4,7 @@ const stripeKey = process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_for_buil
 
 // Create Stripe client (will use placeholder during build without env vars)
 export const stripe = new Stripe(stripeKey, {
-  apiVersion: '2025-09-30.clover',
+  apiVersion: '2025-10-29.clover',
 });
 
 // Check if Stripe is properly configured

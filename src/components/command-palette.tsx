@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import {
   CommandDialog,
   CommandEmpty,
@@ -22,7 +22,7 @@ import {
   Moon,
   Sun,
 } from "lucide-react";
-import { useTheme } from "../lib/theme-context";
+import { useTheme } from "next-themes";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -30,7 +30,7 @@ interface CommandPaletteProps {
 }
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
 
   const pages = [
@@ -43,9 +43,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   ];
 
   const actions = [
-    { name: "Scan for Trends", icon: Activity, action: () => navigate("/trends") },
-    { name: "Generate Product", icon: Sparkles, action: () => navigate("/products") },
-    { name: "View Reports", icon: FileText, action: () => navigate("/analytics") },
+    { name: "Scan for Trends", icon: Activity, action: () => router.push("/trends") },
+    { name: "Generate Product", icon: Sparkles, action: () => router.push("/products") },
+    { name: "View Reports", icon: FileText, action: () => router.push("/analytics") },
   ];
 
   const handleSelect = (callback: () => void) => {
@@ -64,7 +64,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             return (
               <CommandItem
                 key={page.path}
-                onSelect={() => handleSelect(() => navigate(page.path))}
+                onSelect={() => handleSelect(() => router.push(page.path))}
                 keywords={page.keywords}
               >
                 <Icon className="mr-2 h-4 w-4" />
