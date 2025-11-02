@@ -1,3 +1,4 @@
+import { JobStage, JobStatus, ListingStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/config/db";
 import { logger } from "@/config/logger";
 import { generateAIContent } from "@/lib/ai/aiFactory";
@@ -14,6 +15,33 @@ interface TrendData {
  * This scans the web, identifies trends, creates products, and lists them
  */
 export class ProductGenerator {
+
+  private normalizeTrendId(keyword: string): string {
+    return `market-${keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "")}`;
+  }
+
+  private computeScore(trend: TrendData): number {
+    const normalizedVolume = Math.max(0, trend.searchVolume);
+    const volumeScore = Math.min(1, normalizedVolume / 100);
+    const competitionPenalty = (() => {
+      const normalized = trend.competition?.toLowerCase() ?? "";
+      if (normalized.includes("high")) return 0.4;
+      if (normalized.includes("medium")) return 0.7;
+      return 0.9;
+    })();
+    return Number(Math.max(0.1, volumeScore * competitionPenalty).toFixed(3));
+  }
+
+  private toTrendMetadata(trend: TrendData): Prisma.JsonObject {
+    return {
+      source: "marketplace_scan",
+      keyword: trend.keyword,
+      searchVolume: trend.searchVolume,
+      competitionLabel: trend.competition,
+      averagePrice: trend.avgPrice,
+      scannedAt: new Date().toISOString(),
+    } satisfies Record<string, unknown>;
+  }
   
   /**
    * Step 1: Scan marketplaces for trending products
@@ -38,19 +66,43 @@ export class ProductGenerator {
       
       // Store trends in database
       for (const trend of trends) {
+        const trendId = this.normalizeTrendId(trend.keyword);
+        const score = this.computeScore(trend);
+        const competitionValue = trend.competition
+          ? (() => {
+              const normalized = trend.competition?.toLowerCase() ?? "";
+              if (normalized.includes("high")) return 0.9;
+              if (normalized.includes("medium")) return 0.6;
+              if (normalized.includes("low")) return 0.3;
+              return null;
+            })()
+          : null;
+
         await prisma.trend.upsert({
-          where: { keyword: trend.keyword },
+          where: { id: trendId },
           update: {
-            searchVolume: trend.searchVolume,
-            competition: trend.competition,
+            niche: trend.keyword,
+            score,
+            tamApprox:
+              typeof trend.avgPrice === "number"
+                ? trend.avgPrice * Math.max(1, trend.searchVolume)
+                : null,
+            momentum: Number((score * 0.85).toFixed(3)),
+            competition: competitionValue ?? undefined,
+            metadata: this.toTrendMetadata(trend),
             updatedAt: new Date(),
           },
           create: {
-            keyword: trend.keyword,
-            searchVolume: trend.searchVolume,
-            competition: trend.competition,
-            source: "marketplace_scan",
-            category: "digital_products",
+            id: trendId,
+            niche: trend.keyword,
+            score,
+            tamApprox:
+              typeof trend.avgPrice === "number"
+                ? trend.avgPrice * Math.max(1, trend.searchVolume)
+                : null,
+            momentum: Number((score * 0.85).toFixed(3)),
+            competition: competitionValue ?? undefined,
+            metadata: this.toTrendMetadata(trend),
           },
         });
       }
@@ -87,18 +139,43 @@ export class ProductGenerator {
       
       // Parse AI response
       const product = JSON.parse(productData);
-      
+
+      const tags = Array.isArray(product.tags)
+        ? product.tags
+        : typeof product.tags === "string"
+          ? product.tags
+              .split(",")
+              .map((tag: string) => tag.trim())
+              .filter(Boolean)
+          : [];
+
+      const productMetadata: Prisma.JsonObject = {
+        pricing: {
+          suggested: product.price ?? trend.avgPrice ?? 9.99,
+        },
+        generation: {
+          provider: "gemini",
+          promptTrend: trend.keyword,
+        },
+        status: "draft",
+        trend: {
+          keyword: trend.keyword,
+          searchVolume: trend.searchVolume,
+        },
+      };
+
       // Create product in database
       const dbProduct = await prisma.product.create({
         data: {
           title: product.title,
           description: product.description,
-          price: trend.avgPrice || 9.99,
-          tags: product.tags,
-          category: product.category || "Digital Downloads",
-          status: "draft",
-          aiGenerated: true,
-          trendKeyword: trend.keyword,
+          tags,
+          attributes: {
+            category: product.category ?? "Digital Downloads",
+            originTrend: trend.keyword,
+          } as Prisma.JsonObject,
+          assetPaths: [],
+          metadata: productMetadata,
         },
       });
       
@@ -141,26 +218,69 @@ export class ProductGenerator {
       }
       
       // Update product with marketplace listing ID
+      const nextMetadata = (() => {
+        const base = (product.metadata ?? {}) as Record<string, unknown>;
+        const listings = (base.listings as Record<string, unknown>) ?? {};
+        return {
+          ...base,
+          status: "published",
+          listings: {
+            ...listings,
+            [marketplace]: {
+              listingId: listingResult.listingId,
+              url: listingResult.url,
+              publishedAt: new Date().toISOString(),
+            },
+          },
+        } satisfies Record<string, unknown>;
+      })();
+
       await prisma.product.update({
         where: { id: productId },
         data: {
-          status: "published",
-          marketplaceListing: listingResult.listingId,
-          publishedAt: new Date(),
+          metadata: nextMetadata as Prisma.InputJsonValue,
         },
       });
-      
+
+      const baseMetadata = (product.metadata ?? {}) as Record<string, unknown>;
+      const pricingInfo = baseMetadata.pricing as { suggested?: number } | undefined;
+      const suggestedPrice =
+        typeof pricingInfo?.suggested === "number" ? pricingInfo.suggested : undefined;
+
+      await prisma.listing.create({
+        data: {
+          marketplace,
+          remoteId: listingResult.listingId,
+          status:
+            marketplace === "etsy" ? ListingStatus.DRAFT : ListingStatus.PUBLISHED,
+          price: suggestedPrice,
+          currency: "USD",
+          productId,
+          metadata: {
+            url: listingResult.url,
+            marketplace,
+          } as Prisma.JsonObject,
+        },
+      });
+
       // Create job record
       await prisma.job.create({
         data: {
-          type: "product_listing",
-          status: "COMPLETED",
+          jobKey: `product_listing:${marketplace}:${productId}:${Date.now()}`,
+          stage: JobStage.LIST,
+          status: JobStatus.SUCCESS,
+          startedAt: new Date(),
+          completedAt: new Date(),
+          durationMs: 0,
+          result: {
+            listingId: listingResult.listingId,
+            marketplace,
+          },
           metadata: {
             productId,
             marketplace,
             listingId: listingResult.listingId,
-          },
-          completedAt: new Date(),
+          } as Prisma.JsonObject,
         },
       });
       
@@ -173,13 +293,23 @@ export class ProductGenerator {
       // Log failed job
       await prisma.job.create({
         data: {
-          type: "product_listing",
-          status: "FAILED",
-          error: error instanceof Error ? error.message : "Unknown error",
-          metadata: { productId, marketplace },
+          jobKey: `product_listing:${marketplace}:${productId}:${Date.now()}:error`,
+          stage: JobStage.LIST,
+          status: JobStatus.FAILED,
+          startedAt: new Date(),
+          completedAt: new Date(),
+          durationMs: 0,
+          error:
+            error instanceof Error
+              ? { message: error.message }
+              : { message: "Unknown error" },
+          metadata: {
+            productId,
+            marketplace,
+          } as Prisma.JsonObject,
         },
       });
-      
+
       throw error;
     }
   }

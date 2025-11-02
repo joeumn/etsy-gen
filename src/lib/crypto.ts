@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { env } from "../config/env";
 
 const IV_LENGTH = 12;
