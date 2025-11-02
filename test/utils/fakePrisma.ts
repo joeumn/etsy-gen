@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { vi } from "vitest";
 
 type SettingKey = `${string}|${string}`;
@@ -88,6 +88,23 @@ interface ListingRecord {
   updatedAt: Date;
 }
 
+interface JobRecord {
+  id: string;
+  jobKey: string;
+  stage: string;
+  status: string;
+  attempts: number;
+  result?: any;
+  error?: any;
+  startedAt?: Date | null;
+  completedAt?: Date | null;
+  durationMs?: number | null;
+  metadata?: any;
+  parentJobId?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export const createFakePrisma = () => {
   const settings = new Map<SettingKey, SettingRecord>();
   const apiKeys = new Map<ApiKeyKey, ApiKeyRecord>();
@@ -95,6 +112,7 @@ export const createFakePrisma = () => {
   const trends = new Map<string, TrendRecord>();
   const products = new Map<string, ProductRecord>();
   const listings: ListingRecord[] = [];
+  const jobs: JobRecord[] = [];
 
   const makeSettingKey = (namespace: string, key: string): SettingKey =>
     `${namespace}|${key}`;
@@ -254,18 +272,19 @@ export const createFakePrisma = () => {
     },
     trend: {
       upsert: vi.fn(async ({ where, create, update }: any) => {
-        const existing = trends.get(where.id);
+        const id = where.id ?? where.niche ?? create.id;
+        const existing = trends.get(id);
         if (existing) {
           const updated = {
             ...existing,
             ...update,
             updatedAt: new Date(),
           };
-          trends.set(where.id, updated);
+          trends.set(id, updated);
           return updated;
         }
         const record: TrendRecord = {
-          id: create.id,
+          id,
           niche: create.niche,
           score: create.score,
           tamApprox: create.tamApprox,
@@ -290,6 +309,23 @@ export const createFakePrisma = () => {
       }),
     },
     product: {
+      create: vi.fn(async ({ data }: any) => {
+        const record: ProductRecord = {
+          id: data.id ?? randomUUID(),
+          title: data.title,
+          description: data.description,
+          tags: data.tags,
+          attributes: data.attributes,
+          assetPaths: data.assetPaths,
+          previewUrl: data.previewUrl,
+          metadata: data.metadata,
+          jobId: data.jobId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        products.set(record.id, record);
+        return record;
+      }),
       upsert: vi.fn(async ({ where, update, create }: any) => {
         const existing = products.get(where.id);
         if (existing) {
@@ -316,6 +352,25 @@ export const createFakePrisma = () => {
         };
         products.set(record.id, record);
         return record;
+      }),
+      update: vi.fn(async ({ where, data }: any) => {
+        const existing = products.get(where.id);
+        if (!existing) {
+          throw new Error("Product not found");
+        }
+        const updated = {
+          ...existing,
+          ...data,
+          updatedAt: new Date(),
+        };
+        products.set(where.id, updated);
+        return updated;
+      }),
+      findUnique: vi.fn(async ({ where }: any) => {
+        if (!where?.id) {
+          return null;
+        }
+        return products.get(where.id) ?? null;
       }),
       findMany: vi.fn(async ({ where }: any = {}) => {
         const entries = Array.from(products.values());
@@ -348,7 +403,36 @@ export const createFakePrisma = () => {
       }),
       findMany: vi.fn(async () => listings),
     },
+    job: {
+      create: vi.fn(async ({ data }: any) => {
+        if (jobs.some((job) => job.jobKey === data.jobKey)) {
+          throw new Error(`Job with key ${data.jobKey} already exists`);
+        }
+        const record: JobRecord = {
+          id: data.id ?? randomUUID(),
+          jobKey: data.jobKey,
+          stage: data.stage,
+          status: data.status,
+          attempts: data.attempts ?? 0,
+          result: data.result,
+          error: data.error,
+          startedAt: data.startedAt ?? null,
+          completedAt: data.completedAt ?? null,
+          durationMs: data.durationMs ?? null,
+          metadata: data.metadata,
+          parentJobId: data.parentJobId ?? null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        jobs.push(record);
+        return record;
+      }),
+      findMany: vi.fn(async () => jobs),
+    },
   };
 
-  return { prisma, state: { settings, apiKeys, scrapeResults, trends, products, listings } };
+  return {
+    prisma,
+    state: { settings, apiKeys, scrapeResults, trends, products, listings, jobs },
+  };
 };
