@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { motion } from "framer-motion";
 import { Loader2, CheckCircle2, AlertCircle, Wifi, Database, Key, Package, Sparkles } from "lucide-react";
 import { Progress } from "./ui/progress";
 import { Card, CardContent } from "./ui/card";
@@ -21,7 +22,9 @@ interface AppInitializerProps {
 }
 
 export function AppInitializer({ children, onComplete }: AppInitializerProps) {
-  const [isInitializing, setIsInitializing] = useState(true);
+  const { status } = useSession();
+  const [shouldInitialize, setShouldInitialize] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState<InitStep[]>([
     { id: "env", label: "Loading Environment", status: "pending", icon: Key },
@@ -32,9 +35,44 @@ export function AppInitializer({ children, onComplete }: AppInitializerProps) {
   ]);
   const [progress, setProgress] = useState(0);
 
-  useEffect(() => {
-    initializeApp();
+  const resetSteps = useCallback(() => {
+    setSteps((prev) =>
+      prev.map((step) => ({
+        ...step,
+        status: "pending",
+        message: undefined,
+      })),
+    );
+    setCurrentStep(0);
+    setProgress(0);
   }, []);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      const initDone = typeof window !== "undefined" ? sessionStorage.getItem("forge-init-done") : "true";
+      if (!initDone) {
+        resetSteps();
+        setShouldInitialize(true);
+        setIsInitializing(true);
+      } else {
+        setShouldInitialize(false);
+        setIsInitializing(false);
+      }
+    } else if (status === "unauthenticated") {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("forge-init-done");
+      }
+      setShouldInitialize(false);
+      setIsInitializing(false);
+    }
+  }, [status, resetSteps]);
+
+  useEffect(() => {
+    if (shouldInitialize) {
+      initializeApp();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldInitialize]);
 
   const updateStep = (index: number, status: "loading" | "success" | "error", message?: string) => {
     setSteps(prev => prev.map((step, i) => 
@@ -43,6 +81,8 @@ export function AppInitializer({ children, onComplete }: AppInitializerProps) {
   };
 
   const initializeApp = async () => {
+    if (!shouldInitialize) return;
+
     try {
       // Step 1: Load environment variables
       setCurrentStep(0);
@@ -93,7 +133,11 @@ export function AppInitializer({ children, onComplete }: AppInitializerProps) {
 
       // Wait a moment before removing loading screen
       await simulateStep(800);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("forge-init-done", "true");
+      }
       setIsInitializing(false);
+      setShouldInitialize(false);
       onComplete?.();
 
     } catch (error) {
@@ -102,6 +146,7 @@ export function AppInitializer({ children, onComplete }: AppInitializerProps) {
       setProgress(100);
       await simulateStep(1000);
       setIsInitializing(false);
+      setShouldInitialize(false);
       onComplete?.();
     }
   };
