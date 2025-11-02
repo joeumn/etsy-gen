@@ -1,0 +1,34 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "./",
+    "module": "commonjs",
+    "target": "es2019",
+    "lib": ["es2019"],
+    "noEmit": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "isolatedModules": false,
+    "types": ["node"],
+    "sourceMap": true,
+    "declaration": false,
+    "skipLibCheck": true,
+    "incremental": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts"
+  ],
+  "exclude": [
+    "src/app/**/*",
+    "src/components/**/*",
+    "src/contexts/**/*",
+    "src/**/*.test.tsx",
+    "src/**/*.test.ts",
+    "test/**/*",
+    "node_modules"
+  ]
+}

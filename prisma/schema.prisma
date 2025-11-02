@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JobStage {
+  SCRAPE
+  ANALYZE
+  GENERATE
+  LIST
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  RETRYING
+}
+
+enum ListingStatus {
+  PENDING
+  DRAFT
+  PUBLISHED
+  FAILED
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  apiKeys   ApiKey[]
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  namespace String   @default("global")
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([namespace, key])
+  @@index([namespace, key])
+}
+
+model ApiKey {
+  id             String   @id @default(cuid())
+  namespace      String   @default("global")
+  name           String
+  encryptedValue String
+  iv             String
+  lastFour       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    String?
+  createdBy      User?    @relation(fields: [createdById], references: [id])
+  metadata       Json?
+
+  @@unique([namespace, name])
+  @@index([namespace, name])
+}
+
+model Job {
+  id            String         @id @default(cuid())
+  jobKey        String
+  stage         JobStage
+  status        JobStatus      @default(PENDING)
+  attempts      Int            @default(0)
+  result        Json?
+  error         Json?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  durationMs    Int?
+  metadata      Json?
+  parentJobId   String?
+  parent        Job?           @relation("JobChildren", fields: [parentJobId], references: [id])
+  children      Job[]          @relation("JobChildren")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  scrapeResults ScrapeResult[]
+  trends        Trend[]
+  products      Product[]
+  listings      Listing[]
+
+  @@unique([jobKey])
+  @@index([stage, status, createdAt])
+}
+
+model ScrapeResult {
+  id             String   @id @default(cuid())
+  marketplace    String
+  productId      String
+  title          String
+  price          Decimal? @db.Numeric(18, 2)
+  currency       String   @default("USD")
+  tags           String[]
+  category       String?
+  sales          Int?
+  rating         Float?
+  collectedAt    DateTime @default(now())
+  metadata       Json?
+  jobId          String?
+  job            Job?     @relation(fields: [jobId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([marketplace, productId, collectedAt])
+  @@index([marketplace, collectedAt])
+}
+
+model Trend {
+  id                String   @id @default(cuid())
+  niche             String
+  score             Float
+  tamApprox         Float?
+  momentum          Float?
+  competition       Float?
+  summary           String?
+  recommendedAssets Json?
+  metadata          Json?
+  jobId             String?
+  job               Job?     @relation(fields: [jobId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([niche, createdAt])
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  tags        String[]
+  attributes  Json?
+  assetPaths  String[]
+  previewUrl  String?
+  metadata    Json?
+  jobId       String?
+  job         Job?      @relation(fields: [jobId], references: [id])
+  listings    Listing[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([title])
+}
+
+model Listing {
+  id          String         @id @default(cuid())
+  marketplace String
+  remoteId    String?
+  status      ListingStatus  @default(PENDING)
+  price       Decimal?       @db.Numeric(18, 2)
+  currency    String         @default("USD")
+  quantity    Int?
+  productId   String
+  product     Product        @relation(fields: [productId], references: [id])
+  jobId       String?
+  job         Job?           @relation(fields: [jobId], references: [id])
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([marketplace, status, createdAt])
+  @@unique([marketplace, remoteId], map: "listing_marketplace_remote_unique")
+}
