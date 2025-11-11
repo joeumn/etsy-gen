@@ -14,10 +14,16 @@ const envSchema = z
     APP_ENCRYPTION_KEY: z.string().optional(),
     OPENAI_API_KEY: z.string().optional(),
     ETSY_API_KEY: z.string().optional(),
+    ETSY_ACCESS_TOKEN: z.string().optional(),
     ETSY_SHOP_ID: z.string().optional(),
     STABILITY_API_KEY: z.string().optional(),
     SHOPIFY_API_KEY: z.string().optional(),
+    SHOPIFY_ACCESS_TOKEN: z.string().optional(),
+    SHOPIFY_SHOP_DOMAIN: z.string().optional(),
     AMAZON_ASSOCIATE_TAG: z.string().optional(),
+    AMAZON_ACCESS_KEY: z.string().optional(),
+    AMAZON_SECRET_KEY: z.string().optional(),
+    GOOGLE_TRENDS_API_KEY: z.string().optional(),
     ADMIN_API_TOKEN: z.string().optional(),
     LOGGER_LEVEL: z
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])

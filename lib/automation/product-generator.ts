@@ -1,5 +1,7 @@
+import axios from "axios";
 import { JobStage, JobStatus, ListingStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/config/db";
+import { env } from "@/config/env";
 import { logger } from "@/config/logger";
 import { generateAIContent } from "@/lib/ai/aiFactory";
 
@@ -15,6 +17,24 @@ interface TrendData {
  * This scans the web, identifies trends, creates products, and lists them
  */
 export class ProductGenerator {
+
+  private parseTraffic(value: unknown): number {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === "string") {
+      const sanitized = value.replace(/[+,]/g, "").trim();
+      const numeric = Number(sanitized);
+      return Number.isFinite(numeric) ? numeric : 0;
+    }
+    return 0;
+  }
+
+  private competitionFromMagnitude(value: number): string {
+    if (value >= 750) return "high";
+    if (value >= 300) return "medium";
+    return "low";
+  }
 
   private normalizeTrendId(keyword: string): string {
     return `market-${keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "")}`;
@@ -354,45 +374,483 @@ export class ProductGenerator {
   // Private helper methods
   
   private async scanEtsyTrends(): Promise<TrendData[]> {
-    // Implementation would use Etsy API
-    // For now, return mock data structure
-    return [];
-  }
-  
-  private async scanGoogleTrends(): Promise<TrendData[]> {
-    // Implementation would use Google Trends API
-    return [];
-  }
-  
-  private async scanAmazonTrends(): Promise<TrendData[]> {
-    // Implementation would use Amazon API
-    return [];
-  }
-  
-  private async listOnEtsy(product: any) {
-    // Implementation would use Etsy API
-    const etsyApiKey = process.env.ETSY_API_KEY;
-    if (!etsyApiKey) {
-      throw new Error("Etsy API key not configured");
+    if (!env.ETSY_API_KEY || !env.ETSY_ACCESS_TOKEN) {
+      logger.warn("Skipping Etsy trend scan - Etsy credentials missing");
+      return [];
     }
-    
-    // Mock response
+
+    const startedAt = Date.now();
+
+    const response = await axios.get("https://openapi.etsy.com/v3/application/listings/active", {
+      params: {
+        limit: 20,
+        sort_on: "score",
+        sort_order: "desc",
+        category: "digital_downloads",
+        include_private: false,
+      },
+      headers: {
+        "x-api-key": env.ETSY_API_KEY,
+        Authorization: `Bearer ${env.ETSY_ACCESS_TOKEN}`,
+      },
+      timeout: 15000,
+    });
+
+    const listings = Array.isArray(response.data?.results) ? response.data.results : [];
+    const collectedAt = new Date();
+
+    const trends: TrendData[] = [];
+
+    for (const listing of listings) {
+      const listingId = String(listing.listing_id ?? listing.listingId ?? "");
+      if (!listingId) continue;
+
+      const rawPrice = listing.price;
+      const priceAmount = (() => {
+        if (!rawPrice) return undefined;
+        if (typeof rawPrice === "number") return rawPrice;
+        if (typeof rawPrice === "string") return Number(rawPrice);
+        if (typeof rawPrice === "object") {
+          const amount = Number(rawPrice.amount ?? rawPrice.amount_minor ?? rawPrice.value);
+          const divisor = Number(rawPrice.divisor ?? rawPrice.divisor_minor ?? 100);
+          if (Number.isFinite(amount) && Number.isFinite(divisor) && divisor !== 0) {
+            return amount / divisor;
+          }
+        }
+        return undefined;
+      })();
+
+      const totalViews = this.parseTraffic(
+        listing.total_view_count ?? listing.views ?? listing.listing_views ?? listing.watch_count,
+      );
+      const favorers = this.parseTraffic(listing.num_favorers ?? listing.favorite_count);
+      const keyword = String(listing.title ?? listing.description ?? listingId);
+
+      const competition = this.competitionFromMagnitude(favorers);
+
+      const trend: TrendData = {
+        keyword,
+        searchVolume: totalViews,
+        competition,
+        avgPrice: priceAmount ?? 0,
+      };
+
+      trends.push(trend);
+
+      const tags: string[] = Array.isArray(listing.tags)
+        ? listing.tags.filter((tag: unknown): tag is string => typeof tag === "string")
+        : [];
+
+      const category = Array.isArray(listing.category_path) && listing.category_path.length > 0
+        ? String(listing.category_path[listing.category_path.length - 1])
+        : listing.category ?? null;
+
+      try {
+        await prisma.scrapeResult.upsert({
+          where: {
+            marketplace_productId_collectedAt: {
+              marketplace: "etsy",
+              productId: listingId,
+              collectedAt,
+            },
+          },
+          update: {
+            title: keyword,
+            price: priceAmount !== undefined ? new Prisma.Decimal(priceAmount) : null,
+            currency: listing.price?.currency_code ?? "USD",
+            tags,
+            category: category ?? undefined,
+            sales: listing.quantity_sold ?? listing.quantity ?? undefined,
+            rating: listing.rating ?? listing.review_average ?? undefined,
+            metadata: {
+              url: listing.url,
+              raw: listing,
+            } satisfies Record<string, unknown>,
+          },
+          create: {
+            marketplace: "etsy",
+            productId: listingId,
+            collectedAt,
+            title: keyword,
+            price: priceAmount !== undefined ? new Prisma.Decimal(priceAmount) : null,
+            currency: listing.price?.currency_code ?? "USD",
+            tags,
+            category: category ?? undefined,
+            sales: listing.quantity_sold ?? listing.quantity ?? undefined,
+            rating: listing.rating ?? listing.review_average ?? undefined,
+            metadata: {
+              url: listing.url,
+              raw: listing,
+            } satisfies Record<string, unknown>,
+          },
+        });
+      } catch (error) {
+        logger.error({ err: error, listingId }, "Failed to persist Etsy scrape result");
+      }
+    }
+
+    const completedAt = Date.now();
+    logger.info(
+      {
+        source: "etsy",
+        count: trends.length,
+        durationMs: completedAt - startedAt,
+      },
+      "Etsy trend scan complete",
+    );
+
+    return trends;
+  }
+
+  private async scanGoogleTrends(): Promise<TrendData[]> {
+    if (!env.GOOGLE_TRENDS_API_KEY) {
+      logger.warn("Skipping Google trend scan - Google Trends API key missing");
+      return [];
+    }
+
+    const startedAt = Date.now();
+
+    const response = await axios.get("https://trends.googleapis.com/trends/api/realtimetrends", {
+      params: {
+        hl: "en-US",
+        tz: 0,
+        cat: "all",
+        geo: "US",
+        key: env.GOOGLE_TRENDS_API_KEY,
+      },
+      timeout: 15000,
+      responseType: "text",
+    });
+
+    const payload = (() => {
+      const raw = typeof response.data === "string" ? response.data : String(response.data ?? "");
+      const sanitized = raw.replace(/^[^\{]+/, "");
+      try {
+        return JSON.parse(sanitized);
+      } catch (error) {
+        logger.error({ err: error }, "Failed to parse Google Trends payload");
+        return { storySummaries: { trendingStories: [] } };
+      }
+    })();
+
+    const stories =
+      payload?.storySummaries?.trendingStories ??
+      payload?.featuredStorySummaries?.trendingStories ??
+      [];
+
+    const collectedAt = new Date();
+    const trends: TrendData[] = [];
+
+    for (const story of stories) {
+      const storyId = String(story.id ?? story.storyId ?? "");
+      if (!storyId) continue;
+
+      const searchVolume = this.parseTraffic(
+        story.searchInterest?.article_search_interest?.[0]?.value ??
+          story.searchInterest?.news_search_interest?.[0]?.value ??
+          story.formattedTraffic,
+      );
+
+      const keyword = String(story.title ?? story.entityNames?.[0] ?? story.shareUrl ?? storyId);
+      const competition = this.competitionFromMagnitude(searchVolume);
+
+      const trend: TrendData = {
+        keyword,
+        searchVolume,
+        competition,
+        avgPrice: 0,
+      };
+
+      trends.push(trend);
+
+      const tags: string[] = Array.isArray(story.entityNames)
+        ? story.entityNames.filter((tag: unknown): tag is string => typeof tag === "string")
+        : [];
+
+      try {
+        await prisma.scrapeResult.upsert({
+          where: {
+            marketplace_productId_collectedAt: {
+              marketplace: "google_trends",
+              productId: storyId,
+              collectedAt,
+            },
+          },
+          update: {
+            title: keyword,
+            price: null,
+            currency: "USD",
+            tags,
+            category: story.mainTopic ?? undefined,
+            sales: undefined,
+            rating: undefined,
+            metadata: {
+              shareUrl: story.shareUrl,
+              articles: story.articles,
+              raw: story,
+            } satisfies Record<string, unknown>,
+          },
+          create: {
+            marketplace: "google_trends",
+            productId: storyId,
+            collectedAt,
+            title: keyword,
+            price: null,
+            currency: "USD",
+            tags,
+            category: story.mainTopic ?? undefined,
+            sales: undefined,
+            rating: undefined,
+            metadata: {
+              shareUrl: story.shareUrl,
+              articles: story.articles,
+              raw: story,
+            } satisfies Record<string, unknown>,
+          },
+        });
+      } catch (error) {
+        logger.error({ err: error, storyId }, "Failed to persist Google trend");
+      }
+    }
+
+    logger.info(
+      {
+        source: "google_trends",
+        count: trends.length,
+        durationMs: Date.now() - startedAt,
+      },
+      "Google trend scan complete",
+    );
+
+    return trends;
+  }
+
+  private async scanAmazonTrends(): Promise<TrendData[]> {
+    if (!env.AMAZON_ACCESS_KEY) {
+      logger.warn("Skipping Amazon trend scan - Amazon API key missing");
+      return [];
+    }
+
+    const startedAt = Date.now();
+
+    const response = await axios.get("https://api.rainforestapi.com/request", {
+      params: {
+        api_key: env.AMAZON_ACCESS_KEY,
+        type: "bestsellers",
+        amazon_domain: "amazon.com",
+        category_id: "16310091", // Arts, Crafts & Sewing
+        associate_id: env.AMAZON_ASSOCIATE_TAG,
+      },
+      timeout: 15000,
+    });
+
+    const bestsellers = Array.isArray(response.data?.bestsellers)
+      ? response.data.bestsellers
+      : [];
+
+    const collectedAt = new Date();
+    const trends: TrendData[] = [];
+
+    for (const item of bestsellers) {
+      const asin = String(item.asin ?? item.id ?? "");
+      if (!asin) continue;
+
+      const price = Number(item.price?.value ?? item.price);
+      const reviews = this.parseTraffic(item.reviews?.total_reviews ?? item.reviews_total);
+      const searchVolume = Math.max(0, 1000 - this.parseTraffic(item.rank ?? item.best_sellers_rank) * 10);
+      const keyword = String(item.title ?? asin);
+
+      const competition = this.competitionFromMagnitude(reviews);
+
+      const trend: TrendData = {
+        keyword,
+        searchVolume,
+        competition,
+        avgPrice: Number.isFinite(price) ? price : 0,
+      };
+
+      trends.push(trend);
+
+      const tags: string[] = Array.isArray(item.categories)
+        ? item.categories
+            .map((category: any) => category.name)
+            .filter((name: unknown): name is string => typeof name === "string")
+        : [];
+
+      try {
+        await prisma.scrapeResult.upsert({
+          where: {
+            marketplace_productId_collectedAt: {
+              marketplace: "amazon",
+              productId: asin,
+              collectedAt,
+            },
+          },
+          update: {
+            title: keyword,
+            price: Number.isFinite(price) ? new Prisma.Decimal(price) : null,
+            currency: item.price?.currency ?? "USD",
+            tags,
+            category: item.category ?? item.subcategory ?? undefined,
+            sales: item.rank ?? undefined,
+            rating: item.reviews?.rating ?? undefined,
+            metadata: {
+              url: item.link,
+              raw: item,
+            } satisfies Record<string, unknown>,
+          },
+          create: {
+            marketplace: "amazon",
+            productId: asin,
+            collectedAt,
+            title: keyword,
+            price: Number.isFinite(price) ? new Prisma.Decimal(price) : null,
+            currency: item.price?.currency ?? "USD",
+            tags,
+            category: item.category ?? item.subcategory ?? undefined,
+            sales: item.rank ?? undefined,
+            rating: item.reviews?.rating ?? undefined,
+            metadata: {
+              url: item.link,
+              raw: item,
+            } satisfies Record<string, unknown>,
+          },
+        });
+      } catch (error) {
+        logger.error({ err: error, asin }, "Failed to persist Amazon bestseller");
+      }
+    }
+
+    logger.info(
+      {
+        source: "amazon",
+        count: trends.length,
+        durationMs: Date.now() - startedAt,
+      },
+      "Amazon trend scan complete",
+    );
+
+    return trends;
+  }
+
+  private async listOnEtsy(product: any) {
+    if (!env.ETSY_API_KEY || !env.ETSY_ACCESS_TOKEN || !env.ETSY_SHOP_ID) {
+      throw new Error("Etsy API credentials are not fully configured");
+    }
+
+    const metadata = (product.metadata ?? {}) as Record<string, any>;
+    const pricing = metadata.pricing ?? {};
+    const suggestedPrice = typeof pricing.suggested === "number" ? pricing.suggested : 12.0;
+    const amountInCents = Math.max(1, Math.round(suggestedPrice * 100));
+
+    const payload = {
+      title: product.title,
+      description: product.description,
+      who_made: "i_did",
+      when_made: "made_to_order",
+      type: "download",
+      is_supply: false,
+      taxonomy_id: 2741, // Digital prints & planners
+      quantity: 999,
+      should_auto_renew: true,
+      tags: Array.isArray(product.tags) ? product.tags.slice(0, 13) : [],
+      price: {
+        amount: amountInCents,
+        divisor: 100,
+        currency_code: "USD",
+      },
+    };
+
+    const response = await axios.post(
+      `https://openapi.etsy.com/v3/application/shops/${env.ETSY_SHOP_ID}/listings`,
+      payload,
+      {
+        headers: {
+          "x-api-key": env.ETSY_API_KEY,
+          Authorization: `Bearer ${env.ETSY_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 20000,
+      },
+    );
+
+    const listingId = String(response.data?.listing_id ?? response.data?.data?.listing_id ?? "");
+    if (!listingId) {
+      throw new Error("Etsy did not return a listing identifier");
+    }
+
+    const url =
+      response.data?.url ??
+      response.data?.listing_url ??
+      `https://www.etsy.com/listing/${listingId}`;
+
     return {
-      listingId: `etsy_${Date.now()}`,
-      url: `https://etsy.com/listing/${Date.now()}`,
+      listingId,
+      url,
     };
   }
-  
+
   private async listOnShopify(product: any) {
-    // Implementation would use Shopify API
-    const shopifyToken = process.env.SHOPIFY_ACCESS_TOKEN;
-    if (!shopifyToken) {
-      throw new Error("Shopify access token not configured");
+    if (!env.SHOPIFY_ACCESS_TOKEN || !env.SHOPIFY_SHOP_DOMAIN) {
+      throw new Error("Shopify credentials are not configured");
     }
-    
+
+    const metadata = (product.metadata ?? {}) as Record<string, any>;
+    const pricing = metadata.pricing ?? {};
+    const suggestedPrice = typeof pricing.suggested === "number" ? pricing.suggested : 19.0;
+
+    const payload = {
+      product: {
+        title: product.title,
+        body_html: product.description,
+        vendor: "AI Product Generator",
+        product_type: (product.attributes as any)?.category ?? "Digital",
+        tags: Array.isArray(product.tags) ? product.tags.join(", ") : "",
+        status: "draft",
+        variants: [
+          {
+            price: suggestedPrice.toFixed(2),
+            sku: `AI-${product.id}`,
+            requires_shipping: false,
+            inventory_policy: "deny",
+            inventory_management: null,
+          },
+        ],
+        options: [
+          {
+            name: "Title",
+            values: ["Default"],
+          },
+        ],
+      },
+    };
+
+    const response = await axios.post(
+      `https://${env.SHOPIFY_SHOP_DOMAIN}/admin/api/2024-01/products.json`,
+      payload,
+      {
+        headers: {
+          "X-Shopify-Access-Token": env.SHOPIFY_ACCESS_TOKEN,
+          "Content-Type": "application/json",
+        },
+        timeout: 20000,
+      },
+    );
+
+    const productData = response.data?.product;
+    const listingId = String(productData?.id ?? "");
+    if (!listingId) {
+      throw new Error("Shopify did not return a product identifier");
+    }
+
+    const handle = productData?.handle;
+    const url = handle
+      ? `https://${env.SHOPIFY_SHOP_DOMAIN}/products/${handle}`
+      : `https://${env.SHOPIFY_SHOP_DOMAIN}/admin/products/${listingId}`;
+
     return {
-      listingId: `shopify_${Date.now()}`,
-      url: `https://foundersforge.myshopify.com/products/${product.id}`,
+      listingId,
+      url,
     };
   }
   
