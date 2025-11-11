@@ -4,6 +4,7 @@ import { prisma } from "@/config/db";
 import { env } from "@/config/env";
 import { logger } from "@/config/logger";
 import { generateAIContent } from "@/lib/ai/aiFactory";
+import type { GeneratedProduct } from "@/lib/ai/IAIProvider";
 
 interface TrendData {
   keyword: string;
@@ -144,10 +145,10 @@ export class ProductGenerator {
     
     try {
       // Use AI to generate product details
-      const productData = await generateAIContent({
+      const aiResult = await generateAIContent({
         provider: "gemini",
         prompt: `Create a digital product listing for: ${trend.keyword}
-        
+
         Generate:
         1. Product title (SEO optimized)
         2. Description (compelling, benefit-focused)
@@ -155,10 +156,22 @@ export class ProductGenerator {
         4. Price recommendation
         5. Product type suggestion`,
         type: "product_generation",
+        trend,
       });
-      
+
       // Parse AI response
-      const product = JSON.parse(productData);
+      const product: GeneratedProduct = (() => {
+        if (aiResult.format === "json") {
+          return aiResult.json;
+        }
+
+        try {
+          return JSON.parse(aiResult.text) as GeneratedProduct;
+        } catch (parseError) {
+          logger.error({ err: parseError, aiResponse: aiResult.text }, "Failed to parse AI content");
+          throw new Error("AI provider returned invalid product data");
+        }
+      })();
 
       const tags = Array.isArray(product.tags)
         ? product.tags
