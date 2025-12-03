@@ -1,6 +1,5 @@
-import { Prisma } from "@prisma/client";
 import { decryptSecret, encryptSecret, maskSecret } from "../lib/crypto";
-import { prisma } from "../config/db";
+import { db } from "../config/db";
 import { logger } from "../config/logger";
 
 export interface ApiKeyMeta {
@@ -19,12 +18,12 @@ export class ApiKeyService {
     name: string,
     value: string,
     namespace = DEFAULT_NAMESPACE,
-    metadata?: Prisma.InputJsonValue,
+    metadata?: any,
   ): Promise<ApiKeyMeta> {
     const trimmed = value.trim();
     const encrypted = encryptSecret(trimmed);
 
-    const record = await prisma.apiKey.upsert({
+    const record = await db.apiKey.upsert({
       where: {
         namespace_name: {
           namespace,
@@ -34,15 +33,15 @@ export class ApiKeyService {
       create: {
         namespace,
         name,
-        encryptedValue: encrypted.value,
+        encrypted_value: encrypted.value,
         iv: encrypted.iv,
-        lastFour: encrypted.lastFour,
+        last_four: encrypted.lastFour,
         metadata,
       },
       update: {
-        encryptedValue: encrypted.value,
+        encrypted_value: encrypted.value,
         iv: encrypted.iv,
-        lastFour: encrypted.lastFour,
+        last_four: encrypted.lastFour,
         metadata,
       },
     });
@@ -66,15 +65,15 @@ export class ApiKeyService {
     return {
       name: record.name,
       namespace: record.namespace,
-      lastFour: record.lastFour,
-      maskedValue: maskSecret(record.lastFour),
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
+      lastFour: record.last_four,
+      maskedValue: maskSecret(record.last_four),
+      createdAt: record.created_at,
+      updatedAt: record.updated_at,
     };
   }
 
   static async getDecryptedKey(name: string, namespace = DEFAULT_NAMESPACE) {
-    const record = await prisma.apiKey.findUnique({
+    const record = await db.apiKey.findUnique({
       where: {
         namespace_name: {
           namespace,
@@ -87,22 +86,28 @@ export class ApiKeyService {
       return null;
     }
 
-    return decryptSecret(record.encryptedValue, record.iv);
+    return decryptSecret(record.encrypted_value, record.iv);
   }
 
   static async listMetadata(namespace = DEFAULT_NAMESPACE): Promise<ApiKeyMeta[]> {
-    const keys = await prisma.apiKey.findMany({
-      where: { namespace },
-      orderBy: { name: "asc" },
-    });
+    // Note: db.apiKey doesn't have findMany, need to use supabase directly
+    const { supabase } = await import("../config/db");
+    const { data: keys, error } = await supabase
+      .from('api_keys')
+      .select('*')
+      .eq('namespace', namespace)
+      .order('name', { ascending: true });
 
-    return keys.map((key) => ({
+    if (error) throw error;
+    if (!keys) return [];
+
+    return keys.map((key: any) => ({
       name: key.name,
       namespace: key.namespace,
-      lastFour: key.lastFour,
-      maskedValue: maskSecret(key.lastFour),
-      createdAt: key.createdAt,
-      updatedAt: key.updatedAt,
+      lastFour: key.last_four,
+      maskedValue: maskSecret(key.last_four),
+      createdAt: key.created_at,
+      updatedAt: key.updated_at,
     }));
   }
 }

@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/config/db';
+import { db } from '@/config/db';
 
 export async function GET(request: NextRequest) {
   try {
     const limit = Number(request.nextUrl.searchParams.get('limit')) || 10;
     
-    const trends = await prisma.trend.findMany({
-      where: {
-        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-      },
+    const trends = await db.trend.findMany({
       orderBy: { score: 'desc' },
       take: limit,
     });

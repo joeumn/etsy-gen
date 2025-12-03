@@ -1,11 +1,9 @@
 import {
-  JobStage,
-  JobStatus,
-  Prisma,
+  type JobStage,
+  type JobStatus,
   type Job,
-} from "@prisma/client";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
-import { prisma } from "../config/db";
+} from "../config/db";
+import { db } from "../config/db";
 import { logger } from "../config/logger";
 import { enqueueStageJob } from "../workers/enqueue";
 
@@ -16,15 +14,15 @@ export type PipelineStage = (typeof pipelineStages)[number];
 export interface RunOptions {
   manual?: boolean;
   parentJobId?: string;
-  context?: Prisma.JsonValue;
+  context?: any;
   chainNext?: boolean;
 }
 
 const stageToEnum: Record<PipelineStage, JobStage> = {
-  scrape: JobStage.SCRAPE,
-  analyze: JobStage.ANALYZE,
-  generate: JobStage.GENERATE,
-  list: JobStage.LIST,
+  scrape: 'SCRAPE',
+  analyze: 'ANALYZE',
+  generate: 'GENERATE',
+  list: 'LIST',
 };
 
 const nextStage: Record<PipelineStage, PipelineStage | null> = {
@@ -53,17 +51,17 @@ export const runStageWithDependencies = async (
   );
 
   try {
-    const job = await prisma.job.create({
+    const job = await db.job.create({
       data: {
-        jobKey,
+        job_key: jobKey,
         stage: stageToEnum[stage],
-        status: JobStatus.PENDING,
+        status: 'PENDING',
         metadata: {
           ...(options.context as Record<string, unknown> | undefined),
           chainNext: options.chainNext ?? false,
           manual: options.manual ?? false,
         },
-        parentJobId: options.parentJobId,
+        parent_job_id: options.parentJobId,
       },
     });
 
@@ -72,13 +70,11 @@ export const runStageWithDependencies = async (
     });
 
     return job;
-  } catch (error) {
-    if (
-      error instanceof PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
-      const existing = await prisma.job.findUnique({
-        where: { jobKey },
+  } catch (error: any) {
+    // Check for unique constraint violation (duplicate job_key)
+    if (error?.code === '23505' || error?.message?.includes('duplicate key')) {
+      const existing = await db.job.findUnique({
+        where: { job_key: jobKey },
       });
       if (existing) {
         return existing;

@@ -1,4 +1,4 @@
-import { JobStatus, Prisma } from "@prisma/client";
+import type { JobStatus } from "../config/db";
 import type { Job, Processor } from "bullmq";
 import { logger } from "../config/logger";
 import { jobDurationHistogram, jobFailureCounter } from "../config/metrics";
@@ -18,7 +18,7 @@ interface StageContext {
 
 export type StageRunner = (
   ctx: StageContext,
-) => Promise<Prisma.InputJsonValue | null | undefined>;
+) => Promise<any | null | undefined>;
 
 export const buildStageProcessor = (
   stage: PipelineStage,
@@ -58,7 +58,7 @@ export const buildStageProcessor = (
       await markJobFailure(
         job.data.jobId,
         error,
-        remaining > 0 ? JobStatus.RETRYING : JobStatus.FAILED,
+        remaining > 0 ? 'RETRYING' : 'FAILED',
       );
       const duration = Date.now() - startedAt;
       jobFailureCounter.inc({ stage });

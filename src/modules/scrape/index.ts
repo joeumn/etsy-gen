@@ -1,5 +1,4 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "../../config/db";
+import { db } from "../../config/db";
 import { logger } from "../../config/logger";
 import { ensureDir, appendNdjson, resolveDataPath } from "../../lib/storage";
 import { SettingsService } from "../../services/settingsService";
@@ -20,8 +19,8 @@ const defaultConfig: { marketplaces: MarketplaceKey[] } = {
   marketplaces: ["etsy"],
 };
 
-const toJson = (value: unknown): Prisma.InputJsonValue =>
-  value as Prisma.InputJsonValue;
+const toJson = (value: unknown): any =>
+  value as any;
 
 export const runScrapeStage = async ({ jobId }: ScrapeContext) => {
   const config =
@@ -33,7 +32,7 @@ export const runScrapeStage = async ({ jobId }: ScrapeContext) => {
     ? config.marketplaces
     : defaultConfig.marketplaces;
 
-  const results: Prisma.InputJsonValue[] = [];
+  const results: any[] = [];
   const summary: ScrapeSummary = {
     count: 0,
     marketplaces: {},
@@ -52,18 +51,11 @@ export const runScrapeStage = async ({ jobId }: ScrapeContext) => {
 
     for (const listing of listings) {
       const collectedAt = listing.collectedAt ?? new Date();
-      await prisma.scrapeResult.upsert({
-        where: {
-          marketplace_productId_collectedAt: {
-            marketplace: listing.marketplace,
-            productId: listing.productId,
-            collectedAt,
-          },
-        },
-        create: {
-          jobId,
+      await db.scrapeResult.create({
+        data: {
+          job_id: jobId,
           marketplace: listing.marketplace,
-          productId: listing.productId,
+          product_id: listing.productId,
           title: listing.title,
           price: listing.price,
           currency: listing.currency ?? "USD",
@@ -71,20 +63,7 @@ export const runScrapeStage = async ({ jobId }: ScrapeContext) => {
           category: listing.category ?? undefined,
           sales: listing.sales ?? undefined,
           rating: listing.rating ?? undefined,
-          collectedAt,
-          metadata: toJson({
-            raw: listing.raw,
-            url: listing.url,
-          }),
-        },
-        update: {
-          title: listing.title,
-          price: listing.price,
-          currency: listing.currency ?? "USD",
-          tags: listing.tags,
-          category: listing.category ?? undefined,
-          sales: listing.sales ?? undefined,
-          rating: listing.rating ?? undefined,
+          collected_at: collectedAt,
           metadata: toJson({
             raw: listing.raw,
             url: listing.url,

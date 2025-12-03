@@ -1,5 +1,5 @@
-import { JobStatus, Prisma } from "@prisma/client";
-import { prisma } from "../config/db";
+import type { JobStatus } from "../config/db";
+import { db, supabase } from "../config/db";
 import { env } from "../config/env";
 
 const calculateDuration = (startedAt?: Date | null) => {
@@ -9,27 +9,33 @@ const calculateDuration = (startedAt?: Date | null) => {
   return Math.max(0, Date.now() - startedAt.getTime());
 };
 
-export const markJobRunning = async (jobId: string) =>
-  prisma.job.update({
+export const markJobRunning = async (jobId: string) => {
+  const { data, error } = await supabase
+    .from('jobs')
+    .update({
+      status: 'RUNNING',
+      attempts: supabase.rpc('increment', { x: 1, field_name: 'attempts' }),
+      started_at: new Date().toISOString(),
+    })
+    .eq('id', jobId)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+};
+
+export const markJobSuccess = async (jobId: string, result: any) => {
+  const existing = await db.job.findUnique({ where: { id: jobId } });
+  const durationMs = calculateDuration(existing?.started_at);
+
+  return db.job.update({
     where: { id: jobId },
     data: {
-      status: JobStatus.RUNNING,
-      attempts: { increment: 1 },
-      startedAt: new Date(),
-    },
-  });
-
-export const markJobSuccess = async (jobId: string, result: Prisma.InputJsonValue) => {
-  const existing = await prisma.job.findUnique({ where: { id: jobId } });
-  const durationMs = calculateDuration(existing?.startedAt);
-
-  return prisma.job.update({
-    where: { id: jobId },
-    data: {
-      status: JobStatus.SUCCESS,
+      status: 'SUCCESS',
       result,
-      completedAt: new Date(),
-      durationMs: durationMs ?? undefined,
+      completed_at: new Date(),
+      duration_ms: durationMs ?? undefined,
     },
   });
 };
@@ -37,24 +43,24 @@ export const markJobSuccess = async (jobId: string, result: Prisma.InputJsonValu
 export const markJobFailure = async (
   jobId: string,
   error: unknown,
-  status: JobStatus = JobStatus.FAILED,
+  status: JobStatus = 'FAILED',
 ) => {
-  const existing = await prisma.job.findUnique({ where: { id: jobId } });
-  const durationMs = calculateDuration(existing?.startedAt);
+  const existing = await db.job.findUnique({ where: { id: jobId } });
+  const durationMs = calculateDuration(existing?.started_at);
   const normalized = normalizeError(error);
 
-  return prisma.job.update({
+  return db.job.update({
     where: { id: jobId },
     data: {
       status,
       error: normalized,
-      completedAt: new Date(),
-      durationMs: durationMs ?? undefined,
+      completed_at: new Date(),
+      duration_ms: durationMs ?? undefined,
     },
   });
 };
 
-export const normalizeError = (error: unknown): Prisma.InputJsonObject => {
+export const normalizeError = (error: unknown): Record<string, any> => {
   if (error instanceof Error) {
     return {
       message: error.message,
@@ -62,16 +68,16 @@ export const normalizeError = (error: unknown): Prisma.InputJsonObject => {
       stack: env.NODE_ENV === "development" ? error.stack : undefined,
     };
   }
-  return { 
-    message: "Unknown error", 
+  return {
+    message: "Unknown error",
     detail: typeof error === "object" && error !== null ? JSON.parse(JSON.stringify(error)) : String(error)
   };
 };
 
 export const markJobRetrying = async (jobId: string) =>
-  prisma.job.update({
+  db.job.update({
     where: { id: jobId },
     data: {
-      status: JobStatus.RETRYING,
+      status: 'RETRYING',
     },
   });

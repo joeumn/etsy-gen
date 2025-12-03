@@ -1,5 +1,4 @@
 import { logger } from "../config/logger";
-import { Prisma } from "@prisma/client";
 
 interface ScrapeStageParams {
   jobId: string;
@@ -8,7 +7,7 @@ interface ScrapeStageParams {
 
 export async function runScrapeStage(
   params: ScrapeStageParams
-): Promise<Prisma.InputJsonValue> {
+): Promise<any> {
   logger.info({ jobId: params.jobId }, "Running scrape stage");
   
   // TODO: Implement actual scraping logic
@@ -17,5 +16,5 @@ export async function runScrapeStage(
       itemsScraped: 0,
       source: "placeholder",
     },
-  } as Prisma.InputJsonObject;
+  };
 }
