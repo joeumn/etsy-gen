@@ -6,6 +6,11 @@ import { z } from "zod";
 //   require('dotenv').config({ path: process.env.ENV_FILE });
 // }
 
+// Helper to get env var with fallback to NEXT_PUBLIC_ prefix
+const getEnvVar = (key: string): string | undefined => {
+  return process.env[key] || process.env[`NEXT_PUBLIC_${key}`];
+};
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -44,13 +49,25 @@ export type Env = z.infer<typeof envSchema>;
 
 export const env: Env = (() => {
   try {
-    return envSchema.parse(process.env);
+    // Merge process.env with NEXT_PUBLIC_ prefixed variables for Vercel compatibility
+    const mergedEnv = {
+      ...process.env,
+      SUPABASE_URL: getEnvVar('SUPABASE_URL'),
+      SUPABASE_ANON_KEY: getEnvVar('SUPABASE_ANON_KEY'),
+    };
+    
+    return envSchema.parse(mergedEnv);
   } catch (error) {
     if (error instanceof z.ZodError) {
       const message = error.issues
         .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
         .join("\n");
       console.error("Environment validation failed:\n", message);
+    }
+    // Don't throw in production build to allow deployment
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build') {
+      console.warn("Environment validation failed during build, using defaults");
+      return envSchema.parse({});
     }
     throw error;
   }

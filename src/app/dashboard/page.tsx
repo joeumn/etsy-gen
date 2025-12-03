@@ -233,10 +233,10 @@ export default function DashboardPage() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-primary">
+            <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent">
               AI Command Center
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-base md:text-lg text-muted-foreground mt-2">
               Autonomous digital product discovery, creation & listing
             </p>
           </div>
