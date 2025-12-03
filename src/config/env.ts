@@ -1,9 +1,10 @@
-import dotenv from "dotenv";
 import { z } from "zod";
 
-if (!process.env.SKIP_ENV_LOAD) {
-  dotenv.config({ path: process.env.ENV_FILE });
-}
+// Next.js automatically loads .env files, so we don't need dotenv
+// If you need to manually load .env files outside Next.js, uncomment:
+// if (typeof window === 'undefined' && !process.env.SKIP_ENV_LOAD) {
+//   require('dotenv').config({ path: process.env.ENV_FILE });
+// }
 
 const envSchema = z
   .object({
