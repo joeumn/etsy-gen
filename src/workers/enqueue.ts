@@ -1,5 +1,5 @@
 import { Queue } from "bullmq";
-import { JobStage } from "@prisma/client";
+import type { JobStage } from "../config/db";
 import { analyzeQueue, generateQueue, listQueue, scrapeQueue } from "../queues";
 import { PipelineStage } from "../services/orchestrator";
 
@@ -20,10 +20,10 @@ export interface QueuePayload {
 }
 
 const stageToEnum: Record<PipelineStage, JobStage> = {
-  scrape: JobStage.SCRAPE,
-  analyze: JobStage.ANALYZE,
-  generate: JobStage.GENERATE,
-  list: JobStage.LIST,
+  scrape: 'SCRAPE',
+  analyze: 'ANALYZE',
+  generate: 'GENERATE',
+  list: 'LIST',
 };
 
 export const enqueueStageJob = async (

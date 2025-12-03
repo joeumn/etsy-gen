@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { prisma } from "../config/db";
+import { checkDatabaseConnection } from "../config/db";
 import { redis } from "../config/redis";
 import { metricsRegister } from "../config/metrics";
 
@@ -7,7 +7,10 @@ export const health = Router();
 
 health.get("/healthz", async (_req, res) => {
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    const connected = await checkDatabaseConnection();
+    if (!connected) {
+      throw new Error("Database connection failed");
+    }
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({
@@ -19,7 +22,10 @@ health.get("/healthz", async (_req, res) => {
 
 health.get("/readyz", async (_req, res) => {
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    const connected = await checkDatabaseConnection();
+    if (!connected) {
+      throw new Error("Database connection failed");
+    }
     await redis.ping();
     res.json({ ok: true });
   } catch (error) {

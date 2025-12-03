@@ -1,5 +1,5 @@
 import { logger } from "@/config/logger";
-import { prisma } from "@/config/db";
+import { checkDatabaseConnection } from "@/config/db";
 
 /**
  * Smart AI Error Recovery System
@@ -114,9 +114,11 @@ export class SmartErrorRecovery {
     // Database connection recovery
     this.recoveryStrategies.set("DATABASE_ERROR", async () => {
       logger.info("Attempting database reconnection...");
-      await prisma.$disconnect();
       await new Promise(resolve => setTimeout(resolve, 2000));
-      await prisma.$connect();
+      const connected = await checkDatabaseConnection();
+      if (!connected) {
+        throw new Error("Database reconnection failed");
+      }
     });
 
     // API error recovery with exponential backoff

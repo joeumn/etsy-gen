@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/config/db';
+import { db } from '@/config/db';
 
 export async function GET(request: NextRequest) {
   try {
     const limit = Number(request.nextUrl.searchParams.get('limit')) || 10;
     
-    const listings = await prisma.listing.findMany({
+    const listings = await db.listing.findMany({
       where: { status: { in: ['PUBLISHED', 'DRAFT'] } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       take: limit,
-      include: { product: { select: { title: true } } },
+      include: { product: true },
     });
     
     return NextResponse.json(listings);
