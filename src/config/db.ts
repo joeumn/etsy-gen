@@ -252,7 +252,7 @@ export const db = {
     
     async delete(params: { where: { id: string } }): Promise<void> {
       try {
-        const { error} = await (supabase.from('jobs') as any).delete().eq('id', params.where.id);
+        const { error } = await (supabase.from('jobs') as any).delete().eq('id', params.where.id);
         if (error) throw error;
       } catch (error) {
         handleError(error, 'job.delete');
@@ -315,8 +315,7 @@ export const db = {
     
     async update(params: { where: { id: string }; data: Partial<Listing> }): Promise<Listing> {
       try {
-        const { data, error } = await (supabase as any)
-          .from('listings')
+        const { data, error } = await (supabase.from('listings') as any)
           .update(params.data)
           .eq('id', params.where.id)
           .select()

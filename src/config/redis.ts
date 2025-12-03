@@ -4,10 +4,12 @@ import { env } from "./env";
 import { logger } from "./logger";
 
 // Conditional import to avoid build errors in Next.js
+// Using require() is intentional here for optional dependency loading
 let IORedis: any;
 let Redis: any;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const ioredis = require("ioredis");
   IORedis = ioredis.default || ioredis;
   Redis = ioredis.Redis;
