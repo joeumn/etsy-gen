@@ -7,11 +7,15 @@ declare global {
   var __redis__: Redis | undefined;
 }
 
-const createRedis = () =>
-  new IORedis(env.REDIS_URL, {
+const createRedis = () => {
+  if (!env.REDIS_URL) {
+    throw new Error("REDIS_URL is not configured");
+  }
+  return new IORedis(env.REDIS_URL, {
     maxRetriesPerRequest: null,
     enableOfflineQueue: false,
   });
+};
 
 export const redis: Redis =
   global.__redis__ ??

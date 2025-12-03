@@ -3,7 +3,8 @@ import { JobStage, JobStatus, ListingStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/config/db";
 import { env } from "@/config/env";
 import { logger } from "@/config/logger";
-import { generateAIContent } from "@/lib/ai/aiFactory";
+import { AIProviderFactory } from "@/lib/ai/aiFactory";
+import type { GenerateProductRequest } from "@/lib/ai/IAIProvider";
 
 interface TrendData {
   keyword: string;
@@ -144,30 +145,24 @@ export class ProductGenerator {
     
     try {
       // Use AI to generate product details
-      const productData = await generateAIContent({
-        provider: "gemini",
-        prompt: `Create a digital product listing for: ${trend.keyword}
-        
-        Generate:
-        1. Product title (SEO optimized)
-        2. Description (compelling, benefit-focused)
-        3. Tags (13 relevant keywords)
-        4. Price recommendation
-        5. Product type suggestion`,
-        type: "product_generation",
-      });
+      const aiProvider = await AIProviderFactory.getProvider("gemini");
       
-      // Parse AI response
-      const product = JSON.parse(productData);
+      const request: GenerateProductRequest = {
+        trendData: {
+          keywords: [trend.keyword],
+          salesVelocity: trend.searchVolume,
+          priceRange: { min: trend.avgPrice * 0.8, max: trend.avgPrice * 1.2 },
+          competitionLevel: trend.competition as 'low' | 'medium' | 'high',
+          seasonality: [],
+          targetAudience: [],
+        },
+        productType: "digital_download",
+        targetMarketplace: "etsy",
+      };
+      
+      const product = await aiProvider.generateProduct(request);
 
-      const tags = Array.isArray(product.tags)
-        ? product.tags
-        : typeof product.tags === "string"
-          ? product.tags
-              .split(",")
-              .map((tag: string) => tag.trim())
-              .filter(Boolean)
-          : [];
+      const tags = Array.isArray(product.tags) ? product.tags : [];
 
       const productMetadata: Prisma.JsonObject = {
         pricing: {

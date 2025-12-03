@@ -27,8 +27,7 @@ export function createRateLimiter(config: Partial<RateLimitConfig> = {}) {
   
   return async (request: NextRequest): Promise<NextResponse | null> => {
     try {
-      const ip = request.ip || 
-                 request.headers.get('x-forwarded-for') || 
+      const ip = request.headers.get('x-forwarded-for') || 
                  request.headers.get('x-real-ip') || 
                  'unknown';
       

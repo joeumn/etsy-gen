@@ -1,4 +1,4 @@
-import { Queue, QueueScheduler } from "bullmq";
+import { Queue } from "bullmq";
 import { env } from "../config/env";
 import { redis } from "../config/redis";
 
@@ -30,25 +30,15 @@ const createQueue = (name: string) =>
     defaultJobOptions,
   });
 
-const createScheduler = (name: string) =>
-  new QueueScheduler(name, {
-    connection: duplicateConnection(),
-  });
-
 export const scrapeQueue = createQueue("scrape");
 export const analyzeQueue = createQueue("analyze");
 export const generateQueue = createQueue("generate");
 export const listQueue = createQueue("list");
 
-export const schedulers = [
-  createScheduler("scrape"),
-  createScheduler("analyze"),
-  createScheduler("generate"),
-  createScheduler("list"),
-];
+export const queues = [scrapeQueue, analyzeQueue, generateQueue, listQueue];
 
 export const waitForQueueInfrastructure = async () => {
-  await Promise.all(schedulers.map((scheduler) => scheduler.waitUntilReady()));
+  await Promise.all(queues.map((queue) => queue.waitUntilReady()));
 };
 
 export const workerConcurrency = concurrency;

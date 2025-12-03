@@ -5,12 +5,6 @@ import { redis } from "../config/redis";
 
 const baseOptions: Omit<WorkerOptions, "connection"> = {
   concurrency: workerConcurrency,
-  // Enhanced retry configuration
-  attempts: 3,
-  backoff: {
-    type: 'exponential',
-    delay: 5000, // Start with 5 seconds
-  },
   // Circuit breaker settings
   maxStalledCount: 2,
   stalledInterval: 30000,
@@ -150,7 +144,7 @@ export const createWorker = <T = unknown>(
       recordCircuitBreakerFailure(name);
       
       // If this is the last attempt, move to DLQ
-      const maxAttempts = options?.attempts ?? baseOptions.attempts ?? 3;
+      const maxAttempts = job.opts?.attempts ?? 3;
       if (job.attemptsMade >= maxAttempts - 1) {
         await moveToDeadLetterQueue(name, job, error as Error);
       }
@@ -167,7 +161,7 @@ export const createWorker = <T = unknown>(
   });
 
   worker.on("failed", (job, error) => {
-    const maxAttempts = options?.attempts ?? baseOptions.attempts ?? 3;
+    const maxAttempts = job?.opts?.attempts ?? 3;
     const isLastAttempt = job && job.attemptsMade >= maxAttempts;
     
     logger.error(

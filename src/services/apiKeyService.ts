@@ -59,7 +59,7 @@ export class ApiKeyService {
         invalidateCache();
         logger.debug("Invalidated AI cache after OpenAI key update");
       } catch (error) {
-        logger.warn("Failed to invalidate AI cache", { error });
+        logger.warn({ error }, "Failed to invalidate AI cache");
       }
     }
 

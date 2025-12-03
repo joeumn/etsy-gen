@@ -7,7 +7,7 @@ const ALGORITHM = "aes-256-gcm";
 
 const key = crypto
   .createHash("sha256")
-  .update(env.APP_ENCRYPTION_KEY, "utf8")
+  .update(env.APP_ENCRYPTION_KEY || "default-encryption-key-change-in-production", "utf8")
   .digest();
 
 const encode = (buffer: Buffer) => buffer.toString("base64");

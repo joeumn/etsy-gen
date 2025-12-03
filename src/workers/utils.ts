@@ -54,7 +54,7 @@ export const markJobFailure = async (
   });
 };
 
-export const normalizeError = (error: unknown) => {
+export const normalizeError = (error: unknown): Prisma.InputJsonObject => {
   if (error instanceof Error) {
     return {
       message: error.message,
@@ -62,7 +62,10 @@ export const normalizeError = (error: unknown) => {
       stack: env.NODE_ENV === "development" ? error.stack : undefined,
     };
   }
-  return { message: "Unknown error", detail: error };
+  return { 
+    message: "Unknown error", 
+    detail: typeof error === "object" && error !== null ? JSON.parse(JSON.stringify(error)) : String(error)
+  };
 };
 
 export const markJobRetrying = async (jobId: string) =>
