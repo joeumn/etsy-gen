@@ -1,6 +1,5 @@
 import axios from "axios";
-import { JobStage, JobStatus, ListingStatus, Prisma } from "@prisma/client";
-import { prisma } from "@/config/db";
+import { prisma, type JobStage, type JobStatus, type ListingStatus } from "@/config/db";
 import { env } from "@/config/env";
 import { logger } from "@/config/logger";
 import { AIProviderFactory } from "@/lib/ai/aiFactory";
@@ -53,7 +52,7 @@ export class ProductGenerator {
     return Number(Math.max(0.1, volumeScore * competitionPenalty).toFixed(3));
   }
 
-  private toTrendMetadata(trend: TrendData): Prisma.JsonObject {
+  private toTrendMetadata(trend: TrendData): Record<string, any> {
     return {
       source: "marketplace_scan",
       keyword: trend.keyword,
@@ -61,7 +60,7 @@ export class ProductGenerator {
       competitionLabel: trend.competition,
       averagePrice: trend.avgPrice,
       scannedAt: new Date().toISOString(),
-    } satisfies Record<string, unknown>;
+    };
   }
   
   /**
@@ -104,23 +103,23 @@ export class ProductGenerator {
           update: {
             niche: trend.keyword,
             score,
-            tamApprox:
+            tam_approx:
               typeof trend.avgPrice === "number"
                 ? trend.avgPrice * Math.max(1, trend.searchVolume)
-                : null,
+                : undefined,
             momentum: Number((score * 0.85).toFixed(3)),
             competition: competitionValue ?? undefined,
             metadata: this.toTrendMetadata(trend),
-            updatedAt: new Date(),
+            updated_at: new Date(),
           },
           create: {
             id: trendId,
             niche: trend.keyword,
             score,
-            tamApprox:
+            tam_approx:
               typeof trend.avgPrice === "number"
                 ? trend.avgPrice * Math.max(1, trend.searchVolume)
-                : null,
+                : undefined,
             momentum: Number((score * 0.85).toFixed(3)),
             competition: competitionValue ?? undefined,
             metadata: this.toTrendMetadata(trend),
@@ -164,7 +163,7 @@ export class ProductGenerator {
 
       const tags = Array.isArray(product.tags) ? product.tags : [];
 
-      const productMetadata: Prisma.JsonObject = {
+      const productMetadata: Record<string, any> = {
         pricing: {
           suggested: product.price ?? trend.avgPrice ?? 9.99,
         },
@@ -188,8 +187,8 @@ export class ProductGenerator {
           attributes: {
             category: product.category ?? "Digital Downloads",
             originTrend: trend.keyword,
-          } as Prisma.JsonObject,
-          assetPaths: [],
+          },
+          asset_paths: [],
           metadata: productMetadata,
         },
       });
@@ -253,7 +252,7 @@ export class ProductGenerator {
       await prisma.product.update({
         where: { id: productId },
         data: {
-          metadata: nextMetadata as Prisma.InputJsonValue,
+          metadata: nextMetadata,
         },
       });
 
@@ -265,28 +264,28 @@ export class ProductGenerator {
       await prisma.listing.create({
         data: {
           marketplace,
-          remoteId: listingResult.listingId,
+          remote_id: listingResult.listingId,
           status:
-            marketplace === "etsy" ? ListingStatus.DRAFT : ListingStatus.PUBLISHED,
+            marketplace === "etsy" ? "DRAFT" : "PUBLISHED",
           price: suggestedPrice,
           currency: "USD",
-          productId,
+          product_id: productId,
           metadata: {
             url: listingResult.url,
             marketplace,
-          } as Prisma.JsonObject,
+          },
         },
       });
 
       // Create job record
       await prisma.job.create({
         data: {
-          jobKey: `product_listing:${marketplace}:${productId}:${Date.now()}`,
-          stage: JobStage.LIST,
-          status: JobStatus.SUCCESS,
-          startedAt: new Date(),
-          completedAt: new Date(),
-          durationMs: 0,
+          job_key: `product_listing:${marketplace}:${productId}:${Date.now()}`,
+          stage: "LIST",
+          status: "SUCCESS",
+          started_at: new Date(),
+          completed_at: new Date(),
+          duration_ms: 0,
           result: {
             listingId: listingResult.listingId,
             marketplace,
@@ -295,7 +294,7 @@ export class ProductGenerator {
             productId,
             marketplace,
             listingId: listingResult.listingId,
-          } as Prisma.JsonObject,
+          },
         },
       });
       
@@ -308,12 +307,12 @@ export class ProductGenerator {
       // Log failed job
       await prisma.job.create({
         data: {
-          jobKey: `product_listing:${marketplace}:${productId}:${Date.now()}:error`,
-          stage: JobStage.LIST,
-          status: JobStatus.FAILED,
-          startedAt: new Date(),
-          completedAt: new Date(),
-          durationMs: 0,
+          job_key: `product_listing:${marketplace}:${productId}:${Date.now()}:error`,
+          stage: "LIST",
+          status: "FAILED",
+          started_at: new Date(),
+          completed_at: new Date(),
+          duration_ms: 0,
           error:
             error instanceof Error
               ? { message: error.message }
@@ -321,7 +320,7 @@ export class ProductGenerator {
           metadata: {
             productId,
             marketplace,
-          } as Prisma.JsonObject,
+          },
         },
       });
 
@@ -451,7 +450,7 @@ export class ProductGenerator {
           },
           update: {
             title: keyword,
-            price: priceAmount !== undefined ? new Prisma.Decimal(priceAmount) : null,
+            price: priceAmount !== undefined ? priceAmount : undefined,
             currency: listing.price?.currency_code ?? "USD",
             tags,
             category: category ?? undefined,
@@ -460,14 +459,14 @@ export class ProductGenerator {
             metadata: {
               url: listing.url,
               raw: listing,
-            } satisfies Record<string, unknown>,
+            },
           },
           create: {
             marketplace: "etsy",
-            productId: listingId,
-            collectedAt,
+            product_id: listingId,
+            collected_at: collectedAt,
             title: keyword,
-            price: priceAmount !== undefined ? new Prisma.Decimal(priceAmount) : null,
+            price: priceAmount !== undefined ? priceAmount : undefined,
             currency: listing.price?.currency_code ?? "USD",
             tags,
             category: category ?? undefined,
@@ -476,7 +475,7 @@ export class ProductGenerator {
             metadata: {
               url: listing.url,
               raw: listing,
-            } satisfies Record<string, unknown>,
+            },
           },
         });
       } catch (error) {
@@ -573,7 +572,7 @@ export class ProductGenerator {
           },
           update: {
             title: keyword,
-            price: null,
+            price: undefined,
             currency: "USD",
             tags,
             category: story.mainTopic ?? undefined,
@@ -583,14 +582,14 @@ export class ProductGenerator {
               shareUrl: story.shareUrl,
               articles: story.articles,
               raw: story,
-            } satisfies Record<string, unknown>,
+            },
           },
           create: {
             marketplace: "google_trends",
-            productId: storyId,
-            collectedAt,
+            product_id: storyId,
+            collected_at: collectedAt,
             title: keyword,
-            price: null,
+            price: undefined,
             currency: "USD",
             tags,
             category: story.mainTopic ?? undefined,
@@ -600,7 +599,7 @@ export class ProductGenerator {
               shareUrl: story.shareUrl,
               articles: story.articles,
               raw: story,
-            } satisfies Record<string, unknown>,
+            },
           },
         });
       } catch (error) {
@@ -683,7 +682,7 @@ export class ProductGenerator {
           },
           update: {
             title: keyword,
-            price: Number.isFinite(price) ? new Prisma.Decimal(price) : null,
+            price: Number.isFinite(price) ? price : undefined,
             currency: item.price?.currency ?? "USD",
             tags,
             category: item.category ?? item.subcategory ?? undefined,
@@ -692,14 +691,14 @@ export class ProductGenerator {
             metadata: {
               url: item.link,
               raw: item,
-            } satisfies Record<string, unknown>,
+            },
           },
           create: {
             marketplace: "amazon",
-            productId: asin,
-            collectedAt,
+            product_id: asin,
+            collected_at: collectedAt,
             title: keyword,
-            price: Number.isFinite(price) ? new Prisma.Decimal(price) : null,
+            price: Number.isFinite(price) ? price : undefined,
             currency: item.price?.currency ?? "USD",
             tags,
             category: item.category ?? item.subcategory ?? undefined,
@@ -708,7 +707,7 @@ export class ProductGenerator {
             metadata: {
               url: item.link,
               raw: item,
-            } satisfies Record<string, unknown>,
+            },
           },
         });
       } catch (error) {

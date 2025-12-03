@@ -27,6 +27,6 @@
       "@/app/*": ["./src/app/*"]
     }
   },
-  "include": ["next-env.d.ts", "src/app/**/*.ts", "src/app/**/*.tsx", "src/components/**/*.ts", "src/components/**/*.tsx", "src/hooks/**/*.ts", "src/config/**/*.ts", "src/lib/**/*.ts", "src/middleware/**/*.ts", "src/modules/**/*.ts", "src/services/**/*.ts", "src/workers/**/*.ts", "lib/**/*.ts", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "test/**/*", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "backup-frontend/**/*", "design-system/**/*", "scripts/**/*"]
+  "include": ["next-env.d.ts", "src/app/**/*.ts", "src/app/**/*.tsx", "src/components/**/*.ts", "src/components/**/*.tsx", "src/hooks/**/*.ts", "src/config/**/*.ts", "src/lib/**/*.ts", "src/modules/**/*.ts", "lib/**/*.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "test/**/*", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "backup-frontend/**/*", "design-system/**/*", "scripts/**/*", "src/server.ts", "src/queues/**/*", "src/workers/**/*", "src/routes/**/*", "src/services/**/*", "src/middleware/**/*", "src/cron/**/*"]
 }

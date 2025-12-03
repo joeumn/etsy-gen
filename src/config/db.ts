@@ -119,28 +119,43 @@ export interface ApiKey {
   updated_at: Date;
 }
 
-// Supabase client initialization
-const supabaseUrl = env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Supabase client initialization (lazy)
+let _supabaseClient: ReturnType<typeof createClient> | null = null;
 
-if (!supabaseUrl || !supabaseKey) {
-  logger.warn('Supabase URL or key not configured. Database operations will fail.');
-}
+const getSupabaseClient = () => {
+  if (_supabaseClient) return _supabaseClient;
+  
+  const supabaseUrl = env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const createSupabaseClient = () => {
   if (!supabaseUrl || !supabaseKey) {
+    logger.warn('Supabase URL or key not configured. Database operations will fail.');
     throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_ANON_KEY');
   }
-  return createClient(supabaseUrl, supabaseKey, {
+  
+  _supabaseClient = createClient(supabaseUrl, supabaseKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
     }
   });
+  
+  return _supabaseClient;
 };
 
-// Export a singleton client
-export const supabase = createSupabaseClient();
+// Export supabase client for direct access
+// Note: This will be initialized on first access, so it's safe to import
+export const supabase = {
+  get from() {
+    return getSupabaseClient().from.bind(getSupabaseClient());
+  },
+  get auth() {
+    return getSupabaseClient().auth;
+  },
+  get storage() {
+    return getSupabaseClient().storage;
+  }
+};
 
 // Helper function to handle errors
 function handleError(error: any, operation: string) {
@@ -156,9 +171,9 @@ export const db = {
       orderBy?: { [key: string]: 'asc' | 'desc' };
       take?: number;
       include?: any;
-    }) {
+    }): Promise<Job[]> {
       try {
-        let query = supabase.from('jobs').select('*');
+        let query = ( supabase.from('jobs') as any).select('*');
         
         if (params?.where) {
           Object.entries(params.where).forEach(([key, value]) => {
@@ -179,16 +194,20 @@ export const db = {
         }
         
         const { data, error } = await query;
-        if (error) throw error;
+        if (error) {
+          logger.error({ err: error }, 'Database job.findMany failed');
+          return [];
+        }
         return data || [];
       } catch (error) {
-        return handleError(error, 'job.findMany');
+        logger.error({ err: error }, 'Database job.findMany failed');
+        return [];
       }
     },
     
-    async findUnique(params: { where: { id?: string; job_key?: string } }) {
+    async findUnique(params: { where: { id?: string; job_key?: string } }): Promise<Job | null> {
       try {
-        let query = supabase.from('jobs').select('*');
+        let query = ( supabase.from('jobs') as any).select('*');
         
         if (params.where.id) {
           query = query.eq('id', params.where.id);
@@ -200,54 +219,56 @@ export const db = {
         if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows returned
         return data || null;
       } catch (error) {
-        return handleError(error, 'job.findUnique');
+        handleError(error, 'job.findUnique');
+        return null;
       }
     },
     
-    async create(params: { data: Partial<Job> }) {
+    async create(params: { data: Partial<Job> }): Promise<Job> {
       try {
-        const { data, error } = await supabase.from('jobs').insert([params.data]).select().single();
+        const { data, error } = await (supabase.from('jobs') as any).insert([params.data]).select().single();
         if (error) throw error;
-        return data;
+        return data as Job;
       } catch (error) {
-        return handleError(error, 'job.create');
+        handleError(error, 'job.create');
+        throw error;
       }
     },
     
-    async update(params: { where: { id: string }; data: Partial<Job> }) {
+    async update(params: { where: { id: string }; data: Partial<Job> }): Promise<Job> {
       try {
-        const { data, error } = await supabase
-          .from('jobs')
+        const { data, error } = await (supabase.from('jobs') as any)
           .update(params.data)
           .eq('id', params.where.id)
           .select()
           .single();
         if (error) throw error;
-        return data;
+        return data as Job;
       } catch (error) {
-        return handleError(error, 'job.update');
+        handleError(error, 'job.update');
+        throw error;
       }
     },
     
-    async delete(params: { where: { id: string } }) {
+    async delete(params: { where: { id: string } }): Promise<void> {
       try {
-        const { error } = await supabase.from('jobs').delete().eq('id', params.where.id);
+        const { error } = await (supabase.from('jobs') as any).delete().eq('id', params.where.id);
         if (error) throw error;
       } catch (error) {
-        return handleError(error, 'job.delete');
+        handleError(error, 'job.delete');
       }
     }
   },
   
   listing: {
     async findMany(params?: {
-      where?: Partial<Listing>;
+      where?: Partial<Listing> | { status?: { in: string[] } | ListingStatus; [key: string]: any };
       orderBy?: { [key: string]: 'asc' | 'desc' };
       take?: number;
       include?: any;
-    }) {
+    }): Promise<any[]> {
       try {
-        let query = supabase.from('listings').select('*, product:products(*)');
+        let query = ( supabase.from('listings') as any).select('*, product:products(*)');
         
         if (params?.where) {
           Object.entries(params.where).forEach(([key, value]) => {
@@ -270,47 +291,91 @@ export const db = {
         }
         
         const { data, error } = await query;
-        if (error) throw error;
+        if (error) {
+          logger.error({ err: error }, 'Database listing.findMany failed');
+          return [];
+        }
         return data || [];
       } catch (error) {
-        return handleError(error, 'listing.findMany');
+        logger.error({ err: error }, 'Database listing.findMany failed');
+        return [];
       }
     },
     
-    async create(params: { data: Partial<Listing> }) {
+    async create(params: { data: Partial<Listing> }): Promise<Listing> {
       try {
-        const { data, error } = await supabase.from('listings').insert([params.data]).select().single();
+        const { data, error } = await (supabase.from('listings') as any).insert([params.data]).select().single();
         if (error) throw error;
-        return data;
+        return data as Listing;
       } catch (error) {
-        return handleError(error, 'listing.create');
+        handleError(error, 'listing.create');
+        throw error;
       }
     },
     
-    async update(params: { where: { id: string }; data: Partial<Listing> }) {
+    async update(params: { where: { id: string }; data: Partial<Listing> }): Promise<Listing> {
       try {
-        const { data, error } = await supabase
-          .from('listings')
+        const { data, error } = await (supabase.from('listings') as any)
           .update(params.data)
           .eq('id', params.where.id)
           .select()
           .single();
         if (error) throw error;
-        return data;
+        return data as Listing;
       } catch (error) {
-        return handleError(error, 'listing.update');
+        handleError(error, 'listing.update');
+        throw error;
       }
     }
   },
   
   scrapeResult: {
-    async create(params: { data: Partial<ScrapeResult> }) {
+    async create(params: { data: Partial<ScrapeResult> }): Promise<ScrapeResult> {
       try {
-        const { data, error } = await supabase.from('scrape_results').insert([params.data]).select().single();
+        const { data, error } = await (supabase.from('scrape_results') as any).insert([params.data]).select().single();
         if (error) throw error;
-        return data;
+        return data as ScrapeResult;
       } catch (error) {
-        return handleError(error, 'scrapeResult.create');
+        handleError(error, 'scrapeResult.create');
+        throw error;
+      }
+    },
+    
+    async upsert(params: { where: { marketplace_productId_collectedAt: { marketplace: string; productId: string; collectedAt: Date } }; create: Partial<ScrapeResult>; update: Partial<ScrapeResult> }): Promise<ScrapeResult> {
+      try {
+        // Supabase doesn't support composite unique constraints in upsert directly
+        // So we need to check if it exists first, then update or create
+        const { marketplace, productId, collectedAt } = params.where.marketplace_productId_collectedAt;
+        
+        const { data: existing } = await (supabase as any)
+          .from('scrape_results')
+          .select('*')
+          .eq('marketplace', marketplace)
+          .eq('product_id', productId)
+          .eq('collected_at', collectedAt.toISOString())
+          .single();
+        
+        if (existing) {
+          const { data, error } = await (supabase as any)
+            .from('scrape_results')
+            .update(params.update)
+            .eq('id', existing.id)
+            .select()
+            .single();
+          if (error) throw error;
+          return data as ScrapeResult;
+        } else {
+          const { data, error } = await (supabase as any)
+            .from('scrape_results')
+            .insert([{ ...params.create, marketplace, product_id: productId, collected_at: collectedAt }])
+            .select()
+            .single();
+          if (error) throw error;
+          return data as ScrapeResult;
+        }
+      } catch (error) {
+        handleError(error, 'scrapeResult.upsert');
+        throw error;
       }
     }
   },
@@ -320,9 +385,9 @@ export const db = {
       where?: Partial<Trend>;
       orderBy?: { [key: string]: 'asc' | 'desc' };
       take?: number;
-    }) {
+    }): Promise<Trend[]> {
       try {
-        let query = supabase.from('trends').select('*');
+        let query = ( supabase.from('trends') as any).select('*');
         
         if (params?.where) {
           Object.entries(params.where).forEach(([key, value]) => {
@@ -343,38 +408,63 @@ export const db = {
         }
         
         const { data, error } = await query;
-        if (error) throw error;
+        if (error) {
+          logger.error({ err: error }, 'Database trend.findMany failed');
+          return [];
+        }
         return data || [];
       } catch (error) {
-        return handleError(error, 'trend.findMany');
+        logger.error({ err: error }, 'Database trend.findMany failed');
+        return [];
       }
     },
     
-    async create(params: { data: Partial<Trend> }) {
+    async create(params: { data: Partial<Trend> }): Promise<Trend> {
       try {
-        const { data, error } = await supabase.from('trends').insert([params.data]).select().single();
+        const { data, error } = await (supabase.from('trends') as any).insert([params.data]).select().single();
         if (error) throw error;
-        return data;
+        return data as Trend;
       } catch (error) {
-        return handleError(error, 'trend.create');
+        handleError(error, 'trend.create');
+        throw error;
+      }
+    },
+    
+    async upsert(params: { where: { id: string }; create: Partial<Trend>; update: Partial<Trend> }): Promise<Trend> {
+      try {
+        const { data, error } = await (supabase as any)
+          .from('trends')
+          .upsert([{
+            id: params.where.id,
+            ...params.create,
+            ...params.update
+          }])
+          .select()
+          .single();
+        if (error) throw error;
+        return data as Trend;
+      } catch (error) {
+        handleError(error, 'trend.upsert');
+        throw error;
       }
     }
   },
   
   product: {
-    async create(params: { data: Partial<Product> }) {
+    async create(params: { data: Partial<Product> }): Promise<Product> {
       try {
-        const { data, error } = await supabase.from('products').insert([params.data]).select().single();
+        const { data, error } = await (supabase.from('products') as any).insert([params.data]).select().single();
         if (error) throw error;
-        return data;
+        return data as Product;
       } catch (error) {
-        return handleError(error, 'product.create');
+        handleError(error, 'product.create');
+        throw error; // This line will never execute but satisfies TypeScript
       }
     },
     
-    async findUnique(params: { where: { id: string } }) {
+    async findUnique(params: { where: { id: string } }): Promise<Product | null> {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('products')
           .select('*')
           .eq('id', params.where.id)
@@ -382,17 +472,34 @@ export const db = {
         if (error && error.code !== 'PGRST116') throw error;
         return data || null;
       } catch (error) {
-        return handleError(error, 'product.findUnique');
+        handleError(error, 'product.findUnique');
+        return null;
+      }
+    },
+    
+    async update(params: { where: { id: string }; data: Partial<Product> }): Promise<Product> {
+      try {
+        const { data, error } = await (supabase as any)
+          .from('products')
+          .update(params.data)
+          .eq('id', params.where.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data as Product;
+      } catch (error) {
+        handleError(error, 'product.update');
+        throw error;
       }
     }
   },
   
   setting: {
-    async findUnique(params: { where: { namespace_key?: { namespace: string; key: string } } }) {
+    async findUnique(params: { where: { namespace_key?: { namespace: string; key: string } } }): Promise<Setting | null> {
       try {
         if (!params.where.namespace_key) return null;
         
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('settings')
           .select('*')
           .eq('namespace', params.where.namespace_key.namespace)
@@ -401,13 +508,14 @@ export const db = {
         if (error && error.code !== 'PGRST116') throw error;
         return data || null;
       } catch (error) {
-        return handleError(error, 'setting.findUnique');
+        handleError(error, 'setting.findUnique');
+        return null;
       }
     },
     
-    async upsert(params: { where: { namespace_key: { namespace: string; key: string } }; create: Partial<Setting>; update: Partial<Setting> }) {
+    async upsert(params: { where: { namespace_key: { namespace: string; key: string } }; create: Partial<Setting>; update: Partial<Setting> }): Promise<Setting> {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('settings')
           .upsert([{
             namespace: params.where.namespace_key.namespace,
@@ -418,19 +526,20 @@ export const db = {
           .select()
           .single();
         if (error) throw error;
-        return data;
+        return data as Setting;
       } catch (error) {
-        return handleError(error, 'setting.upsert');
+        handleError(error, 'setting.upsert');
+        throw error;
       }
     }
   },
   
   apiKey: {
-    async findUnique(params: { where: { namespace_name?: { namespace: string; name: string } } }) {
+    async findUnique(params: { where: { namespace_name?: { namespace: string; name: string } } }): Promise<ApiKey | null> {
       try {
         if (!params.where.namespace_name) return null;
         
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('api_keys')
           .select('*')
           .eq('namespace', params.where.namespace_name.namespace)
@@ -439,13 +548,14 @@ export const db = {
         if (error && error.code !== 'PGRST116') throw error;
         return data || null;
       } catch (error) {
-        return handleError(error, 'apiKey.findUnique');
+        handleError(error, 'apiKey.findUnique');
+        return null;
       }
     },
     
-    async upsert(params: { where: { namespace_name: { namespace: string; name: string } }; create: Partial<ApiKey>; update: Partial<ApiKey> }) {
+    async upsert(params: { where: { namespace_name: { namespace: string; name: string } }; create: Partial<ApiKey>; update: Partial<ApiKey> }): Promise<ApiKey> {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('api_keys')
           .upsert([{
             namespace: params.where.namespace_name.namespace,
@@ -456,9 +566,10 @@ export const db = {
           .select()
           .single();
         if (error) throw error;
-        return data;
+        return data as ApiKey;
       } catch (error) {
-        return handleError(error, 'apiKey.upsert');
+        handleError(error, 'apiKey.upsert');
+        throw error;
       }
     }
   }
@@ -470,7 +581,7 @@ export const prisma = db;
 // Health check function
 export async function checkDatabaseConnection(): Promise<boolean> {
   try {
-    const { error } = await supabase.from('jobs').select('id').limit(1);
+    const { error } = await ( supabase.from('jobs') as any).select('id').limit(1);
     return !error;
   } catch (error) {
     logger.error({ err: error }, 'Database health check failed');

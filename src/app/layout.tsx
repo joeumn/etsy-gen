@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { ToastProvider } from "@/components/ui/toast";
 import { Toaster } from "sonner";
@@ -8,11 +7,11 @@ import { AppInitializer } from "@/components/app-initializer";
 import { InitializationProvider } from "@/components/initialization-context";
 import "./globals.css";
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  display: "swap",
+// Disable Google Fonts in build environment due to network restrictions
+// The font is loaded via CSS in globals.css as fallback
+const inter = {
   variable: "--font-inter",
-});
+};
 
 export const metadata: Metadata = {
   title: "FoundersForge - AI-Powered Product Creation Platform",
