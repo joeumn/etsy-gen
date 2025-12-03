@@ -26,8 +26,7 @@ export const runListStage = async ({ jobId }: ListContext) => {
 
   const { supabase } = await import("../../config/db");
   // Get products without listings by checking if they don't exist in listings table
-  const { data: products, error } = await supabase
-    .from('products')
+  const { data: products, error } = await (supabase.from('products') as any)
     .select('*')
     .limit(5);
 

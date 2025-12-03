@@ -163,8 +163,7 @@ export const runAnalyzeStage = async ({ jobId }: AnalyzeContext) => {
   const since = subDays(new Date(), 7);
 
   const { supabase } = await import("../../config/db");
-  const { data: scrapeResults, error } = await supabase
-    .from('scrape_results')
+  const { data: scrapeResults, error } = await (supabase.from('scrape_results') as any)
     .select('*')
     .gte('collected_at', since.toISOString());
 
