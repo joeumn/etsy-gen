@@ -1,8 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "fs";
 import path from "path";
-import { Prisma } from "@prisma/client";
-import { prisma } from "../../config/db";
+import { db } from "../../config/db";
 import { logger } from "../../config/logger";
 import { generateText } from "../../lib/ai";
 import {
@@ -23,8 +22,8 @@ const slugify = (value: string) =>
     .replace(/(^-|-$)+/g, "")
     .slice(0, 40);
 
-const toJson = (value: unknown): Prisma.InputJsonValue =>
-  value as Prisma.InputJsonValue;
+const toJson = (value: unknown): any =>
+  value as any;
 
 const buildPreviewSvg = (title: string) => `<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -39,7 +38,7 @@ const buildPreviewSvg = (title: string) => `<svg width="800" height="600" xmlns=
 </svg>`;
 
 export const runGenerateStage = async ({ jobId }: GenerateContext) => {
-  const trends = await prisma.trend.findMany({
+  const trends = await db.trend.findMany({
     orderBy: { score: "desc" },
     take: 3,
   });
@@ -103,28 +102,17 @@ Propose a short marketing description (<=120 words) and 8 SEO tags for a digital
     const relativePreview = path.relative(process.cwd(), previewPath);
     const relativeDescription = path.relative(process.cwd(), descriptionPath);
 
-    const product = await prisma.product.upsert({
-      where: { id },
-      update: {
-        title,
-        description: generation.text.trim(),
-        tags,
-        attributes: toJson({ niche: trend.niche }),
-        assetPaths: [relativePreview, relativeDescription],
-        previewUrl: relativePreview,
-        metadata: toJson({ trend }),
-        jobId,
-      },
-      create: {
+    const product = await db.product.create({
+      data: {
         id,
         title,
         description: generation.text.trim(),
         tags,
         attributes: toJson({ niche: trend.niche }),
-        assetPaths: [relativePreview, relativeDescription],
-        previewUrl: relativePreview,
+        asset_paths: [relativePreview, relativeDescription],
+        preview_url: relativePreview,
         metadata: toJson({ trend }),
-        jobId,
+        job_id: jobId,
       },
     });
 

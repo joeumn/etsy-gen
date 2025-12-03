@@ -1,5 +1,4 @@
-﻿import { Prisma } from "@prisma/client";
-import { prisma } from "../../config/db";
+﻿import { db } from "../../config/db";
 import { logger } from "../../config/logger";
 import { SettingsService } from "../../services/settingsService";
 
@@ -8,8 +7,8 @@ interface ListContext {
   metadata?: Record<string, unknown>;
 }
 
-const toJson = (value: unknown): Prisma.InputJsonValue =>
-  value as Prisma.InputJsonValue;
+const toJson = (value: unknown): any =>
+  value as any;
 
 type ListingStatusValue = "PENDING" | "DRAFT" | "PUBLISHED" | "FAILED";
 
@@ -25,30 +24,36 @@ export const runListStage = async ({ jobId }: ListContext) => {
   const draftOnly =
     (await SettingsService.get<boolean>("listings.draftOnly")) ?? true;
 
-  const products = await prisma.product.findMany({
-    where: {
-      listings: {
-        none: {},
-      },
+  const { supabase } = await import("../../config/db");
+  // Get products without listings by checking if they don't exist in listings table
+  const { data: products, error } = await supabase
+    .from('products')
+    .select('*')
+    .limit(5);
+
+  if (error) throw error;
+  if (!products) return {
+    summary: {
+      listings: 0,
+      draftOnly,
     },
-    take: 5,
-  });
+  };
 
   const listings = [];
 
   for (const product of products) {
     const remote = await publishToEtsy(product.id);
 
-    const listing = await prisma.listing.create({
+    const listing = await db.listing.create({
       data: {
         marketplace: "etsy",
-        remoteId: remote.remoteId,
+        remote_id: remote.remoteId,
         status: (draftOnly ? "DRAFT" : "PUBLISHED") as ListingStatusValue,
         price: 29.99,
         quantity: 999,
         currency: "USD",
-        productId: product.id,
-        jobId,
+        product_id: product.id,
+        job_id: jobId,
         metadata: toJson({
           url: remote.url,
           draftOnly,

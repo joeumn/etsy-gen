@@ -1,6 +1,5 @@
-import { Prisma } from "@prisma/client";
 import { subDays } from "date-fns";
-import { prisma } from "../../config/db";
+import { db } from "../../config/db";
 import { logger } from "../../config/logger";
 import { generateText } from "../../lib/ai";
 import { resolveDataPath, writeJsonFile, ensureDir } from "../../lib/storage";
@@ -18,8 +17,8 @@ interface TrendAggregate {
   totalSales: number;
 }
 
-const toJson = (value: unknown): Prisma.InputJsonValue =>
-  value as Prisma.InputJsonValue;
+const toJson = (value: unknown): any =>
+  value as any;
 
 /**
  * Enhanced scoring algorithm with multiple factors
@@ -134,38 +133,17 @@ Write a compelling 2-3 sentence summary explaining why this niche is profitable 
     `Develop an automated workflow template for ${aggregate.niche.toLowerCase()} professionals.`,
   ];
 
-  return prisma.trend.upsert({
-    where: { id: `${aggregate.niche}-${jobId}` },
-    update: {
-      score,
-      tamApprox: aggregate.volume * aggregate.avgPrice,
-      momentum: Number((score * confidence).toFixed(3)),
-      competition: Number((aggregate.volume / 100).toFixed(3)),
-      summary: summary.text,
-      recommendedAssets: toJson(recommendedAssets),
-      jobId,
-      metadata: toJson({
-        volume: aggregate.volume,
-        avgPrice: aggregate.avgPrice,
-        avgRating: aggregate.avgRating,
-        totalSales: aggregate.totalSales,
-        confidence,
-        riskLevel,
-        priceOptimal: aggregate.avgPrice >= 20 && aggregate.avgPrice <= 80,
-        competitionLevel: aggregate.volume < 30 ? 'low' : aggregate.volume < 80 ? 'medium' : 'high',
-        analysisDate: new Date().toISOString(),
-      }),
-    },
-    create: {
+  return db.trend.create({
+    data: {
       id: `${aggregate.niche}-${jobId}`,
       niche: aggregate.niche,
       score,
-      tamApprox: aggregate.volume * aggregate.avgPrice,
+      tam_approx: aggregate.volume * aggregate.avgPrice,
       momentum: Number((score * confidence).toFixed(3)),
       competition: Number((aggregate.volume / 100).toFixed(3)),
       summary: summary.text,
-      recommendedAssets: toJson(recommendedAssets),
-      jobId,
+      recommended_assets: toJson(recommendedAssets),
+      job_id: jobId,
       metadata: toJson({
         volume: aggregate.volume,
         avgPrice: aggregate.avgPrice,
@@ -184,11 +162,22 @@ Write a compelling 2-3 sentence summary explaining why this niche is profitable 
 export const runAnalyzeStage = async ({ jobId }: AnalyzeContext) => {
   const since = subDays(new Date(), 7);
 
-  const scrapeResults = await prisma.scrapeResult.findMany({
-    where: {
-      collectedAt: { gte: since },
-    },
-  });
+  const { supabase } = await import("../../config/db");
+  const { data: scrapeResults, error } = await supabase
+    .from('scrape_results')
+    .select('*')
+    .gte('collected_at', since.toISOString());
+
+  if (error) throw error;
+  if (!scrapeResults) {
+    logger.warn("No scrape results found for analysis window");
+    return {
+      summary: {
+        analyzed: 0,
+        trends: 0,
+      },
+    };
+  }
 
   if (!scrapeResults.length) {
     logger.warn("No scrape results found for analysis window");
@@ -231,7 +220,7 @@ export const runAnalyzeStage = async ({ jobId }: AnalyzeContext) => {
     }
   }
 
-  const trendRecords: Prisma.InputJsonValue[] = [];
+  const trendRecords: any[] = [];
 
   for (const aggregate of aggregates.values()) {
     const record = await toTrendRecord(jobId, aggregate);
